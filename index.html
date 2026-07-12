@@ -228,6 +228,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
   <button class="nav-item" data-sec="financiamentos" onclick="setSecaoDrawer(this)"><span class="ni">🏦</span>Financiamentos</button>
   <button class="nav-item" data-sec="assinaturas" onclick="setSecaoDrawer(this)"><span class="ni">📱</span>Assinaturas</button>
   <button class="nav-item" data-sec="gastos" onclick="setSecaoDrawer(this)"><span class="ni">💸</span>Meus Gastos</button>
+  <button class="nav-item" data-sec="skyfit" onclick="setSecaoDrawer(this)"><span class="ni">🏋️</span>Sky Fit</button>
   <button class="nav-item" data-sec="receitas" onclick="setSecaoDrawer(this)"><span class="ni">💰</span>Receitas</button>
   <button class="nav-item" data-sec="recorrentes" onclick="setSecaoDrawer(this)"><span class="ni">🔄</span>Recorrentes</button>
   <button class="nav-item" data-sec="carteiras" onclick="setSecaoDrawer(this)"><span class="ni">💳</span>Carteiras</button>
@@ -251,6 +252,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
   <button class="nav-item" data-sec="gastos" onclick="setSecao(this)"><span class="ni">💸</span>Meus Gastos</button>
   <div class="nav-div"></div>
   <div class="nav-lbl">Renda</div>
+  <button class="nav-item" data-sec="skyfit" onclick="setSecao(this)"><span class="ni">🏋️</span>Sky Fit</button>
   <button class="nav-item" data-sec="receitas" onclick="setSecao(this)"><span class="ni">💰</span>Fontes de Renda</button>
   <button class="nav-item" data-sec="recorrentes" onclick="setSecao(this)"><span class="ni">🔄</span>Recorrentes</button>
   <div class="nav-div"></div>
@@ -367,6 +369,54 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
 </section>
 
 <!-- RECEITAS -->
+<!-- SKY FIT -->
+<section class="secao" id="sec-skyfit">
+  <div class="page-header"><h2>Sky Fit 🏋️</h2><p>Calculadora de aulas e gerador de nota fiscal</p></div>
+
+  <!-- MODALIDADES -->
+  <div class="form-box" style="margin-bottom:12px">
+    <div class="form-tit"><span class="bar" style="background:var(--gold2)"></span>Modalidades e horas do mês</div>
+    <div id="skyfit-modalidades"></div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+      <div style="font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Adicionar modalidade</div>
+      <div class="fields">
+        <div><label>Nome</label><input type="text" id="sf-mod-nome" placeholder="Ex: Muay Thai Coletivo"/></div>
+        <div><label>Valor por hora (R$)</label><input type="number" id="sf-mod-valor" placeholder="18,00" min="0" step="0.01"/></div>
+        <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--blue),var(--blue2))" onclick="addModalidadeSkyFit()">+ Adicionar Modalidade</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOTAIS -->
+  <div class="form-box" style="margin-bottom:12px">
+    <div class="form-tit"><span class="bar" style="background:var(--green2)"></span>Resumo do mês</div>
+    <div id="skyfit-total"></div>
+  </div>
+
+  <!-- PERSONAL -->
+  <div class="form-box" style="margin-bottom:12px">
+    <div class="form-tit"><span class="bar" style="background:var(--invest2)"></span>Personal Training (variável)</div>
+    <div class="fields">
+      <div><label>Aluno</label><input type="text" id="sf-pt-aluno" placeholder="Nome do aluno"/></div>
+      <div><label>Valor recebido (R$)</label><input type="number" id="sf-pt-val" placeholder="0,00" min="0" step="0.01"/></div>
+      <div><label>Tipo</label><select id="sf-pt-tipo"><option value="confirmado">✅ Confirmado</option><option value="estimativa">📊 Estimativa</option></select></div>
+      <div><label>Data</label><input type="date" id="sf-pt-data"/></div>
+      <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--invest),var(--invest2))" onclick="addPersonalSkyFit()">+ Adicionar Aluno</button></div>
+    </div>
+    <div id="skyfit-personais" style="margin-top:10px"></div>
+  </div>
+
+  <!-- GERAR NOTA -->
+  <div class="form-box">
+    <div class="form-tit"><span class="bar" style="background:var(--red2)"></span>Gerar nota fiscal / comprovante</div>
+    <div class="fields">
+      <div><label>Competência</label><input type="text" id="sf-nota-comp" placeholder="Ex: Junho/2026"/></div>
+      <div><label>Tomador (quem paga)</label><input type="text" id="sf-nota-tomador" placeholder="Ex: Sky Fit Academia"/></div>
+      <div class="full"><button class="btn-add" onclick="gerarNotaSkyFit()">📄 Gerar Nota Fiscal PDF</button></div>
+    </div>
+  </div>
+</section>
+
 <section class="secao" id="sec-receitas">
   <div class="page-header"><h2>Fontes de Renda</h2><p>Registre toda sua renda do mês</p></div>
   <div class="form-box">
@@ -564,6 +614,18 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     </div>
   </div>
   <div class="lista" id="lista-investimentos"></div>
+
+  <!-- IA CHAT INVESTIMENTOS -->
+  <div class="form-box" style="margin-top:12px">
+    <div class="form-tit"><span class="bar" style="background:var(--invest2)"></span>🤖 Consultor de Investimentos IA</div>
+    <div id="inv-chat-msgs" style="max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px;min-height:60px">
+      <div style="background:var(--bg2);border-radius:10px;padding:10px;font-size:.8rem;color:var(--muted)">Olá! Sou seu consultor de investimentos. Pergunte qualquer coisa — onde investir, diferença entre produtos, estratégias para sua situação...</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <input type="text" id="inv-chat-input" placeholder="Ex: Tenho R$500 sobrando, onde investir?" onkeydown="if(event.key==='Enter') enviarChatInv()"/>
+      <button class="btn-add" style="width:auto;padding:10px 14px;flex-shrink:0" onclick="enviarChatInv()">→</button>
+    </div>
+  </div>
 </section>
 
 <!-- RELATÓRIO -->
@@ -782,6 +844,101 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     <div class="modal-btns">
       <button class="btn-cancel" onclick="fecharModal('overlayEditar')">Cancelar</button>
       <button class="btn-confirm" onclick="salvarEdicao()">✅ Salvar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL EDITAR FINANCIAMENTO -->
+<div class="overlay" id="overlayEditarFin" onclick="fecharOverlay('overlayEditarFin',event)">
+  <div class="modal">
+    <h2>✏️ Editar Financiamento</h2>
+    <input type="hidden" id="ef-id"/>
+    <div class="fields">
+      <div class="full"><label>Nome</label><input type="text" id="ef-nome"/></div>
+      <div><label>Ícone</label><input type="text" id="ef-icon" maxlength="4" style="text-align:center;font-size:1.2rem"/></div>
+      <div><label>Dia vencimento</label><input type="number" id="ef-dia" min="1" max="31"/></div>
+      <div><label>Parcela (R$)</label><input type="number" id="ef-parcela" min="0" step="0.01"/></div>
+      <div><label>Parcela atual nº</label><input type="number" id="ef-atual" min="1"/></div>
+      <div><label>Total parcelas</label><input type="number" id="ef-total" min="1"/></div>
+      <div class="full"><label>Obs</label><input type="text" id="ef-obs"/></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal('overlayEditarFin')">Cancelar</button>
+      <button class="btn-confirm" onclick="salvarEdicaoFin()">✅ Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR RECEITA -->
+<div class="overlay" id="overlayEditarReceita" onclick="fecharOverlay('overlayEditarReceita',event)">
+  <div class="modal">
+    <h2>✏️ Editar Receita</h2>
+    <input type="hidden" id="er-id"/>
+    <input type="hidden" id="er-tipo"/>
+    <div class="fields">
+      <div class="full"><label>Descrição</label><input type="text" id="er-desc"/></div>
+      <div><label>Valor (R$)</label><input type="number" id="er-val" min="0" step="0.01"/></div>
+      <div><label>Data</label><input type="date" id="er-data"/></div>
+      <div class="full"><label>Obs</label><input type="text" id="er-obs"/></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal('overlayEditarReceita')">Cancelar</button>
+      <button class="btn-confirm" onclick="salvarEdicaoReceita()">✅ Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR ASSINATURA -->
+<div class="overlay" id="overlayEditarAssn" onclick="fecharOverlay('overlayEditarAssn',event)">
+  <div class="modal">
+    <h2>✏️ Editar Assinatura</h2>
+    <input type="hidden" id="ea-id"/>
+    <div class="fields">
+      <div class="full"><label>Nome</label><input type="text" id="ea-nome"/></div>
+      <div><label>Valor (R$)</label><input type="number" id="ea-val" min="0" step="0.01"/></div>
+      <div><label>Dia cobrança</label><input type="number" id="ea-dia" min="1" max="31"/></div>
+      <div class="full"><label>Obs</label><input type="text" id="ea-obs"/></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal('overlayEditarAssn')">Cancelar</button>
+      <button class="btn-confirm" onclick="salvarEdicaoAssn()">✅ Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR RECORRENTE -->
+<div class="overlay" id="overlayEditarRec" onclick="fecharOverlay('overlayEditarRec',event)">
+  <div class="modal">
+    <h2>✏️ Editar Recorrente</h2>
+    <input type="hidden" id="erec-id"/>
+    <div class="fields">
+      <div class="full"><label>Descrição</label><input type="text" id="erec-desc"/></div>
+      <div><label>Valor (R$)</label><input type="number" id="erec-val" min="0" step="0.01"/></div>
+      <div><label>Dia vencimento</label><input type="number" id="erec-dia" min="1" max="31"/></div>
+      <div class="full"><label>Obs</label><input type="text" id="erec-obs"/></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal('overlayEditarRec')">Cancelar</button>
+      <button class="btn-confirm" onclick="salvarEdicaoRec()">✅ Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR CONTA A VENCER -->
+<div class="overlay" id="overlayEditarConta" onclick="fecharOverlay('overlayEditarConta',event)">
+  <div class="modal">
+    <h2>✏️ Editar Conta</h2>
+    <input type="hidden" id="ec-id"/>
+    <div class="fields">
+      <div class="full"><label>Nome</label><input type="text" id="ec-nome"/></div>
+      <div><label>Valor (R$)</label><input type="number" id="ec-val" min="0" step="0.01"/></div>
+      <div><label>Dia vencimento</label><input type="number" id="ec-dia" min="1" max="31"/></div>
+      <div class="full"><label>Obs</label><input type="text" id="ec-obs"/></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal('overlayEditarConta')">Cancelar</button>
+      <button class="btn-confirm" onclick="salvarEdicaoConta()">✅ Salvar</button>
     </div>
   </div>
 </div>
@@ -1201,8 +1358,16 @@ async function renderGastos(){
 
   var el = document.getElementById('lista-gastos');
   if(!el) return;
-  if(!gastos.length){ el.innerHTML='<div class="vazio">Nenhum gasto lançado ainda 💸</div>'; return; }
-  el.innerHTML = gastos.map(function(g){
+  var fins=carregarFins();
+  var pinned=fins.map(function(f){
+    return '<div class="item" style="border-left:3px solid var(--blue2)">'+
+      '<div class="item-ic">🏦</div>'+
+      '<div class="item-info"><div class="item-nome">'+f.icon+' '+f.nome+'<span class="tag" style="background:rgba(37,65,196,.15);color:var(--blue2);margin-left:4px">fixo</span></div>'+
+      '<div class="item-meta">Parcela '+f.atual+'/'+f.total+' · Vence dia '+f.dia+'</div></div>'+
+      '<div class="item-val neg">'+fmt(f.parcela)+'</div></div>';
+  }).join('');
+  if(!gastos.length&&!fins.length){el.innerHTML='<div class="vazio">Nenhum gasto lançado ainda 💸</div>';return;}
+  el.innerHTML = pinned+gastos.map(function(g){
     return '<div class="item">'+
       '<div class="item-ic">'+(CAT_ICONS[g.cat]||'📦')+'</div>'+
       '<div class="item-info">'+
@@ -1628,7 +1793,7 @@ async function renderContas(){
       '<span class="conta-badge '+badgeCls+'">'+badge+'</span>'+
       '</div>'+
       (!c._auto?'<button class="item-del" style="color:var(--green2)" data-id="'+c.id+'" onclick="pagoContaBtn(this)" title="Marcar como pago">✓</button>':'')+
-      (!c._auto?'<button class="item-del" data-id="'+c.id+'" onclick="delContaBtn(this)">&#x2715;</button>':'')+
+      (!c._auto?'<button class="item-edit" data-id="'+c.id+'" onclick="editarContaBtn(this)" title="Editar" style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.76rem;padding:3px">✏️</button>':'')+(!c._auto?'<button class="item-del" data-id="'+c.id+'" onclick="delContaBtn(this)">&#x2715;</button>':'')+
       '</div>';
   }).join('');
 }
@@ -1788,7 +1953,7 @@ async function analisarIA(){
     });
     var data = await resp.json();
     var texto = data.content&&data.content[0]&&data.content[0].text ? data.content[0].text : 'Erro na analise.';
-    if(el) el.innerHTML='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;font-size:.84rem;line-height:1.6">'+texto.replace(/\n/g,'<br/>')+'</div>';
+    if(el) el.innerHTML='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;font-size:.84rem;line-height:1.6">'+texto.split(String.fromCharCode(10)).join('<br/>')+'</div>';
   }catch(e){
     if(el) el.innerHTML='<div style="color:var(--red2);font-size:.8rem;padding:10px">Erro: '+e.message+'</div>';
   }
@@ -2214,7 +2379,7 @@ function renderFinanciamentos(){
     var dias=diasParaVencer(f.dia);
     if(dias<=3) alertasHtml+='<div class="alerta-banner"><div class="ab-icon">🔔</div><div><h4>'+f.icon+' '+f.nome+' vence em '+dias+'d!</h4><p>Parcela '+f.atual+'/'+f.total+' — '+fmt(f.parcela)+'</p></div></div>';
     html+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;position:relative">'+
-      '<button style="position:absolute;top:10px;right:10px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem" data-id="'+f.id+'" onclick="delFinBtn(this)">✕</button>'+
+      '<button style="position:absolute;top:10px;right:36px;background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.75rem" data-id="'+f.id+'" onclick="editarFinBtn(this)" title="Editar">✏️</button>'+'<button style="position:absolute;top:10px;right:10px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem" data-id="'+f.id+'" onclick="delFinBtn(this)">✕</button>'+
       '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="font-size:1.6rem">'+f.icon+'</div>'+
       '<div><div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:2px">'+f.nome+'</div>'+
       '<div style="font-size:.68rem;color:var(--muted)">Parcela '+f.atual+'/'+f.total+' · Vence dia '+f.dia+'</div></div></div>'+
@@ -2286,7 +2451,7 @@ function renderAssinaturas(){
       '<div class="item-meta">'+(a.obs||a.cat)+'</div></div>'+
       badge+
       '<div class="item-val neg" style="margin-left:6px">'+fmt(a.val)+'</div>'+
-      '<button class="item-del" data-id="'+a.id+'" onclick="delAssnBtn(this)">&#x2715;</button></div>';
+      '<button class="item-edit" data-id="'+a.id+'" onclick="editarAssnBtn(this)" title="Editar" style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.76rem;padding:3px">✏️</button>'+'<button class="item-del" data-id="'+a.id+'" onclick="delAssnBtn(this)">&#x2715;</button></div>';
   }).join('');
 }
 function delAssnBtn(btn){delAssinatura(parseInt(btn.dataset.id));}
@@ -2329,12 +2494,357 @@ function salvarAPIKey(){
   mostrarToast('✅ API key salva!');
 }
 
+// ══ SKY FIT ══
+var SF_MODS_DEFAULT = [
+  {id:1, nome:'Instrutor', valor:18},
+  {id:2, nome:'Muay Thai Coletivo', valor:25}
+];
+
+function carregarSFMods(){
+  var r = localStorage.getItem(docIdG('sf_mods'));
+  return r ? JSON.parse(r) : SF_MODS_DEFAULT;
+}
+async function salvarSFMods(m){ await set(docIdG('sf_mods'), JSON.stringify(m)); }
+
+function carregarSFHoras(){
+  var r = localStorage.getItem(docId()+'_sf_horas');
+  return r ? JSON.parse(r) : {};
+}
+async function salvarSFHoras(h){ await set(docId()+'_sf_horas', JSON.stringify(h)); }
+
+function carregarSFPersonais(){
+  var r = localStorage.getItem(docId()+'_sf_pt');
+  return r ? JSON.parse(r) : [];
+}
+async function salvarSFPersonais(p){ await set(docId()+'_sf_pt', JSON.stringify(p)); }
+
+async function addModalidadeSkyFit(){
+  var nome = document.getElementById('sf-mod-nome').value.trim();
+  var valor = parseFloat(document.getElementById('sf-mod-valor').value)||0;
+  if(!nome||!valor){alert('Preencha nome e valor!');return;}
+  var mods = carregarSFMods();
+  mods.push({id:Date.now(),nome:nome,valor:valor});
+  await salvarSFMods(mods);
+  document.getElementById('sf-mod-nome').value='';
+  document.getElementById('sf-mod-valor').value='';
+  renderSkyFit();
+  mostrarToast('✅ Modalidade adicionada!');
+}
+
+async function updateSFHoras(modId, horas){
+  var h = carregarSFHoras();
+  h[modId] = parseFloat(horas)||0;
+  await salvarSFHoras(h);
+  renderSkyFitTotal();
+}
+
+async function addPersonalSkyFit(){
+  var aluno = document.getElementById('sf-pt-aluno').value.trim();
+  var val   = parseFloat(document.getElementById('sf-pt-val').value)||0;
+  var tipo  = document.getElementById('sf-pt-tipo').value;
+  var data  = document.getElementById('sf-pt-data').value||hoje();
+  if(!aluno||!val){alert('Preencha aluno e valor!');return;}
+  var pts = carregarSFPersonais();
+  pts.push({id:Date.now(),aluno:aluno,val:val,tipo:tipo,data:data});
+  await salvarSFPersonais(pts);
+  document.getElementById('sf-pt-aluno').value='';
+  document.getElementById('sf-pt-val').value='';
+  renderSkyFit();
+  mostrarToast('✅ Personal adicionado!');
+}
+
+async function delSFPersonal(id){
+  var pts = carregarSFPersonais();
+  pts = pts.filter(function(p){return p.id!==id;});
+  await salvarSFPersonais(pts);
+  renderSkyFit();
+}
+
+async function delSFMod(id){
+  var mods = carregarSFMods();
+  mods = mods.filter(function(m){return m.id!==id;});
+  await salvarSFMods(mods);
+  renderSkyFit();
+}
+
+function renderSkyFitTotal(){
+  var mods = carregarSFMods();
+  var horas = carregarSFHoras();
+  var pts = carregarSFPersonais();
+  var totalMods = mods.reduce(function(a,m){return a+(horas[m.id]||0)*m.valor;},0);
+  var totalPT   = pts.filter(function(p){return p.tipo==='confirmado';}).reduce(function(a,p){return a+p.val;},0);
+  var estimPT   = pts.filter(function(p){return p.tipo==='estimativa';}).reduce(function(a,p){return a+p.val;},0);
+  var totalConf = totalMods + totalPT;
+  var totalEstim = totalMods + totalPT + estimPT;
+  window._sfTotal = totalConf;
+  var el = document.getElementById('skyfit-total');
+  if(!el) return;
+  el.innerHTML = '<div class="cards-row">'+
+    '<div class="mini-card"><div class="lbl">🏋️ Aulas confirmadas</div><div class="val" style="color:var(--green2)">'+fmt(totalMods)+'</div></div>'+
+    '<div class="mini-card"><div class="lbl">💪 Personal confirmado</div><div class="val" style="color:var(--green2)">'+fmt(totalPT)+'</div></div>'+
+    (estimPT>0?'<div class="mini-card"><div class="lbl">📊 Estimativa PT</div><div class="val" style="color:var(--gold2)">'+fmt(estimPT)+'</div></div>':'')+
+    '<div class="mini-card" style="border-top:2px solid var(--green2)"><div class="lbl">✅ Total a receber</div><div class="val" style="color:var(--green2)">'+fmt(totalConf)+'</div></div>'+
+    '</div>'+
+    (estimPT>0?'<div style="font-size:.74rem;color:var(--muted);margin-top:6px">📊 Se estimativas confirmarem: <strong style="color:var(--gold2)">'+fmt(totalEstim)+'</strong></div>':'');
+}
+
+function renderSkyFit(){
+  var mods = carregarSFMods();
+  var horas = carregarSFHoras();
+  var pts = carregarSFPersonais();
+  var el = document.getElementById('skyfit-modalidades');
+  if(el){
+    el.innerHTML = mods.map(function(m){
+      var h = horas[m.id]||0;
+      var subtotal = h*m.valor;
+      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">'+
+        '<div style="flex:1"><div style="font-weight:600;font-size:.83rem">'+m.nome+'</div>'+
+        '<div style="font-size:.68rem;color:var(--muted)">'+fmt(m.valor)+'/hora</div></div>'+
+        '<div style="display:flex;align-items:center;gap:6px">'+
+        '<input type="number" value="'+h+'" min="0" step="0.5" style="width:65px;text-align:center;font-size:.83rem;padding:6px 8px" placeholder="Horas" oninput="updateSFHoras('+m.id+',this.value)"/>'+
+        '<span style="font-size:.68rem;color:var(--muted)">h</span></div>'+
+        '<div style="font-family:DM Mono,monospace;font-size:.88rem;color:'+(subtotal>0?'var(--green2)':'var(--muted)')+';min-width:70px;text-align:right">'+fmt(subtotal)+'</div>'+
+        '<button class="item-del" data-id="'+m.id+'" onclick="delSFModBtn(this)" title="Remover">✕</button>'+
+        '</div>';
+    }).join('')+
+    (mods.length===0?'<div class="vazio">Nenhuma modalidade. Adicione abaixo!</div>':'');
+  }
+  var ptEl = document.getElementById('skyfit-personais');
+  if(ptEl){
+    ptEl.innerHTML = !pts.length?'<div class="vazio" style="padding:10px">Nenhum personal cadastrado</div>':
+      pts.map(function(p){
+        return '<div class="item">'+
+          '<div class="item-ic">'+(p.tipo==='confirmado'?'✅':'📊')+'</div>'+
+          '<div class="item-info"><div class="item-nome">'+p.aluno+'</div>'+
+          '<div class="item-meta">'+fmtD(p.data)+' · '+(p.tipo==='confirmado'?'Confirmado':'Estimativa')+'</div></div>'+
+          '<div class="item-val '+(p.tipo==='confirmado'?'pos':'')+'">'+fmt(p.val)+'</div>'+
+          '<button class="item-del" data-id="'+p.id+'" onclick="delSFPTBtn(this)">✕</button>'+
+          '</div>';
+      }).join('');
+  }
+  renderSkyFitTotal();
+}
+function delSFModBtn(btn){delSFMod(parseInt(btn.dataset.id));}
+function delSFPTBtn(btn){delSFPersonal(parseInt(btn.dataset.id));}
+
+function gerarNotaSkyFit(){
+  var mods = carregarSFMods();
+  var horas = carregarSFHoras();
+  var pts = carregarSFPersonais().filter(function(p){return p.tipo==='confirmado';});
+  var comp = document.getElementById('sf-nota-comp').value||MESES[mes]+'/'+ano;
+  var tomador = document.getElementById('sf-nota-tomador').value||'Sky Fit Academia';
+  var totalMods = mods.reduce(function(a,m){return a+(horas[m.id]||0)*m.valor;},0);
+  var totalPT   = pts.reduce(function(a,p){return a+p.val;},0);
+  var total = totalMods + totalPT;
+  var nl = String.fromCharCode(10);
+  var win = window.open('','_blank');
+  var linhasMods = mods.filter(function(m){return (horas[m.id]||0)>0;}).map(function(m){
+    return '<tr><td>'+m.nome+'</td><td style="text-align:center">'+( horas[m.id]||0)+'h</td><td style="text-align:right">'+fmt(m.valor)+'/h</td><td style="text-align:right">'+fmt((horas[m.id]||0)*m.valor)+'</td></tr>';
+  }).join('');
+  var linhasPT = pts.map(function(p){
+    return '<tr><td>Personal Training — '+p.aluno+'</td><td style="text-align:center">—</td><td style="text-align:right">—</td><td style="text-align:right">'+fmt(p.val)+'</td></tr>';
+  }).join('');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Nota Fiscal — '+comp+'</title>');
+  win.document.write('<style>body{font-family:Arial,sans-serif;padding:40px;max-width:700px;margin:0 auto;color:#111}');
+  win.document.write('h1{color:#1a2e8c;font-size:1.4rem;margin-bottom:4px}.sub{color:#888;font-size:.85rem;margin-bottom:24px}');
+  win.document.write('.info{display:flex;justify-content:space-between;margin-bottom:20px;padding:16px;background:#f5f5f5;border-radius:8px;font-size:.85rem}');
+  win.document.write('table{width:100%;border-collapse:collapse;margin-bottom:16px}');
+  win.document.write('th{background:#1a2e8c;color:white;padding:10px;text-align:left;font-size:.82rem}');
+  win.document.write('td{padding:9px 10px;border-bottom:1px solid #eee;font-size:.82rem}');
+  win.document.write('.total-row{background:#f0f4ff;font-weight:bold;font-size:.95rem}');
+  win.document.write('.rodape{margin-top:30px;padding-top:16px;border-top:2px solid #1a2e8c;font-size:.75rem;color:#888;text-align:center}');
+  win.document.write('</style></head><body>');
+  win.document.write('<h1>Recibo de Prestação de Serviços</h1>');
+  win.document.write('<div class="sub">Competência: '+comp+'</div>');
+  win.document.write('<div class="info">');
+  win.document.write('<div><strong>Prestador</strong><br/>Fábio Padote<br/>CREF: 142588-G/SP<br/>CNPJ: 63.359.208/0001-11<br/>PADOTY Saúde e Movimento</div>');
+  win.document.write('<div><strong>Tomador</strong><br/>'+tomador+'</div>');
+  win.document.write('</div>');
+  win.document.write('<table><tr><th>Serviço</th><th style="text-align:center">Qtd/Horas</th><th style="text-align:right">Valor Unit.</th><th style="text-align:right">Total</th></tr>');
+  win.document.write(linhasMods+linhasPT);
+  win.document.write('<tr class="total-row"><td colspan="3"><strong>TOTAL A RECEBER</strong></td><td style="text-align:right"><strong>'+fmt(total)+'</strong></td></tr>');
+  win.document.write('</table>');
+  win.document.write('<div class="rodape">Documento gerado por PADOTY Finance — '+new Date().toLocaleDateString('pt-BR')+'</div>');
+  win.document.write('</body></html>');
+  win.document.close();
+  setTimeout(function(){win.print();},500);
+}
+
+// ══ EDITAR FINANCIAMENTO ══
+function abrirEdicaoFin(id){
+  var fins = carregarFins();
+  var f = fins.find(function(x){return x.id===id;});
+  if(!f) return;
+  document.getElementById('ef-id').value=id;
+  document.getElementById('ef-nome').value=f.nome||'';
+  document.getElementById('ef-icon').value=f.icon||'🏦';
+  document.getElementById('ef-dia').value=f.dia||10;
+  document.getElementById('ef-parcela').value=f.parcela||0;
+  document.getElementById('ef-atual').value=f.atual||1;
+  document.getElementById('ef-total').value=f.total||0;
+  document.getElementById('ef-obs').value=f.obs||'';
+  document.getElementById('overlayEditarFin').classList.add('aberto');
+}
+async function salvarEdicaoFin(){
+  var id = parseInt(document.getElementById('ef-id').value);
+  var fins = carregarFins();
+  fins = fins.map(function(f){
+    if(f.id===id){
+      f.nome=document.getElementById('ef-nome').value.trim();
+      f.icon=document.getElementById('ef-icon').value.trim()||'🏦';
+      f.dia=parseInt(document.getElementById('ef-dia').value)||10;
+      f.parcela=parseFloat(document.getElementById('ef-parcela').value)||0;
+      f.atual=parseInt(document.getElementById('ef-atual').value)||1;
+      f.total=parseInt(document.getElementById('ef-total').value)||0;
+      f.obs=document.getElementById('ef-obs').value.trim();
+    }
+    return f;
+  });
+  await salvarFins(fins);
+  fecharModal('overlayEditarFin');
+  renderFinanciamentos();
+  mostrarToast('✅ Financiamento atualizado!');
+}
+function editarFinBtn(btn){abrirEdicaoFin(parseInt(btn.dataset.id));}
+
+// ══ EDITAR RECEITA ══
+function abrirEdicaoReceita(id,tipo){
+  var key = tipo==='fixa'?docIdG('receitas_fixas'):docId()+'_receitas_var';
+  var lista = JSON.parse(localStorage.getItem(key)||'[]');
+  var r = lista.find(function(x){return x.id===id;});
+  if(!r) return;
+  document.getElementById('er-id').value=id;
+  document.getElementById('er-tipo').value=tipo;
+  document.getElementById('er-desc').value=r.desc||'';
+  document.getElementById('er-val').value=r.val||0;
+  document.getElementById('er-data').value=r.data||hoje();
+  document.getElementById('er-obs').value=r.obs||'';
+  document.getElementById('overlayEditarReceita').classList.add('aberto');
+}
+async function salvarEdicaoReceita(){
+  var id=parseInt(document.getElementById('er-id').value);
+  var tipo=document.getElementById('er-tipo').value;
+  var key=tipo==='fixa'?docIdG('receitas_fixas'):docId()+'_receitas_var';
+  var lista=JSON.parse(localStorage.getItem(key)||'[]');
+  lista=lista.map(function(r){
+    if(r.id===id){r.desc=document.getElementById('er-desc').value.trim();r.val=parseFloat(document.getElementById('er-val').value)||0;r.data=document.getElementById('er-data').value;r.obs=document.getElementById('er-obs').value.trim();}
+    return r;
+  });
+  await set(key,JSON.stringify(lista));
+  fecharModal('overlayEditarReceita');renderAll();mostrarToast('✅ Receita atualizada!');
+}
+function editarReceitaBtn(btn){abrirEdicaoReceita(parseInt(btn.dataset.id),btn.dataset.tipo);}
+
+// ══ EDITAR ASSINATURA ══
+function abrirEdicaoAssn(id){
+  var assns=carregarAssinaturas();var a=assns.find(function(x){return x.id===id;});if(!a) return;
+  document.getElementById('ea-id').value=id;document.getElementById('ea-nome').value=a.nome||'';
+  document.getElementById('ea-val').value=a.val||0;document.getElementById('ea-dia').value=a.dia||1;document.getElementById('ea-obs').value=a.obs||'';
+  document.getElementById('overlayEditarAssn').classList.add('aberto');
+}
+async function salvarEdicaoAssn(){
+  var id=parseInt(document.getElementById('ea-id').value);
+  var assns=carregarAssinaturas();
+  assns=assns.map(function(a){if(a.id===id){a.nome=document.getElementById('ea-nome').value.trim();a.val=parseFloat(document.getElementById('ea-val').value)||0;a.dia=parseInt(document.getElementById('ea-dia').value)||1;a.obs=document.getElementById('ea-obs').value.trim();}return a;});
+  await salvarAssinaturas(assns);fecharModal('overlayEditarAssn');renderAssinaturas();mostrarToast('✅ Assinatura atualizada!');
+}
+function editarAssnBtn(btn){abrirEdicaoAssn(parseInt(btn.dataset.id));}
+
+// ══ EDITAR RECORRENTE ══
+function abrirEdicaoRec(id){
+  var recs=JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');var r=recs.find(function(x){return x.id===id;});if(!r) return;
+  document.getElementById('erec-id').value=id;document.getElementById('erec-desc').value=r.desc||'';
+  document.getElementById('erec-val').value=r.val||0;document.getElementById('erec-dia').value=r.dia||1;document.getElementById('erec-obs').value=r.obs||'';
+  document.getElementById('overlayEditarRec').classList.add('aberto');
+}
+async function salvarEdicaoRec(){
+  var id=parseInt(document.getElementById('erec-id').value);
+  var recs=JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
+  recs=recs.map(function(r){if(r.id===id){r.desc=document.getElementById('erec-desc').value.trim();r.val=parseFloat(document.getElementById('erec-val').value)||0;r.dia=parseInt(document.getElementById('erec-dia').value)||1;r.obs=document.getElementById('erec-obs').value.trim();}return r;});
+  await set(docIdG('recorrentes'),JSON.stringify(recs));fecharModal('overlayEditarRec');renderRecorrentes();mostrarToast('✅ Recorrente atualizado!');
+}
+function editarRecBtn(btn){abrirEdicaoRec(parseInt(btn.dataset.id));}
+
+// ══ EDITAR CONTA A VENCER ══
+function abrirEdicaoConta(id){
+  var contas=JSON.parse(localStorage.getItem(docIdG('contas'))||'[]');var c=contas.find(function(x){return x.id===id;});if(!c) return;
+  document.getElementById('ec-id').value=id;document.getElementById('ec-nome').value=c.nome||'';
+  document.getElementById('ec-val').value=c.valor||0;document.getElementById('ec-dia').value=c.dia||1;document.getElementById('ec-obs').value=c.obs||'';
+  document.getElementById('overlayEditarConta').classList.add('aberto');
+}
+async function salvarEdicaoConta(){
+  var id=parseInt(document.getElementById('ec-id').value);
+  var contas=JSON.parse(localStorage.getItem(docIdG('contas'))||'[]');
+  contas=contas.map(function(c){if(c.id===id){c.nome=document.getElementById('ec-nome').value.trim();c.valor=parseFloat(document.getElementById('ec-val').value)||0;c.dia=parseInt(document.getElementById('ec-dia').value)||1;c.obs=document.getElementById('ec-obs').value.trim();}return c;});
+  await set(docIdG('contas'),JSON.stringify(contas));fecharModal('overlayEditarConta');renderContas();mostrarToast('✅ Conta atualizada!');
+}
+function editarContaBtn(btn){abrirEdicaoConta(parseInt(btn.dataset.id));}
+
+// ══ IA CHAT INVESTIMENTOS ══
+var _invChatHistory = [];
+async function enviarChatInv(){
+  var apiKey=localStorage.getItem('pf_apikey');
+  var input=document.getElementById('inv-chat-input');
+  var msgs=document.getElementById('inv-chat-msgs');
+  if(!input||!msgs) return;
+  var pergunta=input.value.trim();
+  if(!pergunta) return;
+  if(!apiKey){mostrarToast('Configure a API key em Configurações!');return;}
+  input.value='';
+  msgs.innerHTML+='<div style="background:rgba(37,65,196,.15);border-radius:10px;padding:10px;font-size:.8rem;align-self:flex-end;max-width:85%">'+pergunta+'</div>';
+  msgs.innerHTML+='<div id="inv-typing" style="font-size:.76rem;color:var(--muted);padding:4px">IA digitando...</div>';
+  msgs.scrollTop=msgs.scrollHeight;
+  var gastos=carregarGastos();var renda=window._totalRenda||0;
+  var totalGasto=gastos.reduce(function(a,g){return a+g.valor;},0);
+  var inv=window._totalInv||0;var saldo=renda-totalGasto-(window._totalFinanc||0);
+  var nl=String.fromCharCode(10);
+  var ctx='Contexto financeiro do usuario:'+nl+'Renda: R$'+renda.toFixed(2)+nl+'Total gastos: R$'+totalGasto.toFixed(2)+nl+'Investindo este mes: R$'+inv.toFixed(2)+nl+'Saldo disponivel: R$'+saldo.toFixed(2)+nl+nl;
+  _invChatHistory.push({role:'user',content:ctx+pergunta});
+  if(_invChatHistory.length>10) _invChatHistory=_invChatHistory.slice(-10);
+  try{
+    var resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:'Voce e um consultor de investimentos pessoal, direto e pratico. Responda em portugues do Brasil. Considere sempre o contexto financeiro fornecido. Seja objetivo, maximo 4 frases.',messages:_invChatHistory})
+    });
+    var data=await resp.json();
+    var texto=data.content&&data.content[0]?data.content[0].text:'Erro.';
+    _invChatHistory.push({role:'assistant',content:texto});
+    var typingEl=document.getElementById('inv-typing');if(typingEl) typingEl.remove();
+    msgs.innerHTML+='<div style="background:var(--bg2);border-radius:10px;padding:10px;font-size:.8rem;max-width:90%">'+texto.split(String.fromCharCode(10)).join('<br/>')+'</div>';
+    msgs.scrollTop=msgs.scrollHeight;
+  }catch(e){
+    var typingEl=document.getElementById('inv-typing');if(typingEl) typingEl.remove();
+    msgs.innerHTML+='<div style="color:var(--red2);font-size:.76rem;padding:4px">Erro: '+e.message+'</div>';
+  }
+}
+
+// ══ MARCAR PAGO → LANÇA EM GASTOS ══
+async function togglePagoConta(id){
+  var contas=JSON.parse(localStorage.getItem(docIdG('contas'))||'[]');
+  var c=contas.find(function(x){return x.id===id;});
+  if(!c) return;
+  c.pago=!c.pago;
+  if(c.pago){
+    // Auto-lançar em gastos
+    var gastos=JSON.parse(localStorage.getItem(docId()+'_gastos')||'[]');
+    gastos.push({id:Date.now(),desc:c.nome,valor:c.valor,cat:'outros',pag:'debito',data:hoje(),obs:'Auto: conta paga'});
+    await set(docId()+'_gastos',JSON.stringify(gastos));
+    mostrarToast('✅ Pago e lançado em Meus Gastos!');
+  }
+  contas=contas.map(function(x){if(x.id===id) return c;return x;});
+  await set(docIdG('contas'),JSON.stringify(contas));
+  renderContas();renderAll();
+}
+
 // ══ RENDER ALL ══
+
 async function renderAll(){
   _cache['gastos'] = JSON.parse(localStorage.getItem(docId()+'_gastos')||'[]');
   await renderReceitas();
   renderFinanciamentos();
   renderAssinaturas();
+  renderSkyFit();
   await renderRecorrentes();
   await renderGastos();
   await renderCarteiras();
