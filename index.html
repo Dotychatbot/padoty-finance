@@ -226,6 +226,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
   <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;color:var(--gold2);margin-bottom:16px;padding:0 4px">Menu</div>
   <button class="nav-item" data-sec="resumo" onclick="setSecaoDrawer(this)"><span class="ni">📊</span>Resumo</button>
   <button class="nav-item" data-sec="financiamentos" onclick="setSecaoDrawer(this)"><span class="ni">🏦</span>Financiamentos</button>
+  <button class="nav-item" data-sec="assinaturas" onclick="setSecaoDrawer(this)"><span class="ni">📱</span>Assinaturas</button>
   <button class="nav-item" data-sec="gastos" onclick="setSecaoDrawer(this)"><span class="ni">💸</span>Meus Gastos</button>
   <button class="nav-item" data-sec="receitas" onclick="setSecaoDrawer(this)"><span class="ni">💰</span>Receitas</button>
   <button class="nav-item" data-sec="recorrentes" onclick="setSecaoDrawer(this)"><span class="ni">🔄</span>Recorrentes</button>
@@ -235,6 +236,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
   <button class="nav-item" data-sec="investimentos" onclick="setSecaoDrawer(this)"><span class="ni">📈</span>Investimentos</button>
   <button class="nav-item" data-sec="relatorio" onclick="setSecaoDrawer(this)"><span class="ni">📄</span>Relatório</button>
   <button class="nav-item" data-sec="metas" onclick="setSecaoDrawer(this)"><span class="ni">🏆</span>Metas</button>
+  <button class="nav-item" data-sec="config" onclick="setSecaoDrawer(this)"><span class="ni">⚙️</span>Configurações</button>
 </div>
 
 <div class="layout">
@@ -245,6 +247,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
   <div class="nav-div"></div>
   <div class="nav-lbl">Despesas</div>
   <button class="nav-item" data-sec="financiamentos" onclick="setSecao(this)"><span class="ni">🏦</span>Financiamentos</button>
+  <button class="nav-item" data-sec="assinaturas" onclick="setSecao(this)"><span class="ni">📱</span>Assinaturas</button>
   <button class="nav-item" data-sec="gastos" onclick="setSecao(this)"><span class="ni">💸</span>Meus Gastos</button>
   <div class="nav-div"></div>
   <div class="nav-lbl">Renda</div>
@@ -276,38 +279,43 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
 
 <!-- FINANCIAMENTOS -->
 <section class="secao" id="sec-financiamentos">
-  <div class="page-header"><h2>Financiamentos</h2><p>Controle das suas dívidas de longo prazo</p></div>
-
-  <!-- MOTO -->
-  <div class="fin-card moto" id="fin-moto-card">
-    <div class="fin-header"><div class="fin-icon">🏍️</div><div><div class="fin-title">Financiamento Moto</div><div id="fin-moto-parcela" style="font-size:.72rem;color:var(--muted)"></div></div></div>
-    <div class="fin-val" id="fin-moto-val">R$ 0,00/mês</div>
-    <div class="fin-progress"><div class="fin-progress-fill" id="fin-moto-bar" style="background:linear-gradient(90deg,var(--red),var(--gold2));width:0%"></div></div>
-    <div class="fin-meta" id="fin-moto-meta"></div>
-    <button class="btn-sm" style="margin-top:12px" onclick="document.getElementById('overlayFinMoto').classList.add('aberto')">⚙️ Configurar</button>
-  </div>
-
-  <!-- CASA -->
-  <div class="fin-card casa" id="fin-casa-card">
-    <div class="fin-header"><div class="fin-icon">🏠</div><div><div class="fin-title">Financiamento Casa</div><div id="fin-casa-parcela" style="font-size:.72rem;color:var(--muted)"></div></div></div>
-    <div class="fin-val" id="fin-casa-val">R$ 0,00/mês</div>
-    <div class="fin-progress"><div class="fin-progress-fill" id="fin-casa-bar" style="background:linear-gradient(90deg,var(--blue2),var(--invest2));width:0%"></div></div>
-    <div class="fin-meta" id="fin-casa-meta"></div>
-    <div style="margin-top:12px;display:flex;gap:8px">
-      <button class="btn-sm" onclick="document.getElementById('overlayFinCasa').classList.add('aberto')">⚙️ Configurar</button>
-      <button class="btn-sm" style="border-color:var(--invest2);color:var(--invest2)" onclick="document.getElementById('overlayObra').classList.add('aberto')">+ Taxa/Obra</button>
-    </div>
-    <div id="lista-obras" style="margin-top:10px"></div>
-  </div>
-
-  <!-- RESUMO TOTAL -->
-  <div class="form-box">
+  <div class="page-header"><h2>Financiamentos</h2><p>Todas as suas dívidas de longo prazo</p></div>
+  <div id="fin-alertas"></div>
+  <div id="lista-fins"></div>
+  <div class="form-box" style="margin-bottom:12px" id="fin-total-wrap">
     <div class="form-tit"><span class="bar" style="background:var(--gold2)"></span>Total financiamentos</div>
     <div id="fin-total-el"></div>
   </div>
+  <button class="btn-add" style="background:linear-gradient(135deg,var(--blue),var(--blue2));margin-bottom:12px" onclick="document.getElementById('overlayNovoFin').classList.add('aberto')">+ Novo Financiamento</button>
 </section>
 
-<!-- GASTOS -->
+<!-- ASSINATURAS -->
+<section class="secao" id="sec-assinaturas">
+  <div class="page-header"><h2>Assinaturas</h2><p>Serviços que você paga todo mês</p></div>
+  <div id="assn-resumo" style="margin-bottom:12px"></div>
+  <div class="form-box">
+    <div class="form-tit"><span class="bar" style="background:var(--invest2)"></span>Nova assinatura</div>
+    <div class="fields">
+      <div><label>Nome</label><input type="text" id="assn-nome" placeholder="Ex: Spotify, Netflix..."/></div>
+      <div><label>Valor (R$)</label><input type="number" id="assn-val" placeholder="0,00" min="0" step="0.01"/></div>
+      <div><label>Dia cobrança</label><input type="number" id="assn-dia" placeholder="Ex: 5" min="1" max="31"/></div>
+      <div><label>Categoria</label>
+        <select id="assn-cat">
+          <option value="streaming">🎬 Streaming</option>
+          <option value="musica">🎵 Música</option>
+          <option value="ia">🤖 IA / Tecnologia</option>
+          <option value="saude">💊 Saúde</option>
+          <option value="educacao">📚 Educação</option>
+          <option value="outros">📦 Outros</option>
+        </select>
+      </div>
+      <div class="full"><label>Obs</label><input type="text" id="assn-obs" placeholder="Detalhe..."/></div>
+      <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--invest),var(--invest2))" onclick="addAssinatura()">+ Adicionar Assinatura</button></div>
+    </div>
+  </div>
+  <div id="lista-assinaturas" style="margin-top:8px"></div>
+</section>
+
 <section class="secao" id="sec-gastos">
   <div class="page-header"><h2>Meus Gastos</h2><p>Lance todos os seus gastos do mês</p></div>
 
@@ -328,6 +336,8 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
           <option value="saude">💊 Saúde</option>
           <option value="transporte">🚗 Transporte</option>
           <option value="lazer">🎬 Lazer</option>
+          <option value="seguro">🛡️ Seguro</option>
+          <option value="educacao">📚 Educação</option>
           <option value="outros">📦 Outros</option>
         </select>
       </div>
@@ -582,6 +592,33 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
   <div id="lista-metas" style="margin-top:10px"></div>
 </section>
 
+
+
+<!-- CONFIG -->
+<section class="secao" id="sec-config">
+  <div class="page-header"><h2>Configurações</h2><p>API key da IA e preferências</p></div>
+  <div class="form-box">
+    <div class="form-tit"><span class="bar" style="background:var(--invest2)"></span>🤖 Chave da IA — Anthropic</div>
+    <div style="background:var(--bg2);border-radius:10px;padding:11px;font-size:.77rem;color:var(--muted);margin-bottom:10px;line-height:1.6">
+      1. Acesse <strong style="color:var(--text)">console.anthropic.com</strong><br/>
+      2. Vá em <strong style="color:var(--text)">API Keys → Create Key</strong><br/>
+      3. Cole a chave abaixo — fica salva só no seu dispositivo
+    </div>
+    <div class="fields">
+      <div class="full"><label>API Key (sk-ant-...)</label><input type="password" id="config-apikey" placeholder="sk-ant-api03-..."/></div>
+      <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--invest),var(--invest2))" onclick="salvarAPIKey()">💾 Salvar chave</button></div>
+    </div>
+    <div id="config-key-status" style="margin-top:8px;font-size:.75rem;color:var(--green2)"></div>
+  </div>
+  <div class="form-box">
+    <div class="form-tit"><span class="bar" style="background:var(--muted)"></span>Preferências</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn-sm" onclick="toggleTema()" style="text-align:left">🌙 Alternar modo escuro/claro</button>
+      <button class="btn-sm" onclick="sincronizar()" style="text-align:left">🔄 Sincronizar dados agora</button>
+      <button class="btn-sm" onclick="exportarCSV()" style="text-align:left">📊 Exportar CSV</button>
+    </div>
+  </div>
+</section>
 </main>
 </div><!-- layout -->
 
@@ -662,6 +699,87 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     <div class="modal-btns">
       <button class="btn-cancel" onclick="fecharModal('overlayVoz')">Cancelar</button>
       <button class="btn-confirm" onclick="confirmarVoz()">✅ Confirmar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL NOVO FINANCIAMENTO -->
+<div class="overlay" id="overlayNovoFin" onclick="fecharOverlay('overlayNovoFin',event)">
+  <div class="modal">
+    <h2>🏦 Novo Financiamento</h2>
+    <div class="fields">
+      <div class="full"><label>Nome</label><input type="text" id="nf-nome" placeholder="Ex: Moto Honda, Casa, Carro..."/></div>
+      <div><label>Ícone</label><input type="text" id="nf-icon" placeholder="🏍️" maxlength="4" style="text-align:center;font-size:1.2rem"/></div>
+      <div><label>Dia vencimento</label><input type="number" id="nf-dia" placeholder="Ex: 10" min="1" max="31"/></div>
+      <div><label>Parcela (R$/mês)</label><input type="number" id="nf-parcela" placeholder="0,00" min="0" step="0.01"/></div>
+      <div><label>Parcela atual nº</label><input type="number" id="nf-atual" placeholder="Ex: 1" min="1"/></div>
+      <div><label>Total de parcelas</label><input type="number" id="nf-total" placeholder="Ex: 48" min="1"/></div>
+      <div class="full"><label>Tem taxas/extras?</label>
+        <select id="nf-extras"><option value="nao">Não</option><option value="sim">Sim</option></select>
+      </div>
+      <div class="full"><label>Obs</label><input type="text" id="nf-obs" placeholder="Banco, contrato..."/></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal('overlayNovoFin')">Cancelar</button>
+      <button class="btn-confirm" onclick="salvarNovoFin()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EXTRA FINANCIAMENTO -->
+<div class="overlay" id="overlayExtra" onclick="fecharOverlay('overlayExtra',event)">
+  <div class="modal">
+    <h2 id="extra-title">🔧 Taxa / Extra</h2>
+    <input type="hidden" id="extra-fin-id"/>
+    <div class="fields">
+      <div class="full"><label>Descrição</label><input type="text" id="ex-desc" placeholder="Ex: Taxa cartório, Material..."/></div>
+      <div><label>Valor (R$)</label><input type="number" id="ex-val" placeholder="0,00" min="0" step="0.01"/></div>
+      <div><label>Data</label><input type="date" id="ex-data"/></div>
+      <div class="full"><label>Obs</label><input type="text" id="ex-obs" placeholder="Detalhe..."/></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal('overlayExtra')">Cancelar</button>
+      <button class="btn-confirm" onclick="addExtra()">+ Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR GASTO -->
+<div class="overlay" id="overlayEditar" onclick="fecharOverlay('overlayEditar',event)">
+  <div class="modal">
+    <h2>✏️ Editar Gasto</h2>
+    <input type="hidden" id="edit-id"/>
+    <div class="fields">
+      <div class="full"><label>Descrição</label><input type="text" id="edit-desc"/></div>
+      <div><label>Valor (R$)</label><input type="number" id="edit-val" min="0" step="0.01"/></div>
+      <div><label>Categoria</label>
+        <select id="edit-cat">
+          <option value="alimentacao">🛒 Alimentação</option>
+          <option value="mercado">🏪 Supermercado</option>
+          <option value="transporte">🚗 Transporte</option>
+          <option value="saude">💊 Saúde</option>
+          <option value="pessoal">👤 Pessoal</option>
+          <option value="lazer">🎬 Lazer</option>
+          <option value="seguro">🛡️ Seguro</option>
+          <option value="educacao">📚 Educação</option>
+          <option value="outros">📦 Outros</option>
+        </select>
+      </div>
+      <div><label>Pagamento</label>
+        <select id="edit-pag">
+          <option value="debito">Débito</option>
+          <option value="credito">Crédito</option>
+          <option value="dinheiro">Dinheiro</option>
+          <option value="pix">Pix</option>
+        </select>
+      </div>
+      <div><label>Data</label><input type="date" id="edit-data"/></div>
+      <div class="full"><label>Obs</label><input type="text" id="edit-obs"/></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal('overlayEditar')">Cancelar</button>
+      <button class="btn-confirm" onclick="salvarEdicao()">✅ Salvar</button>
     </div>
   </div>
 </div>
@@ -1090,7 +1208,7 @@ async function renderGastos(){
       '<div class="item-meta">'+fmtD(g.data)+' · '+( g.cat||'outros')+(g.obs?' · '+g.obs:'')+'</div>'+
       '</div>'+
       '<div class="item-val neg">'+fmt(g.valor)+'</div>'+
-      '<button class="item-del" data-id="'+g.id+'" onclick="delGastoBtn(this)">&#x2715;</button>'+
+      '<button style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.76rem;padding:3px" data-id="'+g.id+'" onclick="editarGastoBtn(this)" title="Editar">&#x270F;&#xFE0F;</button>'+'<button class="item-del" data-id="'+g.id+'" onclick="delGastoBtn(this)">&#x2715;</button>'+
       '</div>';
   }).join('');
 }
@@ -1461,7 +1579,17 @@ async function delConta(id){
 
 async function renderContas(){
   var contas = JSON.parse(localStorage.getItem(docIdG('contas'))||'[]');
-  // Add recorrentes
+  // Auto: fins
+  carregarFins().forEach(function(f){
+    if(!contas.some(function(c){return c._finId===f.id;}))
+      contas.push({id:'fin_'+f.id,nome:f.icon+' '+f.nome,valor:f.parcela,dia:f.dia,cat:'financiamento',obs:'Parcela '+f.atual+'/'+f.total,pago:false,_finId:f.id,_auto:true});
+  });
+  // Auto: assinaturas
+  carregarAssinaturas().forEach(function(a){
+    if(!contas.some(function(c){return c._assnId===a.id;}))
+      contas.push({id:'assn_'+a.id,nome:a.nome,valor:a.val,dia:a.dia,cat:a.cat,obs:'Assinatura',pago:false,_assnId:a.id,_auto:true});
+  });
+  // Auto: recorrentes
   var recs = JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
   recs.filter(recorrenteAtivo).forEach(function(r){
     var jaExiste = contas.some(function(c){ return c._recId===r.id; });
@@ -1622,8 +1750,13 @@ function renderComparativo(){
 
 // ══ IA ══
 async function analisarIA(){
+  var apiKey=localStorage.getItem('pf_apikey');
   var btn = document.getElementById('btn-ia');
   var el = document.getElementById('ia-resultado');
+  if(!apiKey){
+    if(el) el.innerHTML='<div style="background:rgba(224,48,48,.1);border:1px solid rgba(224,48,48,.3);border-radius:10px;padding:12px;font-size:.8rem;color:var(--red2)">⚙️ Configure sua API key em <strong>Configurações</strong> primeiro!</div>';
+    return;
+  }
   if(btn){ btn.disabled=true; btn.textContent='🤖 Analisando...'; }
   if(el) el.innerHTML='<div style="color:var(--muted);font-size:.8rem;padding:10px">Consultando IA...</div>';
 
@@ -1648,7 +1781,7 @@ async function analisarIA(){
   try{
     var resp = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})
     });
     var data = await resp.json();
@@ -1887,8 +2020,9 @@ async function renderResumo(){
 
   var alertasEl = document.getElementById('resumo-alertas');
   if(alertasEl){
-    var contas = JSON.parse(localStorage.getItem(docIdG('contas'))||'[]');
-    var urgentes = contas.filter(function(c){ return !c.pago && diasParaVencer(c.dia)<=3; });
+    var urgentes=JSON.parse(localStorage.getItem(docIdG('contas'))||'[]').filter(function(c){return !c.pago&&diasParaVencer(c.dia)<=3;}).map(function(c){return {nome:c.nome,valor:c.valor,dia:c.dia};});
+    carregarFins().filter(function(f){return diasParaVencer(f.dia)<=3;}).forEach(function(f){urgentes.push({nome:f.icon+' '+f.nome,valor:f.parcela,dia:f.dia});});
+    carregarAssinaturas().filter(function(a){return diasParaVencer(a.dia)<=3;}).forEach(function(a){urgentes.push({nome:a.nome,valor:a.val,dia:a.dia});});
     alertasEl.innerHTML = urgentes.map(function(c){
       return '<div class="alerta-banner"><div class="ab-icon">🔔</div><div><h4>'+c.nome+' vence em '+diasParaVencer(c.dia)+'d!</h4><p>'+fmt(c.valor)+'</p></div></div>';
     }).join('');
@@ -1906,7 +2040,7 @@ async function renderResumo(){
     '<div style="display:flex;gap:10px;flex-wrap:wrap">'+
     '<div style="flex:1;min-width:120px;font-size:.76rem"><span style="color:var(--muted)">Média/dia</span><br/><strong style="font-family:DM Mono,monospace">'+fmt(media)+'</strong></div>'+
     '<div style="flex:1;min-width:120px;font-size:.76rem"><span style="color:var(--muted)">Projeção mês</span><br/><strong style="font-family:DM Mono,monospace;color:'+(proj>renda?'var(--red2)':'var(--text)')+'">'+fmt(proj)+'</strong></div>'+
-    '<div style="flex:1;min-width:120px;font-size:.76rem"><span style="color:var(--muted)">Financiamentos</span><br/><strong style="font-family:DM Mono,monospace;color:var(--red2)">'+fmt(totalFin)+'</strong></div>'+
+    '<div style="flex:1;min-width:110px;font-size:.75rem"><span style="color:var(--muted)">Financiamentos</span><br/><strong style="font-family:DM Mono,monospace;color:var(--red2)">'+fmt(totalFin)+'</strong></div>'+'<div style="flex:1;min-width:110px;font-size:.75rem"><span style="color:var(--muted)">Assinaturas</span><br/><strong style="font-family:DM Mono,monospace;color:var(--invest2)">'+fmt(window._totalAssinaturas||0)+'</strong></div>'+
     '<div style="flex:1;min-width:120px;font-size:.76rem"><span style="color:var(--muted)">Dia '+diaAtual+'/'+diasMes+'</span><br/><strong style="font-family:DM Mono,monospace">'+(diaAtual/diasMes*100).toFixed(0)+'% do mês</strong></div>'+
     '</div>';
 
@@ -1997,16 +2131,213 @@ function confirmarVoz(){
   if(btn) setSecao(btn);
 }
 
+// ══ FINANCIAMENTOS DINÂMICOS ══
+function carregarFins(){var r=localStorage.getItem(docIdG('fins'));return r?JSON.parse(r):[];}
+async function salvarFins(fins){await set(docIdG('fins'),JSON.stringify(fins));}
+
+async function salvarNovoFin(){
+  var nome=document.getElementById('nf-nome').value.trim();
+  var icon=document.getElementById('nf-icon').value.trim()||'🏦';
+  var dia=parseInt(document.getElementById('nf-dia').value)||10;
+  var parcela=parseFloat(document.getElementById('nf-parcela').value)||0;
+  var atual=parseInt(document.getElementById('nf-atual').value)||1;
+  var total=parseInt(document.getElementById('nf-total').value)||0;
+  var extras=document.getElementById('nf-extras').value==='sim';
+  var obs=document.getElementById('nf-obs').value.trim();
+  if(!nome||!parcela||!total){alert('Preencha nome, parcela e total!');return;}
+  var fins=carregarFins();
+  fins.push({id:Date.now(),nome:nome,icon:icon,dia:dia,parcela:parcela,atual:atual,total:total,extras:extras,obs:obs});
+  await salvarFins(fins);
+  ['nf-nome','nf-icon','nf-dia','nf-parcela','nf-atual','nf-total','nf-obs'].forEach(function(id){document.getElementById(id).value='';});
+  fecharModal('overlayNovoFin');renderFinanciamentos();mostrarToast('✅ Financiamento adicionado!');
+}
+
+async function delFinanciamento(id){
+  var fins=carregarFins();fins=fins.filter(function(f){return f.id!==id;});
+  await salvarFins(fins);renderFinanciamentos();
+}
+
+async function addExtra(){
+  var finId=parseInt(document.getElementById('extra-fin-id').value);
+  var desc=document.getElementById('ex-desc').value.trim();
+  var val=parseFloat(document.getElementById('ex-val').value)||0;
+  var data=document.getElementById('ex-data').value||hoje();
+  var obs=document.getElementById('ex-obs').value.trim();
+  if(!desc||!val){alert('Preencha descrição e valor!');return;}
+  var key=docId()+'_extras_'+finId;
+  var extras=JSON.parse(localStorage.getItem(key)||'[]');
+  extras.push({id:Date.now(),desc:desc,valor:val,data:data,obs:obs});
+  await set(key,JSON.stringify(extras));
+  ['ex-desc','ex-val','ex-obs'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('ex-data').value=hoje();
+  fecharModal('overlayExtra');renderFinanciamentos();mostrarToast('✅ Extra adicionado!');
+}
+
+async function delExtra(finId,exId){
+  var key=docId()+'_extras_'+finId;
+  var extras=JSON.parse(localStorage.getItem(key)||'[]');
+  extras=extras.filter(function(e){return e.id!==exId;});
+  await set(key,JSON.stringify(extras));renderFinanciamentos();
+}
+
+function abrirModalExtra(finId,finNome){
+  document.getElementById('extra-fin-id').value=finId;
+  document.getElementById('extra-title').textContent='🔧 Extra — '+finNome;
+  document.getElementById('ex-data').value=hoje();
+  document.getElementById('overlayExtra').classList.add('aberto');
+}
+
+function renderFinanciamentos(){
+  var fins=carregarFins();
+  var listEl=document.getElementById('lista-fins');
+  var totalEl=document.getElementById('fin-total-el');
+  var alertasEl=document.getElementById('fin-alertas');
+  var totalGeral=0; var alertasHtml='';
+  window._totalFinanc=0;
+
+  if(!fins.length){
+    if(listEl) listEl.innerHTML='<div class="vazio">Nenhum financiamento ainda.<br/>Clique em "+ Novo Financiamento" abaixo 🏦</div>';
+    if(totalEl) totalEl.innerHTML='';if(alertasEl) alertasEl.innerHTML='';return;
+  }
+
+  var html='';
+  fins.forEach(function(f){
+    var key=docId()+'_extras_'+f.id;
+    var extras=JSON.parse(localStorage.getItem(key)||'[]');
+    var totalExtras=extras.reduce(function(a,e){return a+e.valor;},0);
+    var totalMes=f.parcela+totalExtras;totalGeral+=totalMes;
+    var pct=f.total>0?Math.min(f.atual/f.total*100,100):0;
+    var restam=Math.max(0,f.total-f.atual);
+    var corBar=pct>80?'var(--green2)':pct>50?'var(--gold2)':'var(--red2)';
+    var dias=diasParaVencer(f.dia);
+    if(dias<=3) alertasHtml+='<div class="alerta-banner"><div class="ab-icon">🔔</div><div><h4>'+f.icon+' '+f.nome+' vence em '+dias+'d!</h4><p>Parcela '+f.atual+'/'+f.total+' — '+fmt(f.parcela)+'</p></div></div>';
+    html+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;position:relative">'+
+      '<button style="position:absolute;top:10px;right:10px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem" data-id="'+f.id+'" onclick="delFinBtn(this)">✕</button>'+
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="font-size:1.6rem">'+f.icon+'</div>'+
+      '<div><div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:2px">'+f.nome+'</div>'+
+      '<div style="font-size:.68rem;color:var(--muted)">Parcela '+f.atual+'/'+f.total+' · Vence dia '+f.dia+'</div></div></div>'+
+      '<div style="font-family:DM Mono,monospace;font-size:1.3rem;color:var(--gold2);margin-bottom:6px">'+fmt(f.parcela)+'/mês'+(totalExtras>0?' + '+fmt(totalExtras)+' extras':'')+'</div>'+
+      '<div style="height:5px;background:var(--bg2);border-radius:99px;overflow:hidden;margin-bottom:5px"><div style="height:100%;border-radius:99px;background:'+corBar+';width:'+pct.toFixed(0)+'%;transition:width .6s"></div></div>'+
+      '<div style="font-size:.68rem;color:var(--muted);margin-bottom:10px">'+pct.toFixed(0)+'% quitado — '+restam+' parcela(s) restante(s)'+(f.obs?' · '+f.obs:'')+'</div>'+
+      (f.extras?
+        '<div style="padding-top:8px;border-top:1px solid var(--border)">'+
+        '<div style="font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Taxas e extras deste mês</div>'+
+        (extras.length?extras.map(function(e){
+          return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:.78rem">'+
+            '<span style="flex:1">'+e.desc+(e.obs?' — '+e.obs:'')+'</span>'+
+            '<span style="font-family:DM Mono,monospace;color:var(--red2)">'+fmt(e.valor)+'</span>'+
+            '<button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.72rem" data-fid="'+f.id+'" data-eid="'+e.id+'" onclick="delExtraBtn(this)">✕</button></div>';
+        }).join(''):'<div style="font-size:.74rem;color:var(--muted)">Nenhum extra este mês</div>')+
+        '<button style="margin-top:8px;background:none;border:1px solid var(--invest2);color:var(--invest2);border-radius:8px;font-size:.74rem;font-weight:700;padding:6px 11px;cursor:pointer" data-id="'+f.id+'" data-nome="'+f.nome+'" onclick="abrirExtraBtn(this)">+ Adicionar taxa/extra</button></div>':'')+
+      '</div>';
+  });
+
+  if(listEl) listEl.innerHTML=html;
+  if(alertasEl) alertasEl.innerHTML=alertasHtml;
+  if(totalEl) totalEl.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:.76rem;color:var(--muted)">Total mensal</span><span style="font-family:DM Mono,monospace;font-size:1.2rem;color:var(--red2)">'+fmt(totalGeral)+'</span></div>';
+  window._totalFinanc=totalGeral;
+}
+
+function delFinBtn(btn){if(confirm('Remover este financiamento?')) delFinanciamento(parseInt(btn.dataset.id));}
+function delExtraBtn(btn){delExtra(parseInt(btn.dataset.fid),parseInt(btn.dataset.eid));}
+function abrirExtraBtn(btn){abrirModalExtra(parseInt(btn.dataset.id),btn.dataset.nome);}
+
+// ══ ASSINATURAS ══
+function carregarAssinaturas(){var r=localStorage.getItem(docIdG('assinaturas'));return r?JSON.parse(r):[];}
+async function salvarAssinaturas(a){await set(docIdG('assinaturas'),JSON.stringify(a));}
+
+async function addAssinatura(){
+  var nome=document.getElementById('assn-nome').value.trim();
+  var val=parseFloat(document.getElementById('assn-val').value)||0;
+  var dia=parseInt(document.getElementById('assn-dia').value)||1;
+  var cat=document.getElementById('assn-cat').value;
+  var obs=document.getElementById('assn-obs').value.trim();
+  if(!nome||!val){alert('Preencha nome e valor!');return;}
+  var assns=carregarAssinaturas();
+  assns.push({id:Date.now(),nome:nome,val:val,dia:dia,cat:cat,obs:obs});
+  await salvarAssinaturas(assns);
+  ['assn-nome','assn-val','assn-dia','assn-obs'].forEach(function(id){document.getElementById(id).value='';});
+  renderAssinaturas();mostrarToast('✅ Assinatura adicionada!');
+}
+
+async function delAssinatura(id){
+  var assns=carregarAssinaturas();assns=assns.filter(function(a){return a.id!==id;});
+  await salvarAssinaturas(assns);renderAssinaturas();
+}
+
+function renderAssinaturas(){
+  var assns=carregarAssinaturas();
+  var total=assns.reduce(function(a,s){return a+s.val;},0);
+  window._totalAssinaturas=total;
+  var resumoEl=document.getElementById('assn-resumo');
+  if(resumoEl) resumoEl.innerHTML=total>0?'<div class="mini-card"><div class="lbl">📱 Total em assinaturas/mês</div><div class="val" style="color:var(--invest2)">'+fmt(total)+'</div></div>':'';
+  var listEl=document.getElementById('lista-assinaturas');if(!listEl) return;
+  if(!assns.length){listEl.innerHTML='<div class="vazio">Nenhuma assinatura cadastrada 📱</div>';return;}
+  var CATS={streaming:'🎬',musica:'🎵',ia:'🤖',saude:'💊',educacao:'📚',outros:'📦'};
+  assns.sort(function(a,b){return a.dia-b.dia;});
+  listEl.innerHTML=assns.map(function(a){
+    var dias=diasParaVencer(a.dia);
+    var badge=dias<=3?'<span style="font-size:.63rem;font-weight:700;padding:2px 7px;border-radius:99px;background:rgba(240,196,74,.15);color:var(--gold2)">Vence em '+dias+'d</span>':'<span style="font-size:.63rem;font-weight:700;padding:2px 7px;border-radius:99px;background:rgba(34,197,94,.15);color:var(--green2)">Dia '+a.dia+'</span>';
+    return '<div class="item">'+
+      '<div class="item-ic">'+(CATS[a.cat]||'📱')+'</div>'+
+      '<div class="item-info"><div class="item-nome">'+a.nome+'</div>'+
+      '<div class="item-meta">'+(a.obs||a.cat)+'</div></div>'+
+      badge+
+      '<div class="item-val neg" style="margin-left:6px">'+fmt(a.val)+'</div>'+
+      '<button class="item-del" data-id="'+a.id+'" onclick="delAssnBtn(this)">&#x2715;</button></div>';
+  }).join('');
+}
+function delAssnBtn(btn){delAssinatura(parseInt(btn.dataset.id));}
+
+// ══ EDITAR GASTO ══
+function abrirEdicao(id){
+  var gastos=JSON.parse(localStorage.getItem(docId()+'_gastos')||'[]');
+  var g=gastos.find(function(x){return x.id===id;});if(!g) return;
+  document.getElementById('edit-id').value=id;
+  document.getElementById('edit-desc').value=g.desc||'';
+  document.getElementById('edit-val').value=g.valor||0;
+  document.getElementById('edit-cat').value=g.cat||'outros';
+  document.getElementById('edit-pag').value=g.pag||'debito';
+  document.getElementById('edit-data').value=g.data||hoje();
+  document.getElementById('edit-obs').value=g.obs||'';
+  document.getElementById('overlayEditar').classList.add('aberto');
+}
+async function salvarEdicao(){
+  var id=parseInt(document.getElementById('edit-id').value);
+  var desc=document.getElementById('edit-desc').value.trim();
+  var val=parseFloat(document.getElementById('edit-val').value)||0;
+  if(!desc||!val){alert('Preencha descrição e valor!');return;}
+  var gastos=JSON.parse(localStorage.getItem(docId()+'_gastos')||'[]');
+  gastos=gastos.map(function(g){
+    if(g.id===id){g.desc=desc;g.valor=val;g.cat=document.getElementById('edit-cat').value;
+      g.pag=document.getElementById('edit-pag').value;g.data=document.getElementById('edit-data').value;
+      g.obs=document.getElementById('edit-obs').value.trim();}return g;
+  });
+  await set(docId()+'_gastos',JSON.stringify(gastos));
+  fecharModal('overlayEditar');renderAll();mostrarToast('✅ Gasto editado!');
+}
+
+// ══ API KEY CONFIG ══
+function salvarAPIKey(){
+  var key=document.getElementById('config-apikey').value.trim();
+  if(!key){alert('Cole a API key!');return;}
+  localStorage.setItem('pf_apikey',key);
+  var s=document.getElementById('config-key-status');if(s) s.textContent='✅ Chave salva! IA pronta para usar.';
+  document.getElementById('config-apikey').value='';
+  mostrarToast('✅ API key salva!');
+}
+
 // ══ RENDER ALL ══
 async function renderAll(){
   _cache['gastos'] = JSON.parse(localStorage.getItem(docId()+'_gastos')||'[]');
   await renderReceitas();
-  await renderFinanciamentos();
+  renderFinanciamentos();
+  renderAssinaturas();
   await renderRecorrentes();
   await renderGastos();
   await renderCarteiras();
   await renderInvestimentos();
-  await renderResumo();
+  renderResumo();
 }
 
 // ══ INIT ══
