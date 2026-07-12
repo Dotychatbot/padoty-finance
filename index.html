@@ -237,6 +237,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
   <button class="nav-item" data-sec="investimentos" onclick="setSecaoDrawer(this)"><span class="ni">📈</span>Investimentos</button>
   <button class="nav-item" data-sec="relatorio" onclick="setSecaoDrawer(this)"><span class="ni">📄</span>Relatório</button>
   <button class="nav-item" data-sec="metas" onclick="setSecaoDrawer(this)"><span class="ni">🏆</span>Metas</button>
+  <button class="nav-item" data-sec="simulador" onclick="setSecaoDrawer(this)"><span class="ni">🧮</span>Simulador</button>
   <button class="nav-item" data-sec="config" onclick="setSecaoDrawer(this)"><span class="ni">⚙️</span>Configurações</button>
 </div>
 
@@ -266,6 +267,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
   <button class="nav-item" data-sec="relatorio" onclick="setSecao(this)"><span class="ni">📄</span>Relatório</button>
   <button class="nav-item" data-sec="metas" onclick="setSecao(this)"><span class="ni">🏆</span>Metas & Conquistas</button>
   <div class="nav-div"></div>
+  <button class="nav-item" data-sec="simulador" onclick="setSecao(this)"><span class="ni">🧮</span>Simulador</button>
   <button class="nav-item" data-sec="config" onclick="setSecao(this)"><span class="ni">⚙️</span>Configurações</button>
 </aside>
 
@@ -276,9 +278,15 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
 <section class="secao ativa" id="sec-resumo">
   <div class="page-header"><h2>Resumo Geral</h2><p id="resumo-periodo">Carregando...</p></div>
   <div id="resumo-alertas"></div>
+  <!-- SEMÁFORO -->
+  <div id="semaforo-el" style="margin-bottom:12px"></div>
+  <!-- QUANTO POSSO GASTAR HOJE -->
+  <div id="widget-hoje-el" style="margin-bottom:12px"></div>
   <div class="cards-row" id="resumo-cards"></div>
   <div class="form-box" style="margin-bottom:14px"><div class="form-tit"><span class="bar" style="background:var(--casal,var(--blue2))"></span>Fluxo do mês</div><div id="resumo-fluxo"></div></div>
   <div class="form-box"><div class="form-tit"><span class="bar" style="background:var(--red2)"></span>Gastos por categoria</div><div id="resumo-grafico"></div></div>
+  <div class="form-box"><div class="form-tit"><span class="bar" style="background:var(--green2)"></span>📈 Investimentos — últimos 6 meses</div><div id="patrimonio-chart"></div></div>
+  <div id="meta-economia-el" style="margin-top:4px"></div>
 </section>
 
 <!-- FINANCIAMENTOS -->
@@ -453,6 +461,12 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
         </select>
       </div>
       <div><label>Dia vencimento</label><input type="number" id="rec-dia" placeholder="Ex: 10" min="1" max="31"/></div>
+      <div><label>Tipo</label>
+        <select id="rec-tipo">
+          <option value="fixo">🔒 Fixo — mesmo valor, entra automático</option>
+          <option value="recorrente">🔔 Recorrente — lembro mas valor varia</option>
+        </select>
+      </div>
       <div><label>Parcelas (0=sem fim)</label><input type="number" id="rec-meses" placeholder="Ex: 48" min="0"/></div>
       <div class="full"><label>Obs</label><input type="text" id="rec-obs" placeholder="Referência..."/></div>
       <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--invest),var(--invest2))" onclick="addRecorrente()">+ Adicionar Recorrente</button></div>
@@ -658,6 +672,21 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
 
 
 
+<!-- SIMULADOR -->
+<section class="secao" id="sec-simulador">
+  <div class="page-header"><h2>Simulador de Quitação 🧮</h2><p>Quanto mais rápido você quita pagando a mais?</p></div>
+  <div class="form-box">
+    <div class="form-tit"><span class="bar" style="background:var(--gold2)"></span>Selecione o financiamento</div>
+    <div class="fields">
+      <div class="full"><label>Financiamento</label><select id="sim-fin"></select></div>
+      <div><label>Valor extra/mês (R$)</label><input type="number" id="sim-extra" placeholder="Ex: 100" min="0" step="0.01"/></div>
+      <div><label>Taxa de juros anual (%)</label><input type="number" id="sim-juros" placeholder="Ex: 12" min="0" step="0.1"/></div>
+      <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--gold),var(--gold2));color:#111" onclick="calcularSimulador()">🧮 Simular</button></div>
+    </div>
+  </div>
+  <div id="sim-resultado" style="margin-top:4px"></div>
+</section>
+
 <!-- CONFIG -->
 <section class="secao" id="sec-config">
   <div class="page-header"><h2>Configurações</h2><p>API key da IA e preferências</p></div>
@@ -849,6 +878,20 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
 </div>
 
 
+<!-- MODAL META ECONOMIA -->
+<div class="overlay" id="overlayMetaEco" onclick="fecharOverlay('overlayMetaEco',event)">
+  <div class="modal">
+    <h2>🎯 Meta de Economia Mensal</h2>
+    <div class="fields">
+      <div class="full"><label>Quero guardar por mês (R$)</label><input type="number" id="meta-eco-val" placeholder="Ex: 500" min="0" step="0.01"/></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal('overlayMetaEco')">Cancelar</button>
+      <button class="btn-confirm" onclick="salvarMetaEconomia()">💾 Salvar Meta</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL EDITAR FINANCIAMENTO -->
 <div class="overlay" id="overlayEditarFin" onclick="fecharOverlay('overlayEditarFin',event)">
   <div class="modal">
@@ -857,7 +900,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     <div class="fields">
       <div class="full"><label>Nome</label><input type="text" id="ef-nome"/></div>
       <div><label>Ícone</label><input type="text" id="ef-icon" maxlength="4" style="text-align:center;font-size:1.2rem"/></div>
-      <div><label>Dia vencimento</label><input type="number" id="ef-dia" min="1" max="31"/></div>
+      <div><label>Data vencimento</label><input type="date" id="ef-data"/></div>
       <div><label>Parcela (R$)</label><input type="number" id="ef-parcela" min="0" step="0.01"/></div>
       <div><label>Parcela atual nº</label><input type="number" id="ef-atual" min="1"/></div>
       <div><label>Total parcelas</label><input type="number" id="ef-total" min="1"/></div>
@@ -1117,7 +1160,9 @@ function mudarMes(d){
   if(mes < 0){ mes=11; ano--; }
   if(mes > 11){ mes=0; ano++; }
   document.getElementById('labelMes').textContent = MESES[mes]+' '+ano;
+  aplicarFixosDoMes();
   renderAll();
+  renderContas();
 }
 
 function setSecao(btn){
@@ -2382,7 +2427,7 @@ function renderFinanciamentos(){
       '<button style="position:absolute;top:10px;right:36px;background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.75rem" data-id="'+f.id+'" onclick="editarFinBtn(this)" title="Editar">✏️</button>'+'<button style="position:absolute;top:10px;right:10px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem" data-id="'+f.id+'" onclick="delFinBtn(this)">✕</button>'+
       '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="font-size:1.6rem">'+f.icon+'</div>'+
       '<div><div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:2px">'+f.nome+'</div>'+
-      '<div style="font-size:.68rem;color:var(--muted)">Parcela '+f.atual+'/'+f.total+' · Vence dia '+f.dia+'</div></div></div>'+
+      '<div style="font-size:.68rem;color:var(--muted)">Parcela '+f.atual+'/'+f.total+' · Vence '+(f.dataVenc?fmtD(f.dataVenc):'dia '+f.dia)+'</div></div></div>'+
       '<div style="font-family:DM Mono,monospace;font-size:1.3rem;color:var(--gold2);margin-bottom:6px">'+fmt(f.parcela)+'/mês'+(totalExtras>0?' + '+fmt(totalExtras)+' extras':'')+'</div>'+
       '<div style="height:5px;background:var(--bg2);border-radius:99px;overflow:hidden;margin-bottom:5px"><div style="height:100%;border-radius:99px;background:'+corBar+';width:'+pct.toFixed(0)+'%;transition:width .6s"></div></div>'+
       '<div style="font-size:.68rem;color:var(--muted);margin-bottom:10px">'+pct.toFixed(0)+'% quitado — '+restam+' parcela(s) restante(s)'+(f.obs?' · '+f.obs:'')+'</div>'+
@@ -2837,7 +2882,253 @@ async function togglePagoConta(id){
   renderContas();renderAll();
 }
 
+// ══ AUTO-LANÇAMENTO DE FIXOS NO MÊS ══
+function aplicarFixosDoMes(){
+  var recs = JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
+  var fixos = recs.filter(function(r){return r.tipo==='fixo'&&recorrenteAtivo(r);});
+  var gastos = JSON.parse(localStorage.getItem(docId()+'_gastos')||'[]');
+  var marcaKey = docId()+'_fixos_aplicados';
+  if(localStorage.getItem(marcaKey)) return; // already applied this month
+  fixos.forEach(function(r){
+    var jaExiste = gastos.some(function(g){return g._recId===r.id;});
+    if(!jaExiste){
+      gastos.push({id:Date.now()+Math.random(),desc:r.desc,valor:r.val,cat:r.cat||'outros',pag:'debito',data:hoje(),obs:'Auto: recorrente fixo',_recId:r.id});
+    }
+  });
+  localStorage.setItem(docId()+'_gastos',JSON.stringify(gastos));
+  localStorage.setItem(marcaKey,'1');
+  if(_db&&_userId){var o={};o[docId()+'_gastos']=JSON.stringify(gastos);_db.collection('dados').doc(_userId).set(o,{merge:true}).catch(function(){});}
+}
+
+// ══ SEMÁFORO ══
+function renderSemaforo(){
+  var el = document.getElementById('semaforo-el');
+  if(!el) return;
+  var renda = window._totalRenda||0;
+  if(!renda){el.innerHTML='';return;}
+  var gastos = JSON.parse(localStorage.getItem(docId()+'_gastos')||'[]');
+  var totalG = gastos.reduce(function(a,g){return a+g.valor;},0)+(window._totalFinanc||0)+(window._totalAssinaturas||0);
+  var pct = totalG/renda*100;
+  var cor,emoji,msg,bg;
+  if(pct<=70){cor='#22c55e';emoji='🟢';msg='Ótimo! Seus gastos estão sob controle.';bg='rgba(34,197,94,.08)';}
+  else if(pct<=90){cor='#f5a623';emoji='🟡';msg='Atenção! Gastos altos este mês.';bg='rgba(245,166,35,.08)';}
+  else{cor='#e03030';emoji='🔴';msg='Cuidado! Gastos passando da renda.';bg='rgba(224,48,48,.08)';}
+  el.innerHTML='<div style="background:'+bg+';border:1px solid '+cor+'40;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px">'+
+    '<div style="font-size:1.8rem">'+emoji+'</div>'+
+    '<div style="flex:1"><div style="font-weight:700;font-size:.85rem;color:'+cor+'">'+msg+'</div>'+
+    '<div style="font-size:.72rem;color:var(--muted);margin-top:2px">'+pct.toFixed(0)+'% da renda comprometida · '+fmt(totalG)+' de '+fmt(renda)+'</div></div></div>';
+}
+
+// ══ QUANTO POSSO GASTAR HOJE ══
+function renderWidgetHoje(){
+  var el = document.getElementById('widget-hoje-el');
+  if(!el) return;
+  var renda = window._totalRenda||0;
+  if(!renda){el.innerHTML='';return;}
+  var gastos = JSON.parse(localStorage.getItem(docId()+'_gastos')||'[]');
+  var totalG = gastos.reduce(function(a,g){return a+g.valor;},0);
+  var fins = window._totalFinanc||0;
+  var assns = window._totalAssinaturas||0;
+  var disponivel = renda-totalG-fins-assns;
+  var hoje_dt = new Date();
+  var diasRestantes = new Date(ano,mes+1,0).getDate()-hoje_dt.getDate();
+  var porDia = diasRestantes>0 ? disponivel/diasRestantes : 0;
+  var cor = porDia>=0 ? 'var(--green2)' : 'var(--red2)';
+  el.innerHTML='<div style="background:linear-gradient(135deg,rgba(26,46,140,.15),var(--surface));border:1px solid var(--border);border-radius:12px;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">'+
+    '<div><div style="font-size:.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">⚡ Pode gastar por dia</div>'+
+    '<div style="font-family:DM Mono,monospace;font-size:1.3rem;font-weight:600;color:'+cor+'">'+fmt(Math.max(0,porDia))+'</div>'+
+    '<div style="font-size:.68rem;color:var(--muted)">'+diasRestantes+' dias restantes</div></div>'+
+    '<div style="text-align:right"><div style="font-size:.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Disponível total</div>'+
+    '<div style="font-family:DM Mono,monospace;font-size:1rem;color:'+cor+'">'+fmt(Math.max(0,disponivel))+'</div></div>'+
+    '</div>';
+}
+
+// ══ GRÁFICO PATRIMÔNIO ══
+function renderGraficoPatrimonio(){
+  var el = document.getElementById('patrimonio-chart');
+  if(!el) return;
+  var mL=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  var dados=[];
+  for(var m2=5;m2>=0;m2--){
+    var mC=mes-m2;var aC=ano;if(mC<0){mC+=12;aC--;}
+    var invs=[];
+    try{invs=JSON.parse(localStorage.getItem((_userId||'local')+'_'+aC+'_'+mC+'_invs')||'[]');}catch(e){}
+    var totalInv=invs.reduce(function(a,i){return a+i.valor;},0);
+    dados.push({l:mL[mC],v:totalInv,atual:m2===0});
+  }
+  var max=Math.max.apply(null,dados.map(function(d){return d.v;}))||1;
+  el.innerHTML='<div style="display:flex;align-items:flex-end;gap:6px;height:80px;margin-bottom:6px">'+
+    dados.map(function(d){
+      var h=Math.max(3,d.v/max*72).toFixed(0);
+      return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">'+
+        '<div style="font-size:.58rem;font-family:DM Mono,monospace;color:var(--muted)">'+fmt(d.v)+'</div>'+
+        '<div style="width:100%;height:'+h+'px;background:'+(d.atual?'var(--green2)':'rgba(34,197,94,.3)')+';border-radius:4px 4px 0 0;transition:height .5s"></div>'+
+        '<div style="font-size:.6rem;font-weight:700;color:'+(d.atual?'var(--green2)':'var(--muted)')+'">'+d.l+'</div></div>';
+    }).join('')+'</div>';
+}
+
+// ══ META DE ECONOMIA ══
+function renderMetaEconomia(){
+  var el = document.getElementById('meta-economia-el');
+  if(!el) return;
+  var meta = parseFloat(localStorage.getItem(docIdG('meta_economia'))||'0');
+  if(!meta){el.innerHTML='';return;}
+  var renda = window._totalRenda||0;
+  var gastos = JSON.parse(localStorage.getItem(docId()+'_gastos')||'[]');
+  var totalG = gastos.reduce(function(a,g){return a+g.valor;},0)+(window._totalFinanc||0)+(window._totalAssinaturas||0);
+  var economia = renda-totalG;
+  var pct = meta>0?Math.min(economia/meta*100,100).toFixed(0):0;
+  var cor = economia>=meta?'var(--green2)':economia>0?'var(--gold2)':'var(--red2)';
+  el.innerHTML='<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px"><div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:6px"><span style="font-weight:600">🎯 Meta de economia mensal</span><span style="font-family:DM Mono,monospace;color:'+cor+'">'+fmt(Math.max(0,economia))+' / '+fmt(meta)+'</span></div>'+
+    '<div style="height:7px;background:var(--bg2);border-radius:99px;overflow:hidden"><div style="height:100%;background:'+cor+';width:'+pct+'%;border-radius:99px;transition:width .6s"></div></div>'+
+    (economia<meta?'<div style="font-size:.68rem;color:var(--muted);margin-top:4px">Falta '+fmt(meta-Math.max(0,economia))+' para bater a meta</div>':'<div style="font-size:.68rem;color:var(--green2);margin-top:4px">✅ Meta batida!</div>')+
+    '</div>';
+}
+
+async function salvarMetaEconomia(){
+  var val = parseFloat(document.getElementById('meta-eco-val').value)||0;
+  if(!val){alert('Digite um valor!');return;}
+  localStorage.setItem(docIdG('meta_economia'),val);
+  fecharModal('overlayMetaEco');
+  renderMetaEconomia();
+  mostrarToast('✅ Meta de economia salva!');
+}
+
+// ══ SIMULADOR DE QUITAÇÃO ══
+function popularSimuladorFins(){
+  var sel = document.getElementById('sim-fin');
+  if(!sel) return;
+  var fins = carregarFins();
+  sel.innerHTML = fins.map(function(f){
+    return '<option value="'+f.id+'">'+f.icon+' '+f.nome+' — '+fmt(f.parcela)+'/mês</option>';
+  }).join('');
+  if(!fins.length) sel.innerHTML='<option>Nenhum financiamento cadastrado</option>';
+}
+
+function calcularSimulador(){
+  var fins = carregarFins();
+  var finId = parseInt(document.getElementById('sim-fin').value)||0;
+  var extra = parseFloat(document.getElementById('sim-extra').value)||0;
+  var jurosAnual = parseFloat(document.getElementById('sim-juros').value)||0;
+  var f = fins.find(function(x){return x.id===finId;});
+  if(!f){mostrarToast('Selecione um financiamento!');return;}
+  var restam = f.total - f.atual + 1;
+  var parcela = f.parcela;
+  var jurosMes = jurosAnual/100/12;
+  // Sem extra
+  var mesesNormal = restam;
+  var totalNormal = parcela*mesesNormal;
+  // Com extra
+  var mesesExtra = 0;var saldoDevedor = parcela*restam; // simplified
+  if(extra>0){
+    var parcelaExtra = parcela+extra;
+    mesesExtra = jurosAnual>0 ? Math.ceil(Math.log(parcelaExtra/(parcelaExtra-saldoDevedor*jurosMes))/Math.log(1+jurosMes)) : Math.ceil(saldoDevedor/parcelaExtra);
+    mesesExtra = Math.min(mesesExtra, mesesNormal);
+  } else { mesesExtra = mesesNormal; }
+  var totalExtra = (parcela+extra)*mesesExtra;
+  var economia = Math.max(0, totalNormal-totalExtra);
+  var mesesAMenos = Math.max(0, mesesNormal-mesesExtra);
+  var el = document.getElementById('sim-resultado');
+  if(!el) return;
+  el.innerHTML='<div class="form-box">'+
+    '<div class="form-tit"><span class="bar" style="background:var(--gold2)"></span>Resultado da simulação</div>'+
+    '<div class="cards-row">'+
+    '<div class="mini-card"><div class="lbl">⏱️ Parcelas restantes</div><div class="val">'+restam+' meses</div></div>'+
+    (extra>0?'<div class="mini-card"><div class="lbl">⚡ Com R$'+extra.toFixed(0)+'/mês a mais</div><div class="val" style="color:var(--green2)">'+mesesExtra+' meses</div></div>':'')+
+    (mesesAMenos>0?'<div class="mini-card"><div class="lbl">📅 Quita antes</div><div class="val" style="color:var(--green2)">'+mesesAMenos+' meses</div></div>':'')+
+    (economia>0?'<div class="mini-card"><div class="lbl">💰 Economia total</div><div class="val" style="color:var(--green2)">'+fmt(economia)+'</div></div>':'')+
+    '</div>'+
+    (mesesAMenos>0?'<div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:12px;font-size:.8rem;margin-top:8px">Pagando <strong style="color:var(--green2)">'+fmt(extra)+' a mais</strong> por mês, você quita <strong style="color:var(--green2)">'+mesesAMenos+' meses antes</strong> e economiza <strong style="color:var(--green2)">'+fmt(economia)+'</strong>!</div>':'<div style="font-size:.78rem;color:var(--muted);margin-top:8px">Digite um valor extra para ver a simulação.</div>')+
+    '</div>';
+}
+
+// ══ SKY FIT → RECEITAS AUTO ══
+async function addPersonalSkyFit(){
+  var aluno = document.getElementById('sf-pt-aluno').value.trim();
+  var val   = parseFloat(document.getElementById('sf-pt-val').value)||0;
+  var tipo  = document.getElementById('sf-pt-tipo').value;
+  var data  = document.getElementById('sf-pt-data').value||hoje();
+  if(!aluno||!val){alert('Preencha aluno e valor!');return;}
+  var pts = carregarSFPersonais();
+  pts.push({id:Date.now(),aluno:aluno,val:val,tipo:tipo,data:data});
+  await salvarSFPersonais(pts);
+  // Se confirmado → vai para receitas automaticamente
+  if(tipo==='confirmado'){
+    var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
+    vars.push({id:Date.now()+1,desc:'Personal — '+aluno,val:val,data:data,obs:'Auto: Sky Fit',carteira:0});
+    await set(docId()+'_receitas_var',JSON.stringify(vars));
+    mostrarToast('✅ Adicionado e lançado em Receitas!');
+  } else {
+    mostrarToast('✅ Estimativa adicionada!');
+  }
+  document.getElementById('sf-pt-aluno').value='';
+  document.getElementById('sf-pt-val').value='';
+  renderSkyFit();renderAll();
+}
+
+// ══ FINANCIAMENTO — DATA COMPLETA ══
+async function salvarNovoFin(){
+  var nome=document.getElementById('nf-nome').value.trim();
+  var icon=document.getElementById('nf-icon').value.trim()||'🏦';
+  var dataVenc=document.getElementById('nf-data').value||hoje();
+  var parcela=parseFloat(document.getElementById('nf-parcela').value)||0;
+  var atual=parseInt(document.getElementById('nf-atual').value)||1;
+  var total=parseInt(document.getElementById('nf-total').value)||0;
+  var extras=document.getElementById('nf-extras').value==='sim';
+  var obs=document.getElementById('nf-obs').value.trim();
+  if(!nome||!parcela||!total){alert('Preencha nome, parcela e total!');return;}
+  var dia=parseInt((dataVenc.split('-')[2]||'1'));
+  var fins=carregarFins();
+  fins.push({id:Date.now(),nome:nome,icon:icon,dia:dia,dataVenc:dataVenc,parcela:parcela,atual:atual,total:total,extras:extras,obs:obs});
+  await salvarFins(fins);
+  ['nf-nome','nf-icon','nf-parcela','nf-atual','nf-total','nf-obs'].forEach(function(id){document.getElementById(id).value='';});
+  fecharModal('overlayNovoFin');renderFinanciamentos();renderContas();
+  mostrarToast('✅ Financiamento adicionado!');
+}
+
+// ══ EDITAR FINANCIAMENTO ATUALIZADO ══
+async function salvarEdicaoFin(){
+  var id=parseInt(document.getElementById('ef-id').value);
+  var fins=carregarFins();
+  fins=fins.map(function(f){
+    if(f.id===id){
+      f.nome=document.getElementById('ef-nome').value.trim();
+      f.icon=document.getElementById('ef-icon').value.trim()||'🏦';
+      var dataVenc=document.getElementById('ef-data').value||hoje();
+      f.dia=parseInt((dataVenc.split('-')[2]||'1'));
+      f.dataVenc=dataVenc;
+      f.parcela=parseFloat(document.getElementById('ef-parcela').value)||0;
+      f.atual=parseInt(document.getElementById('ef-atual').value)||1;
+      f.total=parseInt(document.getElementById('ef-total').value)||0;
+      f.obs=document.getElementById('ef-obs').value.trim();
+    }
+    return f;
+  });
+  await salvarFins(fins);
+  fecharModal('overlayEditarFin');
+  renderFinanciamentos();renderContas();
+  mostrarToast('✅ Financiamento atualizado!');
+}
+
+// ══ RECORRENTES COM TIPO ══
+async function addRecorrente(){
+  var desc=document.getElementById('rec-desc').value.trim();
+  var val=parseFloat(document.getElementById('rec-val').value)||0;
+  var cat=document.getElementById('rec-cat').value;
+  var dia=parseInt(document.getElementById('rec-dia').value)||1;
+  var tipo=document.getElementById('rec-tipo')?document.getElementById('rec-tipo').value:'recorrente';
+  var meses2=parseInt(document.getElementById('rec-meses').value)||0;
+  var obs=document.getElementById('rec-obs').value.trim();
+  if(!desc||!val){alert('Preencha descrição e valor!');return;}
+  var recs=JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
+  recs.push({id:Date.now(),desc:desc,val:val,cat:cat,dia:dia,tipo:tipo,meses:meses2,obs:obs,inicio:mes+'/'+ano,parc:1});
+  await set(docIdG('recorrentes'),JSON.stringify(recs));
+  ['rec-desc','rec-val','rec-dia','rec-meses','rec-obs'].forEach(function(id){document.getElementById(id).value='';});
+  renderRecorrentes();mostrarToast('✅ '+(tipo==='fixo'?'Fixo':'Recorrente')+' adicionado!');
+}
+
 // ══ RENDER ALL ══
+
 
 async function renderAll(){
   _cache['gastos'] = JSON.parse(localStorage.getItem(docId()+'_gastos')||'[]');
@@ -2850,6 +3141,9 @@ async function renderAll(){
   await renderCarteiras();
   await renderInvestimentos();
   renderResumo();
+  renderSemaforo();
+  renderWidgetHoje();
+  renderMetaEconomia();
 }
 
 // ══ INIT ══
