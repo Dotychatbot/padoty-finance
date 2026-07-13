@@ -2273,6 +2273,12 @@ async function salvarEdicaoHist(){
 }
 
 // ══ FUNÇÕES AUXILIARES RESTAURADAS ══
+function recorrenteAtivo(r){
+  if(!r.meses||r.meses===0) return true;
+  var mI=r.inicio?parseInt(r.inicio.split('/')[0]||'0'):0;
+  var aI=r.inicio?parseInt(r.inicio.split('/')[1]||'0'):0;
+  return (ano-aI)*12+(mes-mI)<r.meses;
+}
 function parcelaAtual(r){
   if(!r.inicio) return 1;
   var mI=parseInt(r.inicio.split('/')[0]||'0'),aI=parseInt(r.inicio.split('/')[1]||'0');
@@ -2992,6 +2998,48 @@ async function analisarIA(){
     if(el) el.innerHTML='<div style="color:var(--red2);font-size:.8rem;padding:10px">Erro: '+e.message+'</div>';
   }
   if(btn){btn.disabled=false;btn.textContent='🤖 Analisar com IA';}
+}
+
+// ══ FUNÇÕES AUXILIARES FALTANDO ══
+function carregarFins(){
+  var r=localStorage.getItem(docIdG('fins'));
+  return r?JSON.parse(r):[];
+}
+async function salvarFins(fins){
+  await set(docIdG('fins'),JSON.stringify(fins));
+}
+async function fazerTransferencia(){
+  var deId=parseInt(document.getElementById('transf-de').value)||0;
+  var paraId=parseInt(document.getElementById('transf-para').value)||0;
+  var val=parseFloat(document.getElementById('transf-val').value)||0;
+  var desc=document.getElementById('transf-desc').value.trim()||'Transferência';
+  if(!deId||!paraId||!val){alert('Preencha todos os campos!');return;}
+  if(deId===paraId){alert('Origem e destino iguais!');return;}
+  var cart=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
+  cart=cart.map(function(c){
+    if(c.id===deId) c.saldo=(c.saldo||0)-val;
+    if(c.id===paraId) c.saldo=(c.saldo||0)+val;
+    return c;
+  });
+  await set(docIdG('carteiras'),JSON.stringify(cart));
+  var tv=document.getElementById('transf-val');if(tv) tv.value='';
+  var td=document.getElementById('transf-desc');if(td) td.value='';
+  renderCarteiras();mostrarToast('✅ Transferência realizada!');
+}
+async function pagarFatura(){
+  var creditoId=parseInt(document.getElementById('fatura-cartao').value)||0;
+  var contaId=parseInt(document.getElementById('fatura-conta').value)||0;
+  var val=parseFloat(document.getElementById('fatura-val').value)||0;
+  if(!creditoId||!contaId||!val){alert('Preencha todos os campos!');return;}
+  var cart=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
+  cart=cart.map(function(c){
+    if(c.id===contaId) c.saldo=(c.saldo||0)-val;
+    if(c.id===creditoId) c.fatura=Math.max(0,(c.fatura||0)-val);
+    return c;
+  });
+  await set(docIdG('carteiras'),JSON.stringify(cart));
+  var fv=document.getElementById('fatura-val');if(fv) fv.value='';
+  renderCarteiras();mostrarToast('✅ Fatura paga!');
 }
 
 // ══ RENDER ALL ══
