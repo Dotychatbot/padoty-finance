@@ -472,49 +472,57 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
 <!-- RECEITAS -->
 <!-- SKY FIT -->
 <section class="secao" id="sec-skyfit">
-  <div class="page-header"><h2>Sky Fit 🏋️</h2><p>Calculadora de aulas e gerador de nota fiscal</p></div>
+  <div class="page-header"><h2>Sky Fit 🏋️</h2><p>Calcule, edite e lance direto na sua receita</p></div>
 
-  <!-- MODALIDADES -->
+  <!-- MODALIDADES DO MÊS -->
   <div class="form-box" style="margin-bottom:12px">
-    <div class="form-tit"><span class="bar" style="background:var(--gold2)"></span>Modalidades e horas do mês</div>
+    <div class="form-tit"><span class="bar" style="background:var(--gold2)"></span>Aulas do mês — <span id="sf-mes-label" style="color:var(--gold2)"></span></div>
     <div id="skyfit-modalidades"></div>
+    <!-- ADICIONAR MODALIDADE -->
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
-      <div style="font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Adicionar modalidade</div>
+      <div style="font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">+ Nova modalidade</div>
       <div class="fields">
         <div><label>Nome</label><input type="text" id="sf-mod-nome" placeholder="Ex: Muay Thai Coletivo"/></div>
-        <div><label>Valor por hora (R$)</label><input type="number" id="sf-mod-valor" placeholder="18,00" min="0" step="0.01"/></div>
-        <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--blue),var(--blue2))" onclick="addModalidadeSkyFit()">+ Adicionar Modalidade</button></div>
+        <div><label>Valor/hora (R$)</label><input type="number" id="sf-mod-valor" placeholder="18,00" min="0" step="0.01"/></div>
+        <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--blue),var(--blue2))" onclick="addModalidadeSkyFit()">+ Adicionar</button></div>
       </div>
     </div>
   </div>
 
-  <!-- TOTAIS -->
+  <!-- TOTAL E LANÇAR -->
   <div class="form-box" style="margin-bottom:12px">
-    <div class="form-tit"><span class="bar" style="background:var(--green2)"></span>Resumo do mês</div>
-    <div id="skyfit-total"></div>
+    <div class="form-tit"><span class="bar" style="background:var(--green2)"></span>Total do mês</div>
+    <div id="skyfit-total-el" style="margin-bottom:12px"></div>
+    <button class="btn-add" id="btn-lancar-sf" onclick="lancarSkyFitReceita()" style="background:linear-gradient(135deg,var(--green),var(--green2));display:none">💰 Lançar total nas Receitas</button>
+    <div id="sf-lancado-el" style="font-size:.74rem;color:var(--muted);margin-top:6px"></div>
   </div>
 
-  <!-- PERSONAL -->
+  <!-- PERSONAL TRAINING -->
   <div class="form-box" style="margin-bottom:12px">
-    <div class="form-tit"><span class="bar" style="background:var(--invest2)"></span>Personal Training (variável)</div>
+    <div class="form-tit"><span class="bar" style="background:var(--invest2)"></span>💪 Personal Training (vai direto pra Receita)</div>
     <div class="fields">
       <div><label>Aluno</label><input type="text" id="sf-pt-aluno" placeholder="Nome do aluno"/></div>
-      <div><label>Valor recebido (R$)</label><input type="number" id="sf-pt-val" placeholder="0,00" min="0" step="0.01"/></div>
-      <div><label>Tipo</label><select id="sf-pt-tipo"><option value="confirmado">✅ Confirmado</option><option value="estimativa">📊 Estimativa</option></select></div>
+      <div><label>Valor (R$)</label><input type="number" id="sf-pt-val" placeholder="0,00" min="0" step="0.01"/></div>
       <div><label>Data</label><input type="date" id="sf-pt-data"/></div>
-      <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--invest),var(--invest2))" onclick="addPersonalSkyFit()">+ Adicionar Aluno</button></div>
+      <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--invest),var(--invest2))" onclick="addPersonalSkyFit()">+ Confirmar e lançar na Receita</button></div>
     </div>
     <div id="skyfit-personais" style="margin-top:10px"></div>
   </div>
 
-  <!-- GERAR NOTA -->
-  <div class="form-box">
-    <div class="form-tit"><span class="bar" style="background:var(--red2)"></span>Gerar nota fiscal / comprovante</div>
+  <!-- NOTA FISCAL -->
+  <div class="form-box" style="margin-bottom:12px">
+    <div class="form-tit"><span class="bar" style="background:var(--red2)"></span>📄 Nota Fiscal / Comprovante</div>
     <div class="fields">
       <div><label>Competência</label><input type="text" id="sf-nota-comp" placeholder="Ex: Junho/2026"/></div>
-      <div><label>Tomador (quem paga)</label><input type="text" id="sf-nota-tomador" placeholder="Ex: Sky Fit Academia"/></div>
-      <div class="full"><button class="btn-add" onclick="gerarNotaSkyFit()">📄 Gerar Nota Fiscal PDF</button></div>
+      <div><label>Tomador</label><input type="text" id="sf-nota-tomador" placeholder="Ex: Sky Fit Academia"/></div>
+      <div class="full"><button class="btn-add" onclick="gerarNotaSkyFit()">📄 Gerar PDF</button></div>
     </div>
+  </div>
+
+  <!-- HISTÓRICO -->
+  <div class="form-box">
+    <div class="form-tit"><span class="bar" style="background:var(--muted)"></span>📋 Histórico de receitas Sky Fit</div>
+    <div id="sf-historico-el"></div>
   </div>
 </section>
 
@@ -1353,6 +1361,7 @@ function setSecao(btn){
   var sec = document.getElementById('sec-'+btn.dataset.sec);
   if(sec) sec.classList.add('ativa');
   if(btn.dataset.sec==='orcamento') renderOrcamento();
+  if(btn.dataset.sec==='skyfit') renderSkyFit();
   if(btn.dataset.sec==='relatorio') renderRelatorio();
   if(btn.dataset.sec==='metas') renderMetas();
   if(btn.dataset.sec==='contas') renderContas();
@@ -1650,28 +1659,51 @@ var SF_MODS_DEFAULT = [
 ];
 
 function carregarSFMods(){
-  var r = localStorage.getItem(docIdG('sf_mods'));
-  return r ? JSON.parse(r) : SF_MODS_DEFAULT;
+  var r=localStorage.getItem(docIdG('sf_mods'));
+  return r?JSON.parse(r):JSON.parse(JSON.stringify(SF_MODS_DEFAULT));
 }
-async function salvarSFMods(m){ await set(docIdG('sf_mods'), JSON.stringify(m)); }
-
+async function salvarSFMods(m){
+  localStorage.setItem(docIdG('sf_mods'),JSON.stringify(m));
+  await set(docIdG('sf_mods'),JSON.stringify(m));
+}
 function carregarSFHoras(){
-  var r = localStorage.getItem(docId()+'_sf_horas');
-  return r ? JSON.parse(r) : {};
+  var r=localStorage.getItem(docId()+'_sf_horas');
+  return r?JSON.parse(r):{};
 }
-async function salvarSFHoras(h){ await set(docId()+'_sf_horas', JSON.stringify(h)); }
-
+async function salvarSFHoras(h){
+  localStorage.setItem(docId()+'_sf_horas',JSON.stringify(h));
+  await set(docId()+'_sf_horas',JSON.stringify(h));
+}
 function carregarSFPersonais(){
-  var r = localStorage.getItem(docId()+'_sf_pt');
-  return r ? JSON.parse(r) : [];
+  var r=localStorage.getItem(docId()+'_sf_pt');
+  return r?JSON.parse(r):[];
 }
-async function salvarSFPersonais(p){ await set(docId()+'_sf_pt', JSON.stringify(p)); }
+async function salvarSFPersonais(p){
+  localStorage.setItem(docId()+'_sf_pt',JSON.stringify(p));
+  await set(docId()+'_sf_pt',JSON.stringify(p));
+}
+function carregarSFHistorico(){
+  var r=localStorage.getItem(docIdG('sf_hist'));
+  return r?JSON.parse(r):[];
+}
+async function salvarSFHistorico(h){
+  localStorage.setItem(docIdG('sf_hist'),JSON.stringify(h));
+  await set(docIdG('sf_hist'),JSON.stringify(h));
+}
+function carregarSFLancado(){
+  var r=localStorage.getItem(docId()+'_sf_lancado');
+  return r?JSON.parse(r):null;
+}
+async function salvarSFLancado(obj){
+  localStorage.setItem(docId()+'_sf_lancado',JSON.stringify(obj));
+  await set(docId()+'_sf_lancado',JSON.stringify(obj));
+}
 
 async function addModalidadeSkyFit(){
-  var nome = document.getElementById('sf-mod-nome').value.trim();
-  var valor = parseFloat(document.getElementById('sf-mod-valor').value)||0;
+  var nome=document.getElementById('sf-mod-nome').value.trim();
+  var valor=parseFloat(document.getElementById('sf-mod-valor').value)||0;
   if(!nome||!valor){alert('Preencha nome e valor!');return;}
-  var mods = carregarSFMods();
+  var mods=carregarSFMods();
   mods.push({id:Date.now(),nome:nome,valor:valor});
   await salvarSFMods(mods);
   document.getElementById('sf-mod-nome').value='';
@@ -1680,128 +1712,213 @@ async function addModalidadeSkyFit(){
   mostrarToast('✅ Modalidade adicionada!');
 }
 
-async function updateSFHoras(modId, horas){
-  var h = carregarSFHoras();
-  h[modId] = parseFloat(horas)||0;
+async function updateSFHoras(modId,horas){
+  var h=carregarSFHoras();
+  h[modId]=parseFloat(horas)||0;
   await salvarSFHoras(h);
   renderSkyFitTotal();
 }
 
-async function delSFPersonal(id){
-  var pts = carregarSFPersonais();
-  pts = pts.filter(function(p){return p.id!==id;});
-  await salvarSFPersonais(pts);
+async function editarSFMod(id){
+  var mods=carregarSFMods();
+  var m=mods.find(function(x){return x.id===id;});
+  if(!m) return;
+  var novoNome=prompt('Nome da modalidade:',m.nome);
+  if(!novoNome) return;
+  var novoValor=parseFloat(prompt('Valor por hora (R$):',m.valor));
+  if(!novoValor) return;
+  mods=mods.map(function(x){if(x.id===id){x.nome=novoNome;x.valor=novoValor;}return x;});
+  await salvarSFMods(mods);
   renderSkyFit();
+  mostrarToast('✅ Modalidade atualizada!');
 }
 
 async function delSFMod(id){
-  var mods = carregarSFMods();
-  mods = mods.filter(function(m){return m.id!==id;});
+  var mods=carregarSFMods().filter(function(m){return m.id!==id;});
+  var horas=carregarSFHoras();
+  delete horas[id];
   await salvarSFMods(mods);
+  await salvarSFHoras(horas);
   renderSkyFit();
+}
+function delSFModBtn(btn){delSFMod(parseInt(btn.dataset.id));}
+function editSFModBtn(btn){editarSFMod(parseInt(btn.dataset.id));}
+
+async function addPersonalSkyFit(){
+  var aluno=document.getElementById('sf-pt-aluno').value.trim();
+  var val=parseFloat(document.getElementById('sf-pt-val').value)||0;
+  var data=document.getElementById('sf-pt-data').value||hoje();
+  if(!aluno||!val){alert('Preencha aluno e valor!');return;}
+  var pts=carregarSFPersonais();
+  pts.push({id:Date.now(),aluno:aluno,val:val,data:data});
+  await salvarSFPersonais(pts);
+  // Vai direto pra receita
+  var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
+  vars.push({id:Date.now()+1,desc:'Personal — '+aluno,val:val,data:data,obs:'Sky Fit Personal'});
+  await set(docId()+'_receitas_var',JSON.stringify(vars));
+  document.getElementById('sf-pt-aluno').value='';
+  document.getElementById('sf-pt-val').value='';
+  var pd=document.getElementById('sf-pt-data');if(pd) pd.value=hoje();
+  renderSkyFit();renderAll();
+  mostrarToast('✅ '+aluno+' lançado na Receita!');
+}
+
+async function delSFPersonal(id){
+  var pts=carregarSFPersonais().filter(function(p){return p.id!==id;});
+  await salvarSFPersonais(pts);
+  renderSkyFit();
+}
+function delSFPTBtn(btn){delSFPersonal(parseInt(btn.dataset.id));}
+
+async function lancarSkyFitReceita(){
+  var mods=carregarSFMods();
+  var horas=carregarSFHoras();
+  var total=mods.reduce(function(a,m){return a+(horas[m.id]||0)*m.valor;},0);
+  if(!total){mostrarToast('Nenhuma hora lançada ainda!');return;}
+  // Salva no histórico
+  var hist=carregarSFHistorico();
+  var entry={id:Date.now(),mes:mes,ano:ano,mesLabel:MESES[mes]+'/'+ano,total:total,data:hoje(),
+    detalhe:mods.filter(function(m){return (horas[m.id]||0)>0;}).map(function(m){
+      return m.nome+' '+( horas[m.id]||0)+'h × '+fmt(m.valor);
+    }).join(', ')};
+  hist.unshift(entry);
+  await salvarSFHistorico(hist);
+  // Vai pra receita
+  var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
+  vars.push({id:Date.now()+2,desc:'Sky Fit — Aulas '+MESES[mes]+'/'+ano,val:total,data:hoje(),obs:entry.detalhe});
+  await set(docId()+'_receitas_var',JSON.stringify(vars));
+  // Marca como lançado neste mês
+  await salvarSFLancado({total:total,data:hoje(),detalhe:entry.detalhe});
+  renderSkyFit();renderAll();
+  mostrarToast('✅ R$'+total.toFixed(2)+' lançado nas Receitas!');
 }
 
 function renderSkyFitTotal(){
-  var mods = carregarSFMods();
-  var horas = carregarSFHoras();
-  var pts = carregarSFPersonais();
-  var totalMods = mods.reduce(function(a,m){return a+(horas[m.id]||0)*m.valor;},0);
-  var totalPT   = pts.filter(function(p){return p.tipo==='confirmado';}).reduce(function(a,p){return a+p.val;},0);
-  var estimPT   = pts.filter(function(p){return p.tipo==='estimativa';}).reduce(function(a,p){return a+p.val;},0);
-  var totalConf = totalMods + totalPT;
-  var totalEstim = totalMods + totalPT + estimPT;
-  window._sfTotal = totalConf;
-  var el = document.getElementById('skyfit-total');
-  if(!el) return;
-  el.innerHTML = '<div class="cards-row">'+
-    '<div class="mini-card"><div class="lbl">🏋️ Aulas confirmadas</div><div class="val" style="color:var(--green2)">'+fmt(totalMods)+'</div></div>'+
-    '<div class="mini-card"><div class="lbl">💪 Personal confirmado</div><div class="val" style="color:var(--green2)">'+fmt(totalPT)+'</div></div>'+
-    (estimPT>0?'<div class="mini-card"><div class="lbl">📊 Estimativa PT</div><div class="val" style="color:var(--gold2)">'+fmt(estimPT)+'</div></div>':'')+
-    '<div class="mini-card" style="border-top:2px solid var(--green2)"><div class="lbl">✅ Total a receber</div><div class="val" style="color:var(--green2)">'+fmt(totalConf)+'</div></div>'+
-    '</div>'+
-    (estimPT>0?'<div style="font-size:.74rem;color:var(--muted);margin-top:6px">📊 Se estimativas confirmarem: <strong style="color:var(--gold2)">'+fmt(totalEstim)+'</strong></div>':'');
+  var mods=carregarSFMods();
+  var horas=carregarSFHoras();
+  var pts=carregarSFPersonais();
+  var totalAulas=mods.reduce(function(a,m){return a+(horas[m.id]||0)*m.valor;},0);
+  var totalPT=pts.reduce(function(a,p){return a+p.val;},0);
+  var totalGeral=totalAulas+totalPT;
+  window._sfTotal=totalGeral;
+  var el=document.getElementById('skyfit-total-el');
+  if(el) el.innerHTML='<div class="cards-row">'+
+    '<div class="mini-card"><div class="lbl">🏋️ Aulas</div><div class="val" style="color:var(--gold2)">'+fmt(totalAulas)+'</div></div>'+
+    '<div class="mini-card"><div class="lbl">💪 Personal</div><div class="val" style="color:var(--invest2)">'+fmt(totalPT)+'</div></div>'+
+    '<div class="mini-card"><div class="lbl">✅ Total Sky Fit</div><div class="val" style="color:var(--green2)">'+fmt(totalGeral)+'</div></div>'+
+    '</div>';
+  var btnLancar=document.getElementById('btn-lancar-sf');
+  var lancado=carregarSFLancado();
+  var lancadoEl=document.getElementById('sf-lancado-el');
+  if(lancado){
+    if(btnLancar) btnLancar.style.display='none';
+    if(lancadoEl) lancadoEl.innerHTML='<span style="color:var(--green2)">✅ Já lançado em '+lancado.data+' — '+fmt(lancado.total)+'</span>'+
+      ' <button style="background:none;border:none;color:var(--muted);font-size:.7rem;cursor:pointer" onclick="reabrirLancamentoSF()">Relançar</button>';
+  } else {
+    if(btnLancar) btnLancar.style.display=totalAulas>0?'block':'none';
+    if(lancadoEl) lancadoEl.innerHTML='';
+  }
+}
+
+async function reabrirLancamentoSF(){
+  if(!confirm('Isso vai relançar o total nas Receitas. Continuar?')) return;
+  localStorage.removeItem(docId()+'_sf_lancado');
+  if(_db&&_userId) await _db.collection('dados').doc(_userId).set({'d':{}},{merge:true}).catch(function(){});
+  renderSkyFit();
 }
 
 function renderSkyFit(){
-  var mods = carregarSFMods();
-  var horas = carregarSFHoras();
-  var pts = carregarSFPersonais();
-  var el = document.getElementById('skyfit-modalidades');
+  var mods=carregarSFMods();
+  var horas=carregarSFHoras();
+  var pts=carregarSFPersonais();
+  // Mes label
+  var mlEl=document.getElementById('sf-mes-label');
+  if(mlEl) mlEl.textContent=MESES[mes]+'/'+ano;
+  // Modalidades
+  var el=document.getElementById('skyfit-modalidades');
   if(el){
-    el.innerHTML = mods.map(function(m){
-      var h = horas[m.id]||0;
-      var subtotal = h*m.valor;
-      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">'+
-        '<div style="flex:1"><div style="font-weight:600;font-size:.83rem">'+m.nome+'</div>'+
-        '<div style="font-size:.68rem;color:var(--muted)">'+fmt(m.valor)+'/hora</div></div>'+
-        '<div style="display:flex;align-items:center;gap:6px">'+
-        '<input type="number" value="'+h+'" min="0" step="0.5" style="width:65px;text-align:center;font-size:.83rem;padding:6px 8px" placeholder="Horas" oninput="updateSFHoras('+m.id+',this.value)"/>'+
-        '<span style="font-size:.68rem;color:var(--muted)">h</span></div>'+
-        '<div style="font-family:DM Mono,monospace;font-size:.88rem;color:'+(subtotal>0?'var(--green2)':'var(--muted)')+';min-width:70px;text-align:right">'+fmt(subtotal)+'</div>'+
-        '<button class="item-del" data-id="'+m.id+'" onclick="delSFModBtn(this)" title="Remover">✕</button>'+
+    el.innerHTML=mods.map(function(m){
+      var h=horas[m.id]||0;
+      var subtotal=h*m.valor;
+      return '<div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border)">'+
+        '<div style="flex:1">'+
+          '<div style="font-weight:600;font-size:.83rem">'+m.nome+'</div>'+
+          '<div style="font-size:.68rem;color:var(--muted)">'+fmt(m.valor)+'/hora</div>'+
+        '</div>'+
+        '<input type="number" value="'+h+'" min="0" step="0.5" '+
+          'style="width:62px;text-align:center;font-size:.85rem;padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text)" '+
+          'placeholder="Hrs" data-id="'+m.id+'" onchange="updateSFHoras('+m.id+',this.value)"/>'+
+        '<div style="font-family:DM Mono,monospace;font-size:.88rem;color:'+(subtotal>0?'var(--green2)':'var(--muted)')+';min-width:68px;text-align:right">'+fmt(subtotal)+'</div>'+
+        '<button style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.78rem;padding:4px" data-id="'+m.id+'" onclick="editSFModBtn(this)" title="Editar">✏️</button>'+
+        '<button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.78rem;padding:4px" data-id="'+m.id+'" onclick="delSFModBtn(this)" title="Remover">✕</button>'+
         '</div>';
-    }).join('')+
-    (mods.length===0?'<div class="vazio">Nenhuma modalidade. Adicione abaixo!</div>':'');
+    }).join('')+(mods.length===0?'<div class="vazio">Adicione uma modalidade abaixo</div>':'');
   }
-  var ptEl = document.getElementById('skyfit-personais');
+  // Personais
+  var ptEl=document.getElementById('skyfit-personais');
   if(ptEl){
-    ptEl.innerHTML = !pts.length?'<div class="vazio" style="padding:10px">Nenhum personal cadastrado</div>':
+    ptEl.innerHTML=!pts.length?'<div style="font-size:.74rem;color:var(--muted);padding:6px">Nenhum personal lançado este mês</div>':
       pts.map(function(p){
         return '<div class="item">'+
-          '<div class="item-ic">'+(p.tipo==='confirmado'?'✅':'📊')+'</div>'+
+          '<div class="item-ic">💪</div>'+
           '<div class="item-info"><div class="item-nome">'+p.aluno+'</div>'+
-          '<div class="item-meta">'+fmtD(p.data)+' · '+(p.tipo==='confirmado'?'Confirmado':'Estimativa')+'</div></div>'+
-          '<div class="item-val '+(p.tipo==='confirmado'?'pos':'')+'">'+fmt(p.val)+'</div>'+
+          '<div class="item-meta">'+fmtD(p.data)+' · Lançado na Receita ✅</div></div>'+
+          '<div class="item-val pos">'+fmt(p.val)+'</div>'+
           '<button class="item-del" data-id="'+p.id+'" onclick="delSFPTBtn(this)">✕</button>'+
           '</div>';
       }).join('');
   }
+  // Total e botão lançar
   renderSkyFitTotal();
+  // Histórico
+  var histEl=document.getElementById('sf-historico-el');
+  if(histEl){
+    var hist=carregarSFHistorico();
+    histEl.innerHTML=!hist.length?'<div class="vazio">Nenhum lançamento anterior</div>':
+      hist.slice(0,12).map(function(h){
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">'+
+          '<div><div style="font-size:.8rem;font-weight:600">'+h.mesLabel+'</div>'+
+          '<div style="font-size:.68rem;color:var(--muted)">'+h.detalhe+'</div></div>'+
+          '<div style="font-family:DM Mono,monospace;color:var(--green2);font-size:.88rem">'+fmt(h.total)+'</div>'+
+          '</div>';
+      }).join('');
+  }
 }
-function delSFModBtn(btn){delSFMod(parseInt(btn.dataset.id));}
-function delSFPTBtn(btn){delSFPersonal(parseInt(btn.dataset.id));}
 
 function gerarNotaSkyFit(){
-  var mods = carregarSFMods();
-  var horas = carregarSFHoras();
-  var pts = carregarSFPersonais().filter(function(p){return p.tipo==='confirmado';});
-  var comp = document.getElementById('sf-nota-comp').value||MESES[mes]+'/'+ano;
-  var tomador = document.getElementById('sf-nota-tomador').value||'Sky Fit Academia';
-  var totalMods = mods.reduce(function(a,m){return a+(horas[m.id]||0)*m.valor;},0);
-  var totalPT   = pts.reduce(function(a,p){return a+p.val;},0);
-  var total = totalMods + totalPT;
-  var nl = String.fromCharCode(10);
-  var win = window.open('','_blank');
-  var linhasMods = mods.filter(function(m){return (horas[m.id]||0)>0;}).map(function(m){
-    return '<tr><td>'+m.nome+'</td><td style="text-align:center">'+( horas[m.id]||0)+'h</td><td style="text-align:right">'+fmt(m.valor)+'/h</td><td style="text-align:right">'+fmt((horas[m.id]||0)*m.valor)+'</td></tr>';
+  var mods=carregarSFMods();
+  var horas=carregarSFHoras();
+  var pts=carregarSFPersonais();
+  var comp=document.getElementById('sf-nota-comp').value||(MESES[mes]+'/'+ano);
+  var tomador=document.getElementById('sf-nota-tomador').value||'Sky Fit Academia';
+  var totalMods=mods.reduce(function(a,m){return a+(horas[m.id]||0)*m.valor;},0);
+  var totalPT=pts.reduce(function(a,p){return a+p.val;},0);
+  var total=totalMods+totalPT;
+  var win=window.open('','_blank');
+  var linhasMods=mods.filter(function(m){return(horas[m.id]||0)>0;}).map(function(m){
+    return '<tr><td>'+m.nome+'</td><td style="text-align:center">'+(horas[m.id]||0)+'h</td>'+
+      '<td style="text-align:right">'+fmt(m.valor)+'/h</td><td style="text-align:right">'+fmt((horas[m.id]||0)*m.valor)+'</td></tr>';
   }).join('');
-  var linhasPT = pts.map(function(p){
-    return '<tr><td>Personal Training — '+p.aluno+'</td><td style="text-align:center">—</td><td style="text-align:right">—</td><td style="text-align:right">'+fmt(p.val)+'</td></tr>';
+  var linhasPT=pts.map(function(p){
+    return '<tr><td>Personal Training — '+p.aluno+'</td><td style="text-align:center">—</td>'+
+      '<td style="text-align:right">—</td><td style="text-align:right">'+fmt(p.val)+'</td></tr>';
   }).join('');
-  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Nota Fiscal — '+comp+'</title>');
-  win.document.write('<style>body{font-family:Arial,sans-serif;padding:40px;max-width:700px;margin:0 auto;color:#111}');
-  win.document.write('h1{color:#1a2e8c;font-size:1.4rem;margin-bottom:4px}.sub{color:#888;font-size:.85rem;margin-bottom:24px}');
-  win.document.write('.info{display:flex;justify-content:space-between;margin-bottom:20px;padding:16px;background:#f5f5f5;border-radius:8px;font-size:.85rem}');
-  win.document.write('table{width:100%;border-collapse:collapse;margin-bottom:16px}');
-  win.document.write('th{background:#1a2e8c;color:white;padding:10px;text-align:left;font-size:.82rem}');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Recibo — '+comp+'</title>');
+  win.document.write('<style>body{font-family:Arial,sans-serif;padding:40px;max-width:680px;margin:0 auto}');
+  win.document.write('h1{color:#1a2e8c;font-size:1.3rem}table{width:100%;border-collapse:collapse;margin:16px 0}');
+  win.document.write('th{background:#1a2e8c;color:#fff;padding:10px;text-align:left;font-size:.82rem}');
   win.document.write('td{padding:9px 10px;border-bottom:1px solid #eee;font-size:.82rem}');
-  win.document.write('.total-row{background:#f0f4ff;font-weight:bold;font-size:.95rem}');
-  win.document.write('.rodape{margin-top:30px;padding-top:16px;border-top:2px solid #1a2e8c;font-size:.75rem;color:#888;text-align:center}');
+  win.document.write('.info{display:flex;justify-content:space-between;background:#f5f5f5;padding:14px;border-radius:8px;font-size:.82rem;margin-bottom:16px}');
+  win.document.write('.total{background:#f0f4ff;font-weight:700}');
   win.document.write('</style></head><body>');
   win.document.write('<h1>Recibo de Prestação de Serviços</h1>');
-  win.document.write('<div class="sub">Competência: '+comp+'</div>');
-  win.document.write('<div class="info">');
-  win.document.write('<div><strong>Prestador</strong><br/>Fábio Padote<br/>CREF: 142588-G/SP<br/>CNPJ: 63.359.208/0001-11<br/>PADOTY Saúde e Movimento</div>');
-  win.document.write('<div><strong>Tomador</strong><br/>'+tomador+'</div>');
-  win.document.write('</div>');
-  win.document.write('<table><tr><th>Serviço</th><th style="text-align:center">Qtd/Horas</th><th style="text-align:right">Valor Unit.</th><th style="text-align:right">Total</th></tr>');
+  win.document.write('<div class="info"><div><strong>Prestador</strong><br/>Fábio Padote<br/>CREF: 142588-G/SP<br/>CNPJ: 63.359.208/0001-11</div>');
+  win.document.write('<div><strong>Tomador</strong><br/>'+tomador+'</div><div><strong>Competência</strong><br/>'+comp+'</div></div>');
+  win.document.write('<table><tr><th>Serviço</th><th>Qtd/Horas</th><th>Valor Unit.</th><th>Total</th></tr>');
   win.document.write(linhasMods+linhasPT);
-  win.document.write('<tr class="total-row"><td colspan="3"><strong>TOTAL A RECEBER</strong></td><td style="text-align:right"><strong>'+fmt(total)+'</strong></td></tr>');
-  win.document.write('</table>');
-  win.document.write('<div class="rodape">Documento gerado por PADOTY Finance — '+new Date().toLocaleDateString('pt-BR')+'</div>');
-  win.document.write('</body></html>');
-  win.document.close();
-  setTimeout(function(){win.print();},500);
+  win.document.write('<tr class="total"><td colspan="3">TOTAL A RECEBER</td><td style="text-align:right">'+fmt(total)+'</td></tr></table>');
+  win.document.write('<p style="font-size:.72rem;color:#999;text-align:center;margin-top:24px">PADOTY Finance — '+new Date().toLocaleDateString('pt-BR')+'</p>');
+  win.document.write('</body></html>');win.document.close();setTimeout(function(){win.print();},500);
 }
 
 // ══ EDITAR FINANCIAMENTO ══
@@ -2108,28 +2225,6 @@ function calcularSimulador(){
 }
 
 // ══ SKY FIT → RECEITAS AUTO ══
-async function addPersonalSkyFit(){
-  var aluno = document.getElementById('sf-pt-aluno').value.trim();
-  var val   = parseFloat(document.getElementById('sf-pt-val').value)||0;
-  var tipo  = document.getElementById('sf-pt-tipo').value;
-  var data  = document.getElementById('sf-pt-data').value||hoje();
-  if(!aluno||!val){alert('Preencha aluno e valor!');return;}
-  var pts = carregarSFPersonais();
-  pts.push({id:Date.now(),aluno:aluno,val:val,tipo:tipo,data:data});
-  await salvarSFPersonais(pts);
-  // Se confirmado → vai para receitas automaticamente
-  if(tipo==='confirmado'){
-    var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
-    vars.push({id:Date.now()+1,desc:'Personal — '+aluno,val:val,data:data,obs:'Auto: Sky Fit',carteira:0});
-    await set(docId()+'_receitas_var',JSON.stringify(vars));
-    mostrarToast('✅ Adicionado e lançado em Receitas!');
-  } else {
-    mostrarToast('✅ Estimativa adicionada!');
-  }
-  document.getElementById('sf-pt-aluno').value='';
-  document.getElementById('sf-pt-val').value='';
-  renderSkyFit();renderAll();
-}
 
 // ══ FINANCIAMENTO — DATA COMPLETA ══
 async function salvarNovoFin(){
@@ -3058,7 +3153,6 @@ async function renderAll(){
   await renderReceitas();
   renderFinanciamentos();
   renderAssinaturas();
-  renderSkyFit();
   await renderRecorrentes();
   await renderGastos();
   await renderCarteiras();
