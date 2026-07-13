@@ -824,7 +824,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="fecharModal('overlayFinMoto')">Cancelar</button>
-      <button class="btn-confirm" onclick="salvarFinMoto()">💾 Salvar</button>
+      <button class="btn-confirm" onclick="salvarConfigMoto()">💾 Salvar</button>
     </div>
   </div>
 </div>
@@ -841,7 +841,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="fecharModal('overlayFinCasa')">Cancelar</button>
-      <button class="btn-confirm" onclick="salvarFinCasa()">💾 Salvar</button>
+      <button class="btn-confirm" onclick="salvarConfigCasa()">💾 Salvar</button>
     </div>
   </div>
 </div>
@@ -1358,40 +1358,6 @@ function toggleTema(){
 }
 
 // ══ FINANCIAMENTOS ══
-async function carregarFinMoto(){
-  var r = localStorage.getItem(docIdG('fin_moto'));
-  return r ? JSON.parse(r) : {parcela:0,total:0,atual:1,inicio:''};
-}
-async function carregarFinCasa(){
-  var r = localStorage.getItem(docIdG('fin_casa'));
-  return r ? JSON.parse(r) : {parcela:0,total:0,atual:1,inicio:''};
-}
-
-async function salvarFinMoto(){
-  var parcela = parseFloat(document.getElementById('fm-parcela').value)||0;
-  var total   = parseInt(document.getElementById('fm-total').value)||0;
-  var atual   = parseInt(document.getElementById('fm-atual').value)||1;
-  var inicio  = document.getElementById('fm-inicio').value;
-  if(!parcela||!total){ alert('Preencha parcela e total!'); return; }
-  var data = {parcela:parcela,total:total,atual:atual,inicio:inicio};
-  await set(docIdG('fin_moto'), JSON.stringify(data));
-  fecharModal('overlayFinMoto');
-  renderFinanciamentos();
-  mostrarToast('✅ Financiamento moto salvo!');
-}
-
-async function salvarFinCasa(){
-  var parcela = parseFloat(document.getElementById('fc-parcela').value)||0;
-  var total   = parseInt(document.getElementById('fc-total').value)||0;
-  var atual   = parseInt(document.getElementById('fc-atual').value)||1;
-  var inicio  = document.getElementById('fc-inicio').value;
-  if(!parcela||!total){ alert('Preencha parcela e total!'); return; }
-  var data = {parcela:parcela,total:total,atual:atual,inicio:inicio};
-  await set(docIdG('fin_casa'), JSON.stringify(data));
-  fecharModal('overlayFinCasa');
-  renderFinanciamentos();
-  mostrarToast('✅ Financiamento casa salvo!');
-}
 
 async function addObra(){
   var desc = document.getElementById('ob-desc').value.trim();
@@ -1434,7 +1400,7 @@ async function salvarConfigCasa(){
   fecharModal('overlayConfigCasa');
   renderFinanciamentos();renderContas();mostrarToast('✅ Casa salva!');
 }
-async async function addTaxaObra(){
+async function addTaxaObra(){
   var desc=document.getElementById('obra-desc').value.trim()||'Taxa de obra';
   var val=parseFloat(document.getElementById('obra-val').value)||0;
   if(!val){alert('Digite o valor!');return;}
@@ -3089,22 +3055,6 @@ async function init(){
 }
 
 // ══ DOM READY ══
-document.addEventListener('DOMContentLoaded', function(){
-  // Populate financiamento modals with saved data
-  carregarFinMoto().then(function(m){
-    if(m.parcela){ document.getElementById('fm-parcela').value=m.parcela; }
-    if(m.total){ document.getElementById('fm-total').value=m.total; }
-    if(m.atual){ document.getElementById('fm-atual').value=m.atual; }
-    if(m.inicio){ document.getElementById('fm-inicio').value=m.inicio; }
-  });
-  carregarFinCasa().then(function(c){
-    if(c.parcela){ document.getElementById('fc-parcela').value=c.parcela; }
-    if(c.total){ document.getElementById('fc-total').value=c.total; }
-    if(c.atual){ document.getElementById('fc-atual').value=c.atual; }
-    if(c.inicio){ document.getElementById('fc-inicio').value=c.inicio; }
-  });
-  document.getElementById('ob-data').value=hoje();
-});
 </script>
 </body>
 </html>
