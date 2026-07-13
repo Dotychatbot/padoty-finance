@@ -239,6 +239,8 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
   <button class="nav-item" data-sec="metas" onclick="setSecaoDrawer(this)"><span class="ni">🏆</span>Metas</button>
   <button class="nav-item" data-sec="simulador" onclick="setSecaoDrawer(this)"><span class="ni">🧮</span>Simulador</button>
   <button class="nav-item" data-sec="config" onclick="setSecaoDrawer(this)"><span class="ni">⚙️</span>Configurações</button>
+  <div style="border-top:1px solid var(--border);margin:12px 0"></div>
+  <button class="nav-item" onclick="fecharDrawer();sair()" style="color:var(--red2)"><span class="ni">🚪</span>Sair</button>
 </div>
 
 <div class="layout">
@@ -1596,7 +1598,9 @@ async function salvarEdicao(){
 function salvarAPIKey(){
   var key=document.getElementById('config-apikey').value.trim();
   if(!key){alert('Cole a API key!');return;}
-  localStorage.setItem('pf_apikey',key);
+  try{localStorage.setItem('pf_apikey',key);}catch(e){}
+  try{sessionStorage.setItem('pf_apikey',key);}catch(e){}
+  window._apiKeyCache=key;
   var s=document.getElementById('config-key-status');if(s) s.textContent='✅ Chave salva! IA pronta para usar.';
   document.getElementById('config-apikey').value='';
   mostrarToast('✅ API key salva!');
@@ -1852,7 +1856,7 @@ function editarContaBtn(btn){abrirEdicaoConta(parseInt(btn.dataset.id));}
 // ══ IA CHAT INVESTIMENTOS ══
 var _invChatHistory = [];
 async function enviarChatInv(){
-  var apiKey=localStorage.getItem('pf_apikey');
+  var apiKey=(window._apiKeyCache||localStorage.getItem('pf_apikey')||sessionStorage.getItem('pf_apikey')||'');
   var input=document.getElementById('inv-chat-input');
   var msgs=document.getElementById('inv-chat-msgs');
   if(!input||!msgs) return;
@@ -2930,7 +2934,7 @@ function delHistMotoBtn(btn){delHistMoto(parseInt(btn.dataset.id));}
 
 // ══ IA ANÁLISE ══
 async function analisarIA(){
-  var apiKey=localStorage.getItem('pf_apikey');
+  var apiKey=(window._apiKeyCache||localStorage.getItem('pf_apikey')||sessionStorage.getItem('pf_apikey')||'');
   var btn=document.getElementById('btn-ia');
   var el=document.getElementById('ia-resultado');
   if(!apiKey){
