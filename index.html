@@ -307,7 +307,19 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     </div>
     <div id="moto-val-el" style="font-family:'DM Mono',monospace;font-size:1.3rem;color:var(--gold2);margin-bottom:8px"></div>
     <div id="moto-bar-el"></div>
-    <div id="moto-venc-el" style="font-size:.72rem;color:var(--muted);margin-top:6px"></div>
+    <div id="moto-venc-el" style="font-size:.72rem;color:var(--muted);margin-top:6px;margin-bottom:12px"></div>
+    <!-- HISTÓRICO MOTO -->
+    <div style="background:var(--bg2);border-radius:10px;padding:12px;border:1px solid var(--border)">
+      <div style="font-size:.66rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">📋 Histórico de pagamentos</div>
+      <div id="moto-historico-resumo"></div>
+      <div class="fields">
+        <div><label>Valor (R$)</label><input type="number" id="hist-moto-val" placeholder="0,00" min="0" step="0.01"/></div>
+        <div><label>Data</label><input type="date" id="hist-moto-data"/></div>
+        <div class="full"><label>Obs</label><input type="text" id="hist-moto-obs" placeholder="Ex: Parcela 10..."/></div>
+        <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--red),var(--red2))" onclick="addHistoricoMoto()">+ Registrar pagamento</button></div>
+      </div>
+      <div id="lista-historico-moto" style="margin-top:10px;max-height:200px;overflow-y:auto"></div>
+    </div>
   </div>
 
   <!-- ═══ CASA ═══ -->
@@ -327,7 +339,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     <div id="casa-venc-el" style="font-size:.72rem;color:var(--muted);margin-top:6px;margin-bottom:12px"></div>
 
     <!-- TAXA DE OBRA -->
-    <div style="background:var(--bg2);border-radius:10px;padding:12px;border:1px solid var(--border)">
+    <div style="background:var(--bg2);border-radius:10px;padding:12px;border:1px solid var(--border);margin-bottom:10px">
       <div style="font-size:.66rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">🔧 Taxa de Obra deste mês (variável)</div>
       <div class="fields">
         <div><label>Descrição</label><input type="text" id="obra-desc" placeholder="Ex: Construção, Material..."/></div>
@@ -336,6 +348,25 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
       </div>
       <div id="lista-obras" style="margin-top:10px"></div>
       <div id="obras-total-el" style="font-size:.78rem;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"></div>
+    </div>
+
+    <!-- HISTÓRICO DE PAGAMENTOS CASA -->
+    <div style="background:var(--bg2);border-radius:10px;padding:12px;border:1px solid var(--border)">
+      <div style="font-size:.66rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">📋 Histórico de pagamentos — o que já paguei</div>
+      <div id="casa-historico-resumo" style="margin-bottom:10px"></div>
+      <div class="fields">
+        <div><label>Tipo</label>
+          <select id="hist-tipo">
+            <option value="financiamento">🏠 Parcela financiamento</option>
+            <option value="obra">🔧 Taxa de obra</option>
+          </select>
+        </div>
+        <div><label>Valor (R$)</label><input type="number" id="hist-val" placeholder="0,00" min="0" step="0.01"/></div>
+        <div><label>Data</label><input type="date" id="hist-data"/></div>
+        <div class="full"><label>Obs</label><input type="text" id="hist-obs" placeholder="Ex: Parcela 10, obra janeiro..."/></div>
+        <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--blue),var(--blue2))" onclick="addHistoricoCasa()">+ Registrar pagamento</button></div>
+      </div>
+      <div id="lista-historico-casa" style="margin-top:10px;max-height:220px;overflow-y:auto"></div>
     </div>
   </div>
 
@@ -1073,6 +1104,30 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
   </div>
 </div>
 
+
+<!-- MODAL EDITAR HISTORICO CASA -->
+<div class="overlay" id="overlayEditarHist" onclick="fecharOverlay('overlayEditarHist',event)">
+  <div class="modal">
+    <h2>✏️ Editar Pagamento</h2>
+    <input type="hidden" id="eh-id"/>
+    <div class="fields">
+      <div class="full"><label>Tipo</label>
+        <select id="eh-tipo">
+          <option value="financiamento">🏠 Parcela financiamento</option>
+          <option value="obra">🔧 Taxa de obra</option>
+        </select>
+      </div>
+      <div><label>Valor (R$)</label><input type="number" id="eh-val" min="0" step="0.01"/></div>
+      <div><label>Data</label><input type="date" id="eh-data"/></div>
+      <div class="full"><label>Obs</label><input type="text" id="eh-obs" placeholder="Ex: Parcela 10..."/></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal('overlayEditarHist')">Cancelar</button>
+      <button class="btn-confirm" onclick="salvarEdicaoHist()">✅ Salvar</button>
+    </div>
+  </div>
+</div>
+
 </div><!-- telaApp -->
 
 <script>
@@ -1386,15 +1441,22 @@ async function salvarConfigCasa(){
   fecharModal('overlayConfigCasa');
   renderFinanciamentos();renderContas();mostrarToast('✅ Casa salva!');
 }
-async function addTaxaObra(){
+async async function addTaxaObra(){
   var desc=document.getElementById('obra-desc').value.trim()||'Taxa de obra';
   var val=parseFloat(document.getElementById('obra-val').value)||0;
   if(!val){alert('Digite o valor!');return;}
   var obras=JSON.parse(localStorage.getItem(docId()+'_obras')||'[]');
-  obras.push({id:Date.now(),desc:desc,valor:val,data:hoje()});
+  var obraId = Date.now();
+  obras.push({id:obraId,desc:desc,valor:val,data:hoje()});
   await set(docId()+'_obras',JSON.stringify(obras));
-  document.getElementById('obra-desc').value='';document.getElementById('obra-val').value='';
-  renderFinanciamentos();mostrarToast('✅ Taxa lançada!');
+  // Também vai para Meus Gastos automaticamente
+  var gastos=JSON.parse(localStorage.getItem(docId()+'_gastos')||'[]');
+  gastos.push({id:obraId+1,desc:'🏠 '+desc,valor:val,cat:'financiamento',pag:'debito',data:hoje(),obs:'Taxa obra Casa'});
+  await set(docId()+'_gastos',JSON.stringify(gastos));
+  document.getElementById('obra-desc').value='';
+  document.getElementById('obra-val').value='';
+  renderFinanciamentos();renderAll();
+  mostrarToast('✅ Taxa lançada e adicionada aos gastos!');
 }
 async function delObra(id){
   var obras=JSON.parse(localStorage.getItem(docId()+'_obras')||'[]');
@@ -1460,6 +1522,8 @@ function renderFinanciamentos(){
           '</div>';
       }).join('');
   }
+  renderHistoricoCasa();
+  renderHistoricoMoto();
   // Calc total
   var totalMoto=moto.parcela||0;
   var totalCasa=(casa.parcela||0)+totalObras;
@@ -2170,6 +2234,93 @@ async function addRecorrente(){
   renderRecorrentes();mostrarToast('✅ '+(tipo==='fixo'?'Fixo':'Recorrente')+' adicionado!');
 }
 
+// ══ HISTÓRICO PAGAMENTOS CASA ══
+function carregarHistCasa(){
+  var r=localStorage.getItem(docIdG('hist_casa'));
+  return r?JSON.parse(r):[];
+}
+async function salvarHistCasa(h){
+  await set(docIdG('hist_casa'),JSON.stringify(h));
+}
+async function addHistoricoCasa(){
+  var tipo=document.getElementById('hist-tipo').value;
+  var val=parseFloat(document.getElementById('hist-val').value)||0;
+  var data=document.getElementById('hist-data').value||hoje();
+  var obs=document.getElementById('hist-obs').value.trim();
+  if(!val){alert('Digite o valor!');return;}
+  var hist=carregarHistCasa();
+  hist.push({id:Date.now(),tipo:tipo,valor:val,data:data,obs:obs});
+  await salvarHistCasa(hist);
+  document.getElementById('hist-val').value='';
+  document.getElementById('hist-obs').value='';
+  renderHistoricoCasa();
+  mostrarToast('✅ Pagamento registrado!');
+}
+async function delHistCasa(id){
+  var hist=carregarHistCasa().filter(function(h){return h.id!==id;});
+  await salvarHistCasa(hist);
+  renderHistoricoCasa();
+}
+function renderHistoricoCasa(){
+  var hist=carregarHistCasa();
+  hist.sort(function(a,b){return(b.data||'').localeCompare(a.data||'');});
+  var totalFin=hist.filter(function(h){return h.tipo==='financiamento';}).reduce(function(a,h){return a+h.valor;},0);
+  var totalObr=hist.filter(function(h){return h.tipo==='obra';}).reduce(function(a,h){return a+h.valor;},0);
+  var totalTudo=totalFin+totalObr;
+  var resumoEl=document.getElementById('casa-historico-resumo');
+  if(resumoEl&&totalTudo>0){
+    resumoEl.innerHTML='<div class="cards-row" style="margin-bottom:0">'+
+      '<div class="mini-card"><div class="lbl">🏠 Total financiamento pago</div><div class="val" style="color:var(--blue2)">'+fmt(totalFin)+'</div></div>'+
+      '<div class="mini-card"><div class="lbl">🔧 Total obras pago</div><div class="val" style="color:var(--invest2)">'+fmt(totalObr)+'</div></div>'+
+      '<div class="mini-card"><div class="lbl">💸 Total geral pago</div><div class="val" style="color:var(--red2)">'+fmt(totalTudo)+'</div></div>'+
+      '</div>';
+  }
+  var listEl=document.getElementById('lista-historico-casa');
+  if(!listEl) return;
+  if(!hist.length){listEl.innerHTML='<div style="font-size:.76rem;color:var(--muted);padding:8px">Nenhum pagamento registrado ainda.</div>';return;}
+  listEl.innerHTML=hist.map(function(h){
+    return '<div class="item" style="margin-bottom:4px">'+
+      '<div class="item-ic">'+(h.tipo==='financiamento'?'🏠':'🔧')+'</div>'+
+      '<div class="item-info">'+
+      '<div class="item-nome">'+(h.tipo==='financiamento'?'Parcela financiamento':'Taxa de obra')+(h.obs?' — '+h.obs:'')+'</div>'+
+      '<div class="item-meta">'+fmtD(h.data)+'</div></div>'+
+      '<div class="item-val neg">'+fmt(h.valor)+'</div>'+
+      '<button style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.76rem;padding:3px" data-id="'+h.id+'" onclick="editarHistBtn(this)" title="Editar">&#x270F;&#xFE0F;</button>'+
+      '<button class="item-del" data-id="'+h.id+'" onclick="delHistBtn(this)">&#x2715;</button>'+
+      '</div>';
+  }).join('');
+}
+function delHistBtn(btn){delHistCasa(parseInt(btn.dataset.id));}
+function editarHistBtn(btn){abrirEdicaoHist(parseInt(btn.dataset.id));}
+function abrirEdicaoHist(id){
+  var hist=carregarHistCasa();
+  var h=hist.find(function(x){return x.id===id;});
+  if(!h) return;
+  document.getElementById('eh-id').value=id;
+  document.getElementById('eh-tipo').value=h.tipo||'financiamento';
+  document.getElementById('eh-val').value=h.valor||0;
+  document.getElementById('eh-data').value=h.data||hoje();
+  document.getElementById('eh-obs').value=h.obs||'';
+  document.getElementById('overlayEditarHist').classList.add('aberto');
+}
+async function salvarEdicaoHist(){
+  var id=parseInt(document.getElementById('eh-id').value);
+  var hist=carregarHistCasa();
+  hist=hist.map(function(h){
+    if(h.id===id){
+      h.tipo=document.getElementById('eh-tipo').value;
+      h.valor=parseFloat(document.getElementById('eh-val').value)||0;
+      h.data=document.getElementById('eh-data').value;
+      h.obs=document.getElementById('eh-obs').value.trim();
+    }
+    return h;
+  });
+  await salvarHistCasa(hist);
+  fecharModal('overlayEditarHist');
+  renderHistoricoCasa();
+  mostrarToast('✅ Pagamento atualizado!');
+}
+
 // ══ FUNÇÕES AUXILIARES RESTAURADAS ══
 function parcelaAtual(r){
   if(!r.inicio) return 1;
@@ -2347,6 +2498,512 @@ function renderContas(){
       '</div>';
   }).join('');
 }
+
+// ══ GASTOS ══
+function carregarGastos(){
+  var r=localStorage.getItem(docId()+'_gastos');
+  return r?JSON.parse(r):[];
+}
+async function addGasto(){
+  var desc=document.getElementById('g-desc').value.trim();
+  var val=parseFloat(document.getElementById('g-val').value)||0;
+  var cat=document.getElementById('g-cat').value;
+  var pag=document.getElementById('g-pag').value;
+  var data=document.getElementById('g-data').value||hoje();
+  var cart=parseInt(document.getElementById('g-carteira').value)||0;
+  var obs=document.getElementById('g-obs').value.trim();
+  if(!desc||!val){alert('Preencha descrição e valor!');return;}
+  var gastos=carregarGastos();
+  var item={id:Date.now(),desc:desc,valor:val,cat:cat,pag:pag,data:data,obs:obs};
+  if(cart) item.carteira=cart;
+  gastos.push(item);
+  await set(docId()+'_gastos',JSON.stringify(gastos));
+  if(cart) await debitarCarteira(cart,val,desc,pag==='credito');
+  ['g-desc','g-val','g-obs'].forEach(function(id){var el=document.getElementById(id);if(el) el.value='';});
+  var gd=document.getElementById('g-data');if(gd) gd.value=hoje();
+  renderAll();mostrarToast('✅ Gasto lançado!');
+}
+async function renderGastos(){
+  var gastos=carregarGastos();
+  var filtCat=document.getElementById('filtro-cat');
+  var filtVal=filtCat?filtCat.value:'';
+  if(filtVal) gastos=gastos.filter(function(g){return g.cat===filtVal;});
+  gastos.sort(function(a,b){return(b.data||'').localeCompare(a.data||'');});
+  var total=gastos.reduce(function(a,g){return a+g.valor;},0);
+  var totalEl=document.getElementById('gastos-total');
+  if(totalEl) totalEl.innerHTML=total>0?'<div style="font-size:.76rem;color:var(--muted)">Total: <strong style="color:var(--red2);font-family:DM Mono,monospace">'+fmt(total)+'</strong></div>':'';
+  var el=document.getElementById('lista-gastos');
+  if(!el) return;
+  // Pinned: moto e casa
+  var motoPin=carregarMoto();var casaPin=carregarCasa();
+  var obrasPin=JSON.parse(localStorage.getItem(docId()+'_obras')||'[]');
+  var totalObrasPin=obrasPin.reduce(function(a,o){return a+o.valor;},0);
+  var finsPin=carregarFins();
+  var pinned='';
+  if(motoPin.parcela) pinned+='<div class="item" style="border-left:3px solid var(--red2)">'+
+    '<div class="item-ic">🏍️</div>'+
+    '<div class="item-info"><div class="item-nome">Financiamento Moto<span class="tag" style="background:rgba(176,31,31,.15);color:var(--red2);margin-left:4px">fixo</span></div>'+
+    '<div class="item-meta">Parcela '+motoPin.atual+'/'+motoPin.total+(motoPin.data?' · Vence '+fmtD(motoPin.data):'')+'</div></div>'+
+    '<div class="item-val neg">'+fmt(motoPin.parcela)+'</div></div>';
+  if(casaPin.parcela) pinned+='<div class="item" style="border-left:3px solid var(--blue2)">'+
+    '<div class="item-ic">🏠</div>'+
+    '<div class="item-info"><div class="item-nome">Financiamento Casa<span class="tag" style="background:rgba(37,65,196,.15);color:var(--blue2);margin-left:4px">fixo</span></div>'+
+    '<div class="item-meta">Parcela '+casaPin.atual+'/'+casaPin.total+(casaPin.data?' · Vence '+fmtD(casaPin.data):'')+(totalObrasPin>0?' + Obras: '+fmt(totalObrasPin):'')+'</div></div>'+
+    '<div class="item-val neg">'+fmt(casaPin.parcela+totalObrasPin)+'</div></div>';
+  finsPin.forEach(function(f){
+    pinned+='<div class="item" style="border-left:3px solid var(--border)">'+
+      '<div class="item-ic">🏦</div>'+
+      '<div class="item-info"><div class="item-nome">'+f.icon+' '+f.nome+'<span class="tag" style="background:rgba(37,65,196,.15);color:var(--blue2);margin-left:4px">fixo</span></div>'+
+      '<div class="item-meta">Parcela '+f.atual+'/'+f.total+'</div></div>'+
+      '<div class="item-val neg">'+fmt(f.parcela)+'</div></div>';
+  });
+  if(!gastos.length&&!pinned){el.innerHTML='<div class="vazio">Nenhum gasto lançado 💸</div>';return;}
+  var CAT_IC={alimentacao:'🛒',mercado:'🏪',restaurante:'🍽️',transporte:'🚗',saude:'💊',pessoal:'👤',lazer:'🎬',seguro:'🛡️',educacao:'📚',outros:'📦',financiamento:'🏦'};
+  el.innerHTML=pinned+gastos.map(function(g){
+    return '<div class="item">'+
+      '<div class="item-ic">'+(CAT_IC[g.cat]||'📦')+'</div>'+
+      '<div class="item-info"><div class="item-nome">'+g.desc+'</div>'+
+      '<div class="item-meta">'+fmtD(g.data)+' · '+(g.cat||'')+(g.obs?' · '+g.obs:'')+'</div></div>'+
+      '<div class="item-val neg">'+fmt(g.valor)+'</div>'+
+      '<button style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.76rem;padding:3px" data-id="'+g.id+'" onclick="editarGastoBtn(this)" title="Editar">✏️</button>'+
+      '<button class="item-del" data-id="'+g.id+'" onclick="delGastoBtn(this)">&#x2715;</button>'+
+      '</div>';
+  }).join('');
+}
+
+// ══ RECEITAS ══
+function renderReceitas(){
+  var fixas=JSON.parse(localStorage.getItem(docIdG('receitas_fixas'))||'[]');
+  var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
+  var totalF=fixas.reduce(function(a,f){return a+f.val;},0);
+  var totalV=vars.reduce(function(a,v){return a+v.val;},0);
+  window._totalRenda=totalF+totalV;
+  var resumoEl=document.getElementById('receita-resumo');
+  if(resumoEl) resumoEl.innerHTML='<div class="cards-row">'+
+    '<div class="mini-card"><div class="lbl">Renda fixa</div><div class="val" style="color:var(--green2)">'+fmt(totalF)+'</div></div>'+
+    '<div class="mini-card"><div class="lbl">Renda variável</div><div class="val" style="color:var(--gold2)">'+fmt(totalV)+'</div></div>'+
+    '<div class="mini-card"><div class="lbl">Total</div><div class="val" style="color:var(--green2)">'+fmt(totalF+totalV)+'</div></div>'+
+    '</div>';
+  var listEl=document.getElementById('lista-receitas');if(!listEl) return;
+  var todos=fixas.map(function(f){return Object.assign({},f,{_tipo:'fixa'});})
+    .concat(vars.map(function(v){return Object.assign({},v,{_tipo:'var'});}));
+  todos.sort(function(a,b){return(b.data||'').localeCompare(a.data||'');});
+  if(!todos.length){listEl.innerHTML='<div class="vazio">Nenhuma renda registrada 💰</div>';return;}
+  listEl.innerHTML=todos.map(function(r){
+    return '<div class="item">'+
+      '<div class="item-ic">'+(r._tipo==='fixa'?'🔒':'📈')+'</div>'+
+      '<div class="item-info"><div class="item-nome">'+r.desc+
+      '<span class="tag" style="background:'+(r._tipo==='fixa'?'rgba(34,197,94,.15)':'rgba(240,196,74,.15)')+';color:'+(r._tipo==='fixa'?'var(--green2)':'var(--gold2)')+'">'+( r._tipo==='fixa'?'Fixa':'Variável')+'</span></div>'+
+      '<div class="item-meta">'+fmtD(r.data)+(r.obs?' · '+r.obs:'')+'</div></div>'+
+      '<div class="item-val pos">+'+fmt(r.val)+'</div>'+
+      '<button style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.76rem;padding:3px" data-id="'+r.id+'" data-tipo="'+r._tipo+'" onclick="editarReceitaBtn(this)" title="Editar">✏️</button>'+
+      '<button class="item-del" data-id="'+r.id+'" data-tipo="'+r._tipo+'" onclick="delReceitaBtn(this)">&#x2715;</button></div>';
+  }).join('');
+}
+async function addReceita(){
+  var desc=document.getElementById('r-desc').value.trim();
+  var val=parseFloat(document.getElementById('r-val').value)||0;
+  var tipo=document.getElementById('r-tipo').value;
+  var cart=parseInt(document.getElementById('r-carteira').value)||0;
+  var data=document.getElementById('r-data').value||hoje();
+  var obs=document.getElementById('r-obs').value.trim();
+  if(!desc||!val){alert('Preencha descrição e valor!');return;}
+  var item={id:Date.now(),desc:desc,val:val,data:data,obs:obs,carteira:cart};
+  if(tipo==='fixa'){
+    var fixas=JSON.parse(localStorage.getItem(docIdG('receitas_fixas'))||'[]');fixas.push(item);
+    await set(docIdG('receitas_fixas'),JSON.stringify(fixas));
+  } else {
+    var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');vars.push(item);
+    await set(docId()+'_receitas_var',JSON.stringify(vars));
+  }
+  if(cart&&val) await creditarCarteira(cart,val,desc);
+  ['r-desc','r-val','r-obs'].forEach(function(id){var el=document.getElementById(id);if(el) el.value='';});
+  var rd=document.getElementById('r-data');if(rd) rd.value=hoje();
+  renderAll();mostrarToast('✅ Renda adicionada!');
+}
+
+// ══ RECORRENTES ══
+function renderRecorrentes(){
+  var recs=JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
+  var ativos=recs.filter(recorrenteAtivo);
+  window._totalRecorrentes=ativos.reduce(function(a,r){return a+r.val;},0);
+  var el=document.getElementById('lista-recorrentes');if(!el) return;
+  if(!recs.length){el.innerHTML='<div class="vazio">Nenhum recorrente cadastrado 🔄</div>';return;}
+  var CAT_IC={assinatura:'📱',saude:'💊',educacao:'📚',seguro:'🛡️',outros:'📦'};
+  el.innerHTML=recs.map(function(r){
+    var ativo=recorrenteAtivo(r);var parc=parcelaAtual(r);
+    return '<div class="item" style="opacity:'+(ativo?'1':'0.45')+'">'+
+      '<div class="item-ic">'+(CAT_IC[r.cat]||'📦')+'</div>'+
+      '<div class="item-info"><div class="item-nome">'+r.desc+
+      '<span class="tag" style="background:'+(r.tipo==='fixo'?'rgba(34,197,94,.15)':'rgba(245,166,35,.15)')+';color:'+(r.tipo==='fixo'?'var(--green2)':'var(--gold2)')+'">'+( r.tipo==='fixo'?'🔒 Fixo':'🔔 Recorrente')+'</span>'+
+      (r.meses>0?'<span class="tag" style="background:rgba(139,92,246,.15);color:var(--invest2)">'+parc+'/'+r.meses+'</span>':'')+
+      '</div><div class="item-meta">Dia '+r.dia+' de cada mês'+(r.obs?' · '+r.obs:'')+(ativo?'':' — Encerrado')+'</div></div>'+
+      '<div class="item-val neg">'+fmt(r.val)+'/mês</div>'+
+      '<button style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.76rem;padding:3px" data-id="'+r.id+'" onclick="editarRecBtn(this)" title="Editar">✏️</button>'+
+      '<button class="item-del" data-id="'+r.id+'" onclick="delRecorrenteBtn(this)">&#x2715;</button></div>';
+  }).join('');
+}
+
+// ══ CARTEIRAS ══
+async function addCarteira(){
+  var nome=document.getElementById('ck-nome').value.trim();
+  var icon=document.getElementById('ck-icon').value.trim()||'💳';
+  var tipo=document.getElementById('ck-tipo').value;
+  var saldo=parseFloat(document.getElementById('ck-saldo').value)||0;
+  var lim=parseFloat(document.getElementById('ck-limite').value)||0;
+  var alerta=parseFloat(document.getElementById('ck-alerta').value)||0;
+  if(!nome){alert('Digite o nome!');return;}
+  var cart=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
+  cart.push({id:Date.now(),nome:nome,icon:icon,tipo:tipo,saldo:saldo,limite:lim,alerta:alerta,fatura:0});
+  await set(docIdG('carteiras'),JSON.stringify(cart));
+  ['ck-nome','ck-icon','ck-saldo','ck-limite','ck-alerta'].forEach(function(id){var el=document.getElementById(id);if(el) el.value='';});
+  renderCarteiras();mostrarToast('✅ Conta adicionada!');
+}
+async function creditarCarteira(id,val,desc){
+  if(!id||!val) return;
+  var cart=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
+  cart=cart.map(function(c){if(c.id===id) c.saldo=(c.saldo||0)+val;return c;});
+  await set(docIdG('carteiras'),JSON.stringify(cart));
+}
+async function debitarCarteira(id,val,desc,isCredito){
+  if(!id||!val) return;
+  var cart=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
+  cart=cart.map(function(c){if(c.id===id){if(isCredito) c.fatura=(c.fatura||0)+val;else c.saldo=(c.saldo||0)-val;}return c;});
+  await set(docIdG('carteiras'),JSON.stringify(cart));
+}
+async function renderCarteiras(){
+  var cart=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
+  var sels=[
+    {id:'g-carteira',all:true},{id:'r-carteira',debit:true},
+    {id:'transf-de',all:true},{id:'transf-para',all:true},
+    {id:'fatura-cartao',credit:true},{id:'fatura-conta',debit:true}
+  ];
+  sels.forEach(function(s){
+    var sel=document.getElementById(s.id);if(!sel) return;
+    var curr=sel.value;sel.innerHTML='<option value="">— Nenhuma —</option>';
+    cart.forEach(function(c){
+      if(s.credit&&c.tipo!=='credito') return;
+      if(s.debit&&c.tipo==='credito') return;
+      var opt=document.createElement('option');opt.value=c.id;opt.textContent=c.icon+' '+c.nome;sel.appendChild(opt);
+    });
+    if(curr) sel.value=curr;
+  });
+  var frEl=document.getElementById('fatura-resumo');
+  if(frEl){
+    var creds=cart.filter(function(c){return c.tipo==='credito'&&(c.fatura||0)>0;});
+    frEl.innerHTML=creds.length?creds.map(function(c){
+      return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.76rem"><span>'+c.icon+' '+c.nome+'</span><span style="color:var(--red2);font-family:DM Mono,monospace">'+fmt(c.fatura)+'</span></div>';
+    }).join(''):'<div style="font-size:.74rem;color:var(--green2)">✅ Sem faturas em aberto</div>';
+  }
+  var saldoTotal=cart.filter(function(c){return c.tipo!=='credito';}).reduce(function(a,c){return a+(c.saldo||0);},0);
+  var totalEl=document.getElementById('saldo-total-el');
+  if(totalEl) totalEl.innerHTML='<div style="background:linear-gradient(135deg,rgba(26,46,140,.2),var(--surface));border:1px solid rgba(37,65,196,.3);border-radius:12px;padding:14px;display:flex;justify-content:space-between;align-items:center"><div style="font-size:.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Saldo total em conta</div><div style="font-family:DM Mono,monospace;font-size:1.2rem;color:var(--green2)">'+fmt(saldoTotal)+'</div></div>';
+  var alertasEl=document.getElementById('carteiras-alertas');
+  if(alertasEl){
+    var als=cart.filter(function(c){return c.alerta>0&&(c.saldo||0)<=c.alerta;});
+    alertasEl.innerHTML=als.map(function(c){return '<div class="alerta-banner"><div class="ab-icon">⚠️</div><div><h4>Saldo baixo — '+c.nome+'</h4><p>Saldo: '+fmt(c.saldo)+' | Alerta: '+fmt(c.alerta)+'</p></div></div>';}).join('');
+  }
+  var grid=document.getElementById('carteiras-grid');if(!grid) return;
+  if(!cart.length){grid.innerHTML='<div class="vazio" style="grid-column:1/-1">Nenhuma conta cadastrada 💳</div>';return;}
+  grid.innerHTML=cart.map(function(c){
+    var isC=c.tipo==='credito';
+    var pctLim=isC&&c.limite>0?Math.min((c.fatura||0)/c.limite*100,100).toFixed(0):0;
+    return '<div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid '+(isC?'var(--red2)':'var(--blue2)')+';border-radius:13px;padding:13px;position:relative">'+
+      '<button class="ck-del" data-id="'+c.id+'" onclick="delCkBtn(this)" style="position:absolute;top:8px;right:8px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.72rem">✕</button>'+
+      '<div style="font-size:1.6rem;margin-bottom:6px">'+c.icon+'</div>'+
+      '<div style="font-weight:700;font-size:.84rem;margin-bottom:2px">'+c.nome+'</div>'+
+      '<div style="font-size:.64rem;color:var(--muted)">'+c.tipo+'</div>'+
+      '<div style="font-family:DM Mono,monospace;font-size:1.15rem;margin-top:5px;color:'+(isC?'var(--red2)':(c.saldo||0)<0?'var(--red2)':'var(--green2)')+'">'+
+      (isC?'Fatura: '+fmt(c.fatura||0):fmt(c.saldo||0))+'</div>'+
+      (isC&&c.limite>0?'<div style="font-size:.68rem;color:var(--muted)">Disponível: '+fmt(c.limite-(c.fatura||0))+'</div><div style="height:4px;background:var(--bg2);border-radius:99px;overflow:hidden;margin-top:5px"><div style="height:100%;background:var(--red2);width:'+pctLim+'%;border-radius:99px"></div></div>':'')+
+      ((c.alerta>0&&(c.saldo||0)<=c.alerta)?'<div style="font-size:.66rem;color:var(--red2);margin-top:4px">⚠️ Saldo baixo!</div>':'')+
+      '<div style="display:flex;gap:5px;margin-top:9px;align-items:center">'+
+      '<input type="number" placeholder="'+(isC?'Nova fatura':'Novo saldo')+'" id="ns-'+c.id+'" style="flex:1;font-size:.76rem;padding:5px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--text)"/>'+
+      '<button class="btn-sm" style="font-size:.7rem;padding:5px 9px" data-id="'+c.id+'" onclick="atualizarSaldoBtn(this)">'+(isC?'Fat':'Sal')+'</button>'+
+      '</div></div>';
+  }).join('');
+}
+
+// ══ INVESTIMENTOS ══
+async function addInvestimento(){
+  var desc=document.getElementById('inv-desc').value.trim();
+  var val=parseFloat(document.getElementById('inv-val').value)||0;
+  var tipo=document.getElementById('inv-tipo').value;
+  var data=document.getElementById('inv-data').value||hoje();
+  var obs=document.getElementById('inv-obs').value.trim();
+  if(!desc||!val){alert('Preencha descrição e valor!');return;}
+  var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]');
+  invs.push({id:Date.now(),desc:desc,valor:val,tipo:tipo,data:data,obs:obs});
+  await set(docId()+'_invs',JSON.stringify(invs));
+  ['inv-desc','inv-val','inv-obs'].forEach(function(id){var el=document.getElementById(id);if(el) el.value='';});
+  var id2=document.getElementById('inv-data');if(id2) id2.value=hoje();
+  renderInvestimentos();mostrarToast('✅ Investimento registrado!');
+}
+async function renderInvestimentos(){
+  var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]');
+  var total=invs.reduce(function(a,i){return a+i.valor;},0);
+  window._totalInv=total;
+  var el=document.getElementById('inv-resumo');
+  if(el) el.innerHTML=total>0?'<div class="mini-card"><div class="lbl">Total investido este mês</div><div class="val" style="color:var(--green2)">'+fmt(total)+'</div></div>':'';
+  var listEl=document.getElementById('lista-investimentos');if(!listEl) return;
+  if(!invs.length){listEl.innerHTML='<div class="vazio">Nenhum investimento este mês 📈</div>';return;}
+  var TIPOS={tesouro:'🏛️',cdb:'🏦',acoes:'📈',fii:'🏢',cripto:'₿',poupanca:'🐷',outros:'📦'};
+  listEl.innerHTML=invs.map(function(i){
+    return '<div class="item">'+
+      '<div class="item-ic">'+(TIPOS[i.tipo]||'📦')+'</div>'+
+      '<div class="item-info"><div class="item-nome">'+i.desc+'</div>'+
+      '<div class="item-meta">'+fmtD(i.data)+' · '+i.tipo+(i.obs?' · '+i.obs:'')+'</div></div>'+
+      '<div class="item-val pos">'+fmt(i.valor)+'</div>'+
+      '<button class="item-del" data-id="'+i.id+'" onclick="delInvBtn(this)">&#x2715;</button></div>';
+  }).join('');
+}
+
+// ══ RELATÓRIO ══
+function renderRelatorio(){
+  var gastos=carregarGastos();
+  var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]');
+  var moto=carregarMoto();var casa=carregarCasa();
+  var obras=JSON.parse(localStorage.getItem(docId()+'_obras')||'[]');
+  var fins=carregarFins();
+  var assns=carregarAssinaturas();
+  var renda=window._totalRenda||0;
+  var gastoCat={};gastos.forEach(function(g){gastoCat[g.cat]=(gastoCat[g.cat]||0)+g.valor;});
+  var totalGasto=Object.values(gastoCat).reduce(function(a,v){return a+v;},0);
+  var totalObras=obras.reduce(function(a,o){return a+o.valor;},0);
+  var totalFin=(moto.parcela||0)+(casa.parcela||0)+totalObras+fins.reduce(function(a,f){return a+f.parcela;},0);
+  var totalAssn=assns.reduce(function(a,s){return a+s.val;},0);
+  var totalInv=invs.reduce(function(a,i){return a+i.valor;},0);
+  var totalRec=window._totalRecorrentes||0;
+  var lucro=renda-totalGasto-totalFin-totalAssn-totalRec-totalInv;
+  var el=document.getElementById('relatorio-el');if(!el) return;
+  var CAT_IC={alimentacao:'🛒',mercado:'🏪',restaurante:'🍽️',transporte:'🚗',saude:'💊',pessoal:'👤',lazer:'🎬',seguro:'🛡️',educacao:'📚',outros:'📦'};
+  el.innerHTML=
+    '<div class="form-box"><div class="form-tit"><span class="bar" style="background:var(--green2)"></span>'+MESES[mes]+'/'+ano+' — RECEITAS</div>'+
+    '<div style="display:flex;justify-content:space-between;padding:7px 0;font-size:.82rem"><span style="color:var(--muted)">Total receitas</span><span style="font-family:DM Mono,monospace;color:var(--green2)">'+fmt(renda)+'</span></div></div>'+
+    '<div class="form-box"><div class="form-tit"><span class="bar" style="background:var(--red2)"></span>FINANCIAMENTOS</div>'+
+    (moto.parcela?'<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.79rem"><span style="color:var(--muted)">🏍️ Moto ('+moto.atual+'/'+moto.total+')</span><span style="font-family:DM Mono,monospace">'+fmt(moto.parcela)+'</span></div>':'')+
+    (casa.parcela?'<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.79rem"><span style="color:var(--muted)">🏠 Casa ('+casa.atual+'/'+casa.total+')</span><span style="font-family:DM Mono,monospace">'+fmt(casa.parcela)+'</span></div>':'')+
+    (totalObras>0?'<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.79rem"><span style="color:var(--muted)">🔧 Taxa de obra</span><span style="font-family:DM Mono,monospace">'+fmt(totalObras)+'</span></div>':'')+
+    '<div style="display:flex;justify-content:space-between;padding:7px 0;font-size:.82rem;font-weight:700"><span>Total financiamentos</span><span style="font-family:DM Mono,monospace;color:var(--red2)">'+fmt(totalFin)+'</span></div></div>'+
+    (totalAssn>0?'<div class="form-box"><div class="form-tit"><span class="bar" style="background:var(--invest2)"></span>ASSINATURAS</div>'+
+    '<div style="display:flex;justify-content:space-between;padding:7px 0;font-size:.82rem;font-weight:700"><span>Total assinaturas</span><span style="font-family:DM Mono,monospace;color:var(--invest2)">'+fmt(totalAssn)+'</span></div></div>':'')+
+    '<div class="form-box"><div class="form-tit"><span class="bar" style="background:var(--warn2)"></span>GASTOS</div>'+
+    Object.keys(gastoCat).map(function(cat){return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.79rem"><span style="color:var(--muted)">'+(CAT_IC[cat]||'📦')+' '+cat+'</span><span style="font-family:DM Mono,monospace">'+fmt(gastoCat[cat])+'</span></div>';}).join('')+
+    '<div style="display:flex;justify-content:space-between;padding:7px 0;font-size:.82rem;font-weight:700"><span>Total gastos</span><span style="font-family:DM Mono,monospace;color:var(--warn2)">'+fmt(totalGasto)+'</span></div></div>'+
+    (totalInv>0?'<div class="form-box"><div class="form-tit"><span class="bar" style="background:var(--green2)"></span>INVESTIMENTOS</div>'+
+    '<div style="display:flex;justify-content:space-between;padding:7px 0;font-size:.82rem;font-weight:700"><span>Total investido</span><span style="font-family:DM Mono,monospace;color:var(--green2)">'+fmt(totalInv)+'</span></div></div>':'')+
+    '<div class="form-box" style="border-color:'+(lucro>=0?'var(--green2)':'var(--red2)')+';background:'+(lucro>=0?'rgba(34,197,94,.05)':'rgba(224,48,48,.05)')+'">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center">'+
+    '<div style="font-family:Bebas Neue,sans-serif;letter-spacing:2px;font-size:1rem;color:var(--gold2)">SALDO DO MÊS</div>'+
+    '<div style="font-family:DM Mono,monospace;font-size:1.2rem;color:'+(lucro>=0?'var(--green2)':'var(--red2)')+';font-weight:700">'+fmt(lucro)+'</div></div>'+
+    (renda>0?'<div style="font-size:.7rem;color:var(--muted);margin-top:5px">Margem: '+(lucro/renda*100).toFixed(1)+'%</div>':'')+
+    '</div>';
+}
+function copiarRelatorio(){
+  var el=document.getElementById('relatorio-el');if(!el) return;
+  navigator.clipboard.writeText(el.innerText).then(function(){mostrarToast('✅ Copiado!');}).catch(function(){
+    var ta=document.createElement('textarea');ta.value=el.innerText;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);mostrarToast('✅ Copiado!');
+  });
+}
+function imprimirRelatorio(){
+  var el=document.getElementById('relatorio-el');
+  var win=window.open('','_blank');
+  win.document.write('<html><head><title>PADOTY Finance — '+MESES[mes]+'/'+ano+'</title><style>body{font-family:Arial,sans-serif;padding:28px;max-width:600px;margin:0 auto;}</style></head><body>');
+  win.document.write('<h2>PADOTY Finance — '+MESES[mes]+'/'+ano+'</h2>');
+  win.document.write(el?el.innerHTML:'');
+  win.document.write('</body></html>');
+  win.document.close();setTimeout(function(){win.print();},500);
+}
+function exportarCSV(){
+  var gastos=carregarGastos();
+  var linhas=['Descricao,Valor,Categoria,Pagamento,Data,Obs'];
+  gastos.forEach(function(g){linhas.push('"'+(g.desc||'').replace(/"/g,'""')+'",'+
+    (g.valor||0).toFixed(2).replace('.',',')+','+(g.cat||'')+','+(g.pag||'')+','+(g.data||'')+','+'"'+(g.obs||'').replace(/"/g,'""')+'"');});
+  var sep=String.fromCharCode(13)+String.fromCharCode(10);
+  var blob=new Blob([linhas.join(sep)],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download='padoty_finance_'+MESES[mes]+'_'+ano+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+
+// ══ ORÇAMENTO ══
+async function salvarOrcamento(){
+  var cat=document.getElementById('orc-cat').value;
+  var val=parseFloat(document.getElementById('orc-val').value)||0;
+  if(!val){alert('Digite um valor!');return;}
+  var orcs=JSON.parse(localStorage.getItem(docIdG('orcamentos'))||'{}');orcs[cat]=val;
+  await set(docIdG('orcamentos'),JSON.stringify(orcs));
+  var ov=document.getElementById('orc-val');if(ov) ov.value='';
+  renderOrcamento();mostrarToast('✅ Limite salvo!');
+}
+function renderOrcamento(){
+  var orcs=JSON.parse(localStorage.getItem(docIdG('orcamentos'))||'{}');
+  var gastos=carregarGastos();var gastoCat={};
+  gastos.forEach(function(g){gastoCat[g.cat]=(gastoCat[g.cat]||0)+g.valor;});
+  var el=document.getElementById('orc-cats-el');
+  if(el){
+    var cats=Object.keys(orcs);
+    el.innerHTML=!cats.length?'<div class="vazio">Defina limites abaixo 🎯</div>':
+      cats.map(function(cat){
+        var lim=orcs[cat];var gasto=gastoCat[cat]||0;var pct=Math.min(gasto/lim*100,100).toFixed(0);var over=gasto>lim;
+        var cor=over?'var(--red2)':parseInt(pct)>80?'var(--warn2)':'var(--green2)';
+        return '<div style="margin-bottom:11px"><div style="display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:3px"><span>'+cat+'</span>'+
+          '<span style="font-family:DM Mono,monospace;color:var(--muted)">'+fmt(gasto)+' / '+fmt(lim)+'</span></div>'+
+          '<div style="height:6px;background:var(--bg2);border-radius:99px;overflow:hidden"><div style="height:100%;border-radius:99px;background:'+cor+';width:'+pct+'%"></div></div>'+
+          (over?'<div style="font-size:.66rem;color:var(--red2);margin-top:2px">⚠️ Excedeu '+fmt(gasto-lim)+'</div>':'')+
+          '</div>';
+      }).join('');
+  }
+  renderScore(gastoCat,orcs);
+  renderComparativo();
+}
+
+// ══ METAS ══
+async function addMeta(){
+  var desc=document.getElementById('meta-desc').value.trim();
+  var total=parseFloat(document.getElementById('meta-total').value)||0;
+  var atual=parseFloat(document.getElementById('meta-atual').value)||0;
+  var prazo=document.getElementById('meta-prazo').value;
+  var icon=document.getElementById('meta-icon').value.trim()||'🎯';
+  if(!desc||!total){alert('Preencha descrição e valor!');return;}
+  var metas=JSON.parse(localStorage.getItem(docIdG('metas'))||'[]');
+  metas.push({id:Date.now(),desc:desc,total:total,atual:atual,prazo:prazo,icon:icon});
+  await set(docIdG('metas'),JSON.stringify(metas));
+  ['meta-desc','meta-total','meta-atual','meta-prazo','meta-icon'].forEach(function(id){var el=document.getElementById(id);if(el) el.value='';});
+  renderMetas();mostrarToast('✅ Meta adicionada!');
+}
+function renderMetas(){
+  var gastos=carregarGastos();var renda=window._totalRenda||0;
+  var totalGasto=gastos.reduce(function(a,g){return a+g.valor;},0)+(window._totalFinanc||0);
+  var saldo=renda-totalGasto;var inv=window._totalInv||0;
+  var conqEl=document.getElementById('conquistas-el');
+  if(conqEl){
+    var conqs=[
+      {icon:'💰',t:'Mês Positivo',d:'Fechar no azul',ok:saldo>0},
+      {icon:'📈',t:'Investidor',d:'10%+ da renda',ok:renda>0&&inv/renda>=0.1},
+      {icon:'🎯',t:'Controlado',d:'Gastos abaixo de 70%',ok:renda>0&&totalGasto/renda<0.7},
+      {icon:'⚡',t:'Ativo',d:'10+ lançamentos',ok:gastos.length>10},
+      {icon:'🔄',t:'Planejado',d:'Tem recorrentes',ok:(window._totalRecorrentes||0)>0},
+      {icon:'📱',t:'Consciente',d:'Assinaturas mapeadas',ok:(window._totalAssinaturas||0)>0},
+    ];
+    conqEl.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px">'+
+      conqs.map(function(c){return '<div style="background:var(--surface);border:1px solid '+(c.ok?'var(--green2)':'var(--border)')+';border-radius:11px;padding:12px;text-align:center;opacity:'+(c.ok?'1':'0.4')+'">'+
+        '<div style="font-size:1.6rem;margin-bottom:4px">'+c.icon+'</div>'+
+        '<div style="font-weight:700;font-size:.76rem">'+c.t+'</div>'+
+        '<div style="font-size:.64rem;color:var(--muted);margin-top:2px">'+c.d+'</div>'+
+        (c.ok?'<div style="font-size:.66rem;color:var(--green2);margin-top:4px;font-weight:700">✅</div>':'<div style="font-size:.66rem;color:var(--muted);margin-top:4px">🔒</div>')+
+        '</div>';}).join('')+'</div>';
+  }
+  var metas=JSON.parse(localStorage.getItem(docIdG('metas'))||'[]');
+  var listEl=document.getElementById('lista-metas');if(!listEl) return;
+  if(!metas.length){listEl.innerHTML='<div class="vazio">Nenhuma meta cadastrada 🎯</div>';return;}
+  listEl.innerHTML=metas.map(function(m){
+    var pct=Math.min(m.atual/m.total*100,100).toFixed(0);
+    return '<div class="form-box" style="margin-bottom:9px">'+
+      '<div style="display:flex;align-items:center;gap:9px;margin-bottom:9px">'+
+      '<div style="font-size:1.6rem">'+m.icon+'</div>'+
+      '<div style="flex:1"><div style="font-weight:700">'+m.desc+'</div>'+
+      '<div style="font-size:.7rem;color:var(--muted)">'+(m.prazo?'Prazo: '+fmtD(m.prazo):'Sem prazo')+'</div></div>'+
+      '<button class="item-del" data-id="'+m.id+'" onclick="delMetaBtn(this)">✕</button></div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:.74rem;margin-bottom:3px"><span style="color:var(--muted)">'+fmt(m.atual)+' / '+fmt(m.total)+'</span><span style="color:var(--gold2);font-weight:700">'+pct+'%</span></div>'+
+      '<div style="height:7px;background:var(--bg2);border-radius:99px;overflow:hidden"><div style="height:100%;border-radius:99px;background:var(--gold2);width:'+pct+'%"></div></div>'+
+      '<div style="font-size:.7rem;color:var(--muted);margin-top:3px">Falta: '+fmt(m.total-m.atual)+'</div></div>';
+  }).join('');
+}
+
+// ══ RESUMO ══
+function renderResumo(){
+  var pEl=document.getElementById('resumo-periodo');if(pEl) pEl.textContent=MESES[mes]+' '+ano;
+  var gastos=carregarGastos();var renda=window._totalRenda||0;
+  var totalGasto=gastos.reduce(function(a,g){return a+g.valor;},0);
+  var totalFin=window._totalFinanc||0;var totalRec=window._totalRecorrentes||0;var totalAssn=window._totalAssinaturas||0;
+  var totalTudo=totalGasto+totalFin+totalRec+totalAssn;var saldo=renda-totalTudo;
+  var hj=new Date().toISOString().split('T')[0];
+  var gastoHoje=gastos.filter(function(g){return g.data===hj;}).reduce(function(a,g){return a+g.valor;},0);
+  var diaAtual=new Date().getDate();var diasMes=new Date(ano,mes+1,0).getDate();
+  var media=diaAtual>0?totalGasto/diaAtual:0;var proj=media*diasMes;
+  // Alertas
+  var alertasEl=document.getElementById('resumo-alertas');
+  if(alertasEl){
+    var urg=[];
+    JSON.parse(localStorage.getItem(docIdG('contas'))||'[]').filter(function(c){return !c.pago&&diasParaVencer(c.dia)<=3;}).forEach(function(c){urg.push({nome:c.nome,valor:c.valor,dia:c.dia});});
+    carregarMoto().parcela&&diasParaVencer(parseInt((carregarMoto().data||'').split('-')[2]||'1'))<=3&&urg.push({nome:'🏍️ Moto',valor:carregarMoto().parcela,dia:parseInt((carregarMoto().data||'').split('-')[2]||'1')});
+    carregarCasa().parcela&&diasParaVencer(parseInt((carregarCasa().data||'').split('-')[2]||'1'))<=3&&urg.push({nome:'🏠 Casa',valor:carregarCasa().parcela,dia:parseInt((carregarCasa().data||'').split('-')[2]||'1')});
+    carregarAssinaturas().filter(function(a){return diasParaVencer(a.dia)<=3;}).forEach(function(a){urg.push({nome:a.nome,valor:a.val,dia:a.dia});});
+    alertasEl.innerHTML=urg.map(function(c){
+      return '<div class="alerta-banner"><div class="ab-icon">🔔</div><div><h4>'+c.nome+' vence em '+diasParaVencer(c.dia)+'d!</h4><p>'+fmt(c.valor)+'</p></div></div>';
+    }).join('');
+  }
+  var cardsEl=document.getElementById('resumo-cards');
+  if(cardsEl) cardsEl.innerHTML=
+    '<div class="mini-card" style="border-top:2px solid var(--green2)"><div class="lbl">💰 Renda</div><div class="val" style="color:var(--green2)">'+fmt(renda)+'</div></div>'+
+    '<div class="mini-card" style="border-top:2px solid var(--red2)"><div class="lbl">💸 Total despesas</div><div class="val" style="color:var(--red2)">'+fmt(totalTudo)+'</div></div>'+
+    '<div class="mini-card" style="border-top:2px solid '+(saldo>=0?'var(--green2)':'var(--red2)')+'"><div class="lbl">🏦 Saldo</div><div class="val" style="color:'+(saldo>=0?'var(--green2)':'var(--red2)')+'">'+fmt(saldo)+'</div></div>'+
+    '<div class="mini-card" style="border-top:2px solid var(--warn2)"><div class="lbl">⚡ Hoje</div><div class="val" style="color:var(--warn2)">'+fmt(gastoHoje)+'</div></div>';
+  var fluxoEl=document.getElementById('resumo-fluxo');
+  if(fluxoEl) fluxoEl.innerHTML=
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;font-size:.75rem">'+
+    '<div style="flex:1;min-width:100px"><span style="color:var(--muted)">🏍️ Moto</span><br/><strong style="font-family:DM Mono,monospace;color:var(--red2)">'+fmt(window._totalFinMoto||0)+'</strong></div>'+
+    '<div style="flex:1;min-width:100px"><span style="color:var(--muted)">🏠 Casa</span><br/><strong style="font-family:DM Mono,monospace;color:var(--blue2)">'+fmt(window._totalFinCasa||0)+'</strong></div>'+
+    '<div style="flex:1;min-width:100px"><span style="color:var(--muted)">Projeção mês</span><br/><strong style="font-family:DM Mono,monospace;color:'+(proj>renda?'var(--red2)':'var(--text)')+'">'+fmt(proj)+'</strong></div>'+
+    '<div style="flex:1;min-width:100px"><span style="color:var(--muted)">Dia '+diaAtual+'/'+diasMes+'</span><br/><strong style="font-family:DM Mono,monospace">'+(diaAtual/diasMes*100).toFixed(0)+'% do mês</strong></div>'+
+    '</div>';
+  // Gráfico categorias
+  var grafEl=document.getElementById('resumo-grafico');
+  if(grafEl){
+    var gastoCat={};gastos.forEach(function(g){gastoCat[g.cat]=(gastoCat[g.cat]||0)+g.valor;});
+    var totalC=Object.values(gastoCat).reduce(function(a,v){return a+v;},0);
+    if(!totalC){grafEl.innerHTML='<div class="vazio">Lance gastos para ver o gráfico</div>';}
+    else{
+      var CORES={alimentacao:'#e03030',mercado:'#c0392b',restaurante:'#e87c2d',transporte:'#f5a623',saude:'#8b5cf6',pessoal:'#2541c4',lazer:'#d4a830',seguro:'#1a7a4a',educacao:'#06b6d4',outros:'#5a6a90'};
+      var itens=Object.keys(gastoCat).filter(function(k){return gastoCat[k]>0;}).sort(function(a,b){return gastoCat[b]-gastoCat[a];});
+      grafEl.innerHTML='<div style="display:flex;flex-direction:column;gap:7px">'+
+        itens.map(function(k){var v=gastoCat[k],pct=(v/totalC*100).toFixed(1),w=Math.max(2,v/totalC*100).toFixed(0);
+          return '<div><div style="display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:3px"><span style="font-weight:600">'+k+'</span><span style="font-family:DM Mono,monospace;color:var(--muted)">'+fmt(v)+' ('+pct+'%)</span></div>'+
+            '<div style="height:6px;background:var(--bg2);border-radius:99px;overflow:hidden"><div style="height:100%;border-radius:99px;background:'+(CORES[k]||'var(--muted)')+';width:'+w+'%;transition:width .5s"></div></div></div>';
+        }).join('')+'</div>';
+    }
+  }
+  renderGraficoPatrimonio();
+}
+
+// ══ HISTÓRICO MOTO ══
+function carregarHistMoto(){var r=localStorage.getItem(docIdG('hist_moto'));return r?JSON.parse(r):[];}
+async function salvarHistMoto(h){await set(docIdG('hist_moto'),JSON.stringify(h));}
+async function addHistoricoMoto(){
+  var val=parseFloat(document.getElementById('hist-moto-val').value)||0;
+  var data=document.getElementById('hist-moto-data').value||hoje();
+  var obs=document.getElementById('hist-moto-obs').value.trim();
+  if(!val){alert('Digite o valor!');return;}
+  var hist=carregarHistMoto();
+  hist.push({id:Date.now(),valor:val,data:data,obs:obs});
+  await salvarHistMoto(hist);
+  document.getElementById('hist-moto-val').value='';document.getElementById('hist-moto-obs').value='';
+  renderHistoricoMoto();mostrarToast('✅ Pagamento registrado!');
+}
+async function delHistMoto(id){
+  var hist=carregarHistMoto().filter(function(h){return h.id!==id;});
+  await salvarHistMoto(hist);renderHistoricoMoto();
+}
+function renderHistoricoMoto(){
+  var hist=carregarHistMoto();
+  hist.sort(function(a,b){return(b.data||'').localeCompare(a.data||'');});
+  var total=hist.reduce(function(a,h){return a+h.valor;},0);
+  var resumoEl=document.getElementById('moto-historico-resumo');
+  if(resumoEl) resumoEl.innerHTML=total>0?'<div class="mini-card" style="margin-bottom:8px"><div class="lbl">🏍️ Total pago no financiamento</div><div class="val" style="color:var(--red2)">'+fmt(total)+'</div></div>':'';
+  var listEl=document.getElementById('lista-historico-moto');
+  if(!listEl) return;
+  if(!hist.length){listEl.innerHTML='<div style="font-size:.76rem;color:var(--muted);padding:8px">Nenhum pagamento registrado ainda.</div>';return;}
+  listEl.innerHTML=hist.map(function(h){
+    return '<div class="item" style="margin-bottom:4px">'+
+      '<div class="item-ic">🏍️</div>'+
+      '<div class="item-info"><div class="item-nome">Parcela'+(h.obs?' — '+h.obs:'')+'</div>'+
+      '<div class="item-meta">'+fmtD(h.data)+'</div></div>'+
+      '<div class="item-val neg">'+fmt(h.valor)+'</div>'+
+      '<button class="item-del" data-id="'+h.id+'" onclick="delHistMotoBtn(this)">&#x2715;</button></div>';
+  }).join('');
+}
+function delHistMotoBtn(btn){delHistMoto(parseInt(btn.dataset.id));}
 
 // ══ RENDER ALL ══
 
