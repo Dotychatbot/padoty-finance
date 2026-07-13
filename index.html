@@ -1408,13 +1408,6 @@ async function addObra(){
   renderFinanciamentos();
 }
 
-async function delObra(id){
-  var obras = JSON.parse(localStorage.getItem(docId()+'_obras')||'[]');
-  obras = obras.filter(function(o){ return o.id!==id; });
-  await set(docId()+'_obras', JSON.stringify(obras));
-  renderFinanciamentos();
-}
-
 async function carregarMoto(){var r=localStorage.getItem(docIdG('fin_moto'));return r?JSON.parse(r):{parcela:0,atual:1,total:0,data:'',obs:''};}
 function carregarCasa(){var r=localStorage.getItem(docIdG('fin_casa'));return r?JSON.parse(r):{parcela:0,atual:1,total:0,data:'',obs:''};}
 async function salvarConfigMoto(){
@@ -1556,8 +1549,6 @@ function renderFinanciamentos(){
   }
 }
 function delObraBtn(btn){delObra(parseInt(btn.dataset.id));}
-
-function delFinBtn(btn){if(confirm('Remover este financiamento?')) delFinanciamento(parseInt(btn.dataset.id));}
 function delExtraBtn(btn){delExtra(parseInt(btn.dataset.fid),parseInt(btn.dataset.eid));}
 function abrirExtraBtn(btn){abrirModalExtra(parseInt(btn.dataset.id),btn.dataset.nome);}
 
@@ -1606,7 +1597,6 @@ function renderAssinaturas(){
       '<button class="item-edit" data-id="'+a.id+'" onclick="editarAssnBtn(this)" title="Editar" style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.76rem;padding:3px">✏️</button>'+'<button class="item-del" data-id="'+a.id+'" onclick="delAssnBtn(this)">&#x2715;</button></div>';
   }).join('');
 }
-function delAssnBtn(btn){delAssinatura(parseInt(btn.dataset.id));}
 
 // ══ EDITAR GASTO ══
 function abrirEdicao(id){
@@ -1688,21 +1678,6 @@ async function updateSFHoras(modId, horas){
   h[modId] = parseFloat(horas)||0;
   await salvarSFHoras(h);
   renderSkyFitTotal();
-}
-
-async function addPersonalSkyFit(){
-  var aluno = document.getElementById('sf-pt-aluno').value.trim();
-  var val   = parseFloat(document.getElementById('sf-pt-val').value)||0;
-  var tipo  = document.getElementById('sf-pt-tipo').value;
-  var data  = document.getElementById('sf-pt-data').value||hoje();
-  if(!aluno||!val){alert('Preencha aluno e valor!');return;}
-  var pts = carregarSFPersonais();
-  pts.push({id:Date.now(),aluno:aluno,val:val,tipo:tipo,data:data});
-  await salvarSFPersonais(pts);
-  document.getElementById('sf-pt-aluno').value='';
-  document.getElementById('sf-pt-val').value='';
-  renderSkyFit();
-  mostrarToast('✅ Personal adicionado!');
 }
 
 async function delSFPersonal(id){
@@ -1837,27 +1812,6 @@ function abrirEdicaoFin(id){
   document.getElementById('ef-obs').value=f.obs||'';
   document.getElementById('overlayEditarFin').classList.add('aberto');
 }
-async function salvarEdicaoFin(){
-  var id = parseInt(document.getElementById('ef-id').value);
-  var fins = carregarFins();
-  fins = fins.map(function(f){
-    if(f.id===id){
-      f.nome=document.getElementById('ef-nome').value.trim();
-      f.icon=document.getElementById('ef-icon').value.trim()||'🏦';
-      f.dia=parseInt(document.getElementById('ef-dia').value)||10;
-      f.parcela=parseFloat(document.getElementById('ef-parcela').value)||0;
-      f.atual=parseInt(document.getElementById('ef-atual').value)||1;
-      f.total=parseInt(document.getElementById('ef-total').value)||0;
-      f.obs=document.getElementById('ef-obs').value.trim();
-    }
-    return f;
-  });
-  await salvarFins(fins);
-  fecharModal('overlayEditarFin');
-  renderFinanciamentos();
-  mostrarToast('✅ Financiamento atualizado!');
-}
-function editarFinBtn(btn){abrirEdicaoFin(parseInt(btn.dataset.id));}
 
 // ══ EDITAR RECEITA ══
 function abrirEdicaoReceita(id,tipo){
@@ -1885,7 +1839,6 @@ async function salvarEdicaoReceita(){
   await set(key,JSON.stringify(lista));
   fecharModal('overlayEditarReceita');renderAll();mostrarToast('✅ Receita atualizada!');
 }
-function editarReceitaBtn(btn){abrirEdicaoReceita(parseInt(btn.dataset.id),btn.dataset.tipo);}
 
 // ══ EDITAR ASSINATURA ══
 function abrirEdicaoAssn(id){
@@ -1900,7 +1853,6 @@ async function salvarEdicaoAssn(){
   assns=assns.map(function(a){if(a.id===id){a.nome=document.getElementById('ea-nome').value.trim();a.val=parseFloat(document.getElementById('ea-val').value)||0;a.dia=parseInt(document.getElementById('ea-dia').value)||1;a.obs=document.getElementById('ea-obs').value.trim();}return a;});
   await salvarAssinaturas(assns);fecharModal('overlayEditarAssn');renderAssinaturas();mostrarToast('✅ Assinatura atualizada!');
 }
-function editarAssnBtn(btn){abrirEdicaoAssn(parseInt(btn.dataset.id));}
 
 // ══ EDITAR RECORRENTE ══
 function abrirEdicaoRec(id){
@@ -1915,7 +1867,6 @@ async function salvarEdicaoRec(){
   recs=recs.map(function(r){if(r.id===id){r.desc=document.getElementById('erec-desc').value.trim();r.val=parseFloat(document.getElementById('erec-val').value)||0;r.dia=parseInt(document.getElementById('erec-dia').value)||1;r.obs=document.getElementById('erec-obs').value.trim();}return r;});
   await set(docIdG('recorrentes'),JSON.stringify(recs));fecharModal('overlayEditarRec');renderRecorrentes();mostrarToast('✅ Recorrente atualizado!');
 }
-function editarRecBtn(btn){abrirEdicaoRec(parseInt(btn.dataset.id));}
 
 // ══ EDITAR CONTA A VENCER ══
 function abrirEdicaoConta(id){
@@ -3004,6 +2955,44 @@ function renderHistoricoMoto(){
   }).join('');
 }
 function delHistMotoBtn(btn){delHistMoto(parseInt(btn.dataset.id));}
+
+// ══ IA ANÁLISE ══
+async function analisarIA(){
+  var apiKey=localStorage.getItem('pf_apikey');
+  var btn=document.getElementById('btn-ia');
+  var el=document.getElementById('ia-resultado');
+  if(!apiKey){
+    if(el) el.innerHTML='<div style="background:rgba(224,48,48,.1);border:1px solid rgba(224,48,48,.3);border-radius:10px;padding:12px;font-size:.8rem;color:var(--red2)">Configure sua API key em <strong>Configurações</strong> primeiro!</div>';
+    return;
+  }
+  if(btn){btn.disabled=true;btn.textContent='🤖 Analisando...';}
+  if(el) el.innerHTML='<div style="color:var(--muted);font-size:.8rem;padding:10px">Consultando IA...</div>';
+  var gastos=carregarGastos();var gastoCat={};
+  gastos.forEach(function(g){gastoCat[g.cat]=(gastoCat[g.cat]||0)+g.valor;});
+  var renda=window._totalRenda||0;
+  var totalGasto=Object.values(gastoCat).reduce(function(a,v){return a+v;},0);
+  var totalFin=window._totalFinanc||0;var totalAssn=window._totalAssinaturas||0;
+  var saldo=renda-totalGasto-totalFin-totalAssn;
+  var nl=String.fromCharCode(10);
+  var prompt='Voce e um consultor financeiro pessoal. Analise estes dados:'+nl+
+    'Renda: R$'+renda.toFixed(2)+nl+'Financiamentos: R$'+totalFin.toFixed(2)+nl+
+    'Assinaturas: R$'+totalAssn.toFixed(2)+nl+'Gastos: R$'+totalGasto.toFixed(2)+nl+
+    'Saldo: R$'+saldo.toFixed(2)+nl+nl+
+    'Em 3-4 frases: situacao atual, ponto positivo, 1-2 sugestoes praticas. Portugues Brasil.';
+  try{
+    var resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+    });
+    var data=await resp.json();
+    var texto=data.content&&data.content[0]?data.content[0].text:'Erro.';
+    if(el) el.innerHTML='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:13px;font-size:.82rem;line-height:1.6">'+texto.split(String.fromCharCode(10)).join('<br/>')+'</div>';
+  }catch(e){
+    if(el) el.innerHTML='<div style="color:var(--red2);font-size:.8rem;padding:10px">Erro: '+e.message+'</div>';
+  }
+  if(btn){btn.disabled=false;btn.textContent='🤖 Analisar com IA';}
+}
 
 // ══ RENDER ALL ══
 
