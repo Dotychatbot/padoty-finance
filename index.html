@@ -536,19 +536,56 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
 </section>
 
 <section class="secao" id="sec-receitas">
-  <div class="page-header"><h2>Fontes de Renda</h2><p>Registre toda sua renda do mês</p></div>
-  <div class="form-box">
-    <div class="form-tit"><span class="bar" style="background:var(--green2)"></span>Nova fonte</div>
-    <div class="fields">
-      <div><label>Descrição</label><input type="text" id="r-desc" placeholder="Ex: PADOTY CT, Personal..."/></div>
-      <div><label>Valor (R$)</label><input type="number" id="r-val" placeholder="0,00" min="0" step="0.01"/></div>
-      <div><label>Tipo</label><select id="r-tipo"><option value="fixa">🔒 Fixa (todo mês)</option><option value="variavel">📈 Variável (só este mês)</option></select></div>
-      <div><label>Conta que cai</label><select id="r-carteira"><option value="">— Nenhuma —</option></select></div>
-      <div><label>Data</label><input type="date" id="r-data"/></div>
-      <div class="full"><label>Obs</label><input type="text" id="r-obs" placeholder="Referência..."/></div>
-      <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--green),var(--green2))" onclick="addReceita()">+ Adicionar Renda</button></div>
+  <div class="page-header"><h2>Fontes de Renda 💰</h2><p>Receitas e despesas do mês</p></div>
+
+  <!-- TABS -->
+  <div style="display:flex;gap:8px;margin-bottom:14px">
+    <button id="tab-receita" onclick="switchRecTab('receita')" style="flex:1;padding:10px;border-radius:10px;border:2px solid var(--green2);background:var(--green2);color:#fff;font-weight:700;font-size:.82rem;cursor:pointer">💰 + Renda</button>
+    <button id="tab-despesa" onclick="switchRecTab('despesa')" style="flex:1;padding:10px;border-radius:10px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-weight:700;font-size:.82rem;cursor:pointer">💸 + Despesa</button>
+  </div>
+
+  <!-- FORM RECEITA -->
+  <div id="rec-tab-receita">
+    <div class="form-box" style="margin-bottom:12px">
+      <div class="form-tit"><span class="bar" style="background:var(--green2)"></span>➕ Nova fonte de renda</div>
+      <div class="fields">
+        <div class="full"><label>Descrição</label><input type="text" id="r-desc" placeholder="Ex: Sky Fit, Personal - João, Freela..."/></div>
+        <div><label>Valor (R$)</label><input type="number" id="r-val" placeholder="0,00" min="0" step="0.01"/></div>
+        <div><label>Tipo</label>
+          <select id="r-tipo">
+            <option value="variavel">📈 Variável (só este mês)</option>
+            <option value="fixa">🔒 Fixa (repete todo mês)</option>
+          </select>
+        </div>
+        <div><label>Status</label>
+          <select id="r-status">
+            <option value="confirmado">✅ Já recebi</option>
+            <option value="previsto">📅 Vou receber</option>
+          </select>
+        </div>
+        <div><label>Conta que recebeu</label><select id="r-carteira"><option value="">— Selecione —</option></select></div>
+        <div><label>Data</label><input type="date" id="r-data"/></div>
+        <div class="full"><label>Obs</label><input type="text" id="r-obs" placeholder="Referência, aluno, contrato..."/></div>
+        <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--green),var(--green2))" onclick="addReceita()">💰 Adicionar Renda</button></div>
+      </div>
     </div>
   </div>
+
+  <!-- FORM DESPESA RAPIDA -->
+  <div id="rec-tab-despesa" style="display:none">
+    <div class="form-box" style="margin-bottom:12px">
+      <div class="form-tit"><span class="bar" style="background:var(--red2)"></span>➕ Lançar despesa rápida</div>
+      <div class="fields">
+        <div class="full"><label>Descrição</label><input type="text" id="rd-desc" placeholder="Ex: Gasolina, Almoço, Mercado..."/></div>
+        <div><label>Valor (R$)</label><input type="number" id="rd-val" placeholder="0,00" min="0" step="0.01"/></div>
+        <div><label>Categoria</label><select id="rd-cat"></select></div>
+        <div><label>Data</label><input type="date" id="rd-data"/></div>
+        <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--red),var(--red2))" onclick="addDespesaRapida()">💸 Lançar Despesa</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESUMO E LISTA -->
   <div id="receita-resumo" style="margin-bottom:10px"></div>
   <div class="lista" id="lista-receitas"></div>
 </section>
@@ -957,15 +994,38 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
 
 <!-- MODAL VOZ -->
 <div class="overlay" id="overlayVoz" onclick="fecharOverlay('overlayVoz',event)">
-  <div class="modal" style="text-align:center">
-    <h2>🎤 Lançamento por Voz</h2>
-    <div id="voz-status" style="font-size:.82rem;color:var(--muted);margin-bottom:14px">Clique no microfone e fale o gasto</div>
-    <div id="voz-transcript" style="background:var(--bg2);border-radius:10px;padding:14px;font-size:.88rem;min-height:60px;margin-bottom:14px;text-align:left;color:var(--text)"></div>
-    <button id="voz-btn-mic" onclick="toggleVozRec()" style="width:70px;height:70px;border-radius:50%;background:var(--blue2);color:white;border:none;font-size:2rem;cursor:pointer;margin-bottom:16px">🎤</button>
-    <div style="font-size:.72rem;color:var(--muted);margin-bottom:14px">Exemplo: "gastei setenta e cinco reais no mercado"</div>
+  <div class="modal">
+    <h2 style="text-align:center">🎤 Voz Inteligente</h2>
+    <div id="voz-status" style="font-size:.8rem;color:var(--muted);margin-bottom:10px;text-align:center">Toque no microfone e fale naturalmente</div>
+
+    <!-- EXEMPLOS -->
+    <div style="background:var(--bg2);border-radius:10px;padding:10px;margin-bottom:12px;font-size:.72rem;color:var(--muted)">
+      💡 <strong>Exemplos:</strong><br/>
+      "gastei 90 reais no mercado no crédito Nubank"<br/>
+      "recebi 300 do João personal no Nubank"<br/>
+      "paguei 150 de gasolina no débito"
+    </div>
+
+    <!-- MIC BUTTON -->
+    <div style="text-align:center;margin-bottom:12px">
+      <button id="voz-btn-mic" onclick="toggleVozRec()" style="width:72px;height:72px;border-radius:50%;background:var(--blue2);color:white;border:none;font-size:2rem;cursor:pointer;transition:all .2s">🎤</button>
+    </div>
+
+    <!-- TRANSCRIPT -->
+    <div id="voz-transcript" style="background:var(--bg2);border-radius:10px;padding:12px;font-size:.85rem;min-height:48px;margin-bottom:10px;color:var(--text);font-style:italic"></div>
+
+    <!-- IA PROCESSING -->
+    <div id="voz-ia-status" style="font-size:.76rem;color:var(--muted);text-align:center;margin-bottom:8px"></div>
+
+    <!-- PREVIEW DO QUE VAI SER LANÇADO -->
+    <div id="voz-preview" style="display:none;background:linear-gradient(135deg,rgba(26,46,140,.15),var(--surface));border:1px solid rgba(37,65,196,.3);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div style="font-size:.64rem;font-weight:700;color:var(--blue2);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">✅ IA identificou — confirma?</div>
+      <div id="voz-preview-content"></div>
+    </div>
+
     <div class="modal-btns">
       <button class="btn-cancel" onclick="fecharModal('overlayVoz')">Cancelar</button>
-      <button class="btn-confirm" onclick="confirmarVoz()">✅ Confirmar</button>
+      <button class="btn-confirm" id="voz-btn-confirm" onclick="confirmarVozIA()" style="display:none">✅ Confirmar e Lançar</button>
     </div>
   </div>
 </div>
@@ -2940,6 +3000,160 @@ function editarAssnBtn(btn){abrirEdicaoAssn(parseInt(btn.dataset.id));}
 function editarFinBtn(btn){abrirEdicaoFin(parseInt(btn.dataset.id));}
 function delFinBtn(btn){if(confirm('Remover?')) delFinanciamento(parseInt(btn.dataset.id));}
 async function delFinanciamento(id){var fins=carregarFins().filter(function(f){return f.id!==id;});await salvarFins(fins);renderFinanciamentos();}
+// ══ VOZ INTELIGENTE COM IA ══
+var _vozRecon = null;
+var _vozAtiva = false;
+var _vozDados = null; // Resultado da IA para confirmar
+
+function iniciarVoz(tipo){
+  document.getElementById('overlayVoz').classList.add('aberto');
+  document.getElementById('voz-transcript').textContent='';
+  document.getElementById('voz-ia-status').textContent='';
+  document.getElementById('voz-preview').style.display='none';
+  var btnC=document.getElementById('voz-btn-confirm');if(btnC) btnC.style.display='none';
+  _vozDados=null;
+}
+
+function toggleVozRec(){
+  var btn=document.getElementById('voz-btn-mic');
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert('Seu navegador não suporta reconhecimento de voz. Use o Chrome!');return;}
+  if(_vozAtiva){
+    if(_vozRecon) _vozRecon.stop();
+    return;
+  }
+  _vozAtiva=true;
+  if(btn){btn.style.background='var(--red2)';btn.textContent='⏹';}
+  var status=document.getElementById('voz-status');
+  if(status) status.textContent='🔴 Ouvindo... fale agora!';
+  _vozRecon=new SR();
+  _vozRecon.lang='pt-BR';
+  _vozRecon.continuous=false;
+  _vozRecon.interimResults=false;
+  _vozRecon.onresult=function(e){
+    var texto=e.results[0][0].transcript;
+    var trans=document.getElementById('voz-transcript');
+    if(trans) trans.textContent='"'+texto+'"';
+    processarVozComIA(texto);
+  };
+  _vozRecon.onerror=function(e){
+    _vozAtiva=false;
+    if(btn){btn.style.background='var(--blue2)';btn.textContent='🎤';}
+    var st=document.getElementById('voz-status');
+    if(st) st.textContent='Erro: '+e.error+'. Tente novamente.';
+  };
+  _vozRecon.onend=function(){
+    _vozAtiva=false;
+    if(btn){btn.style.background='var(--blue2)';btn.textContent='🎤';}
+    var st=document.getElementById('voz-status');
+    if(st&&_vozAtiva===false) st.textContent='Processando...';
+  };
+  _vozRecon.start();
+}
+
+async function processarVozComIA(texto){
+  var apiKey=window._apiKeyCache||localStorage.getItem('pf_apikey')||sessionStorage.getItem('pf_apikey')||'';
+  var iaStatus=document.getElementById('voz-ia-status');
+  var preview=document.getElementById('voz-preview');
+  var previewContent=document.getElementById('voz-preview-content');
+  var btnC=document.getElementById('voz-btn-confirm');
+
+  if(!apiKey){
+    // Fallback sem IA
+    parsearVoz(texto);
+    return;
+  }
+
+  if(iaStatus) iaStatus.textContent='🤖 IA processando...';
+
+  var carts=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
+  var cats=carregarCats();
+  var nl=String.fromCharCode(10);
+
+  var cartNames=carts.map(function(c){return c.id+':'+c.icon+c.nome;}).join(', ');
+  var catNames=cats.map(function(c){return c.id+':'+c.nome;}).join(', ');
+
+  var prompt='Analise este comando de voz financeiro e retorne APENAS um JSON (sem markdown, sem explicação):'+nl+
+    'Comando: "'+texto+'"'+nl+nl+
+    'Carteiras disponíveis: '+cartNames+nl+
+    'Categorias disponíveis: '+catNames+nl+nl+
+    'Retorne JSON com estes campos exatos:'+nl+
+    '{"tipo":"gasto"|"receita","desc":"descrição curta","valor":numero,"cat":"id_categoria","pag":"debito"|"credito"|"pix","carteira_id":id_numerico_ou_0,"status":"confirmado"|"previsto","explicacao":"frase curta do que entendeu"}'+nl+nl+
+    'Regras: tipo=receita se usou palavras como recebi/ganhei/entrou/pagou. Pag=credito se mencionou crédito/cartão. Valor sempre número sem R$. Cat deve ser o id exato da lista.';
+
+  try{
+    var resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,messages:[{role:'user',content:prompt}]})
+    });
+    var data=await resp.json();
+    var rawText=data.content&&data.content[0]?data.content[0].text:'{}';
+    // Clean JSON
+    rawText=rawText.replace(/```json|```/g,'').trim();
+    var result=JSON.parse(rawText);
+    _vozDados=result;
+
+    // Find carteira name
+    var cartObj=carts.find(function(c){return c.id===result.carteira_id;});
+    var cartName=cartObj?(cartObj.icon+' '+cartObj.nome):'—';
+    var catObj=cats.find(function(c){return c.id===result.cat;});
+    var catName=catObj?(catObj.icon+' '+catObj.nome):'—';
+
+    // Show preview
+    if(previewContent) previewContent.innerHTML=
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.8rem">'+
+      '<div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;margin-bottom:2px">Tipo</div>'+
+      '<div style="font-weight:700;color:'+(result.tipo==='receita'?'var(--green2)':'var(--red2)')+'">'+( result.tipo==='receita'?'💰 Receita':'💸 Gasto')+'</div></div>'+
+      '<div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;margin-bottom:2px">Valor</div>'+
+      '<div style="font-weight:700;font-family:DM Mono,monospace;font-size:1rem;color:'+(result.tipo==='receita'?'var(--green2)':'var(--red2)')+'">R$ '+parseFloat(result.valor||0).toFixed(2)+'</div></div>'+
+      '<div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;margin-bottom:2px">Descrição</div>'+
+      '<div style="font-weight:600">'+( result.desc||'—')+'</div></div>'+
+      '<div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;margin-bottom:2px">Categoria</div>'+
+      '<div>'+catName+'</div></div>'+
+      (result.tipo==='gasto'?'<div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;margin-bottom:2px">Pagamento</div><div>'+result.pag+'</div></div>':'')+
+      '<div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;margin-bottom:2px">Conta</div>'+
+      '<div>'+cartName+'</div></div>'+
+      '</div>'+
+      (result.explicacao?'<div style="font-size:.7rem;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">🤖 '+result.explicacao+'</div>':'');
+
+    if(preview) preview.style.display='block';
+    if(btnC) btnC.style.display='block';
+    if(iaStatus) iaStatus.textContent='';
+    var st=document.getElementById('voz-status');
+    if(st) st.textContent='✅ IA identificou! Confirma ou fale novamente.';
+
+  }catch(e){
+    if(iaStatus) iaStatus.textContent='Erro na IA — usando reconhecimento simples';
+    parsearVoz(texto);
+  }
+}
+
+async function confirmarVozIA(){
+  if(!_vozDados){confirmarVoz();return;}
+  var d=_vozDados;
+  var val=parseFloat(d.valor)||0;
+  if(!val){mostrarToast('Não consegui identificar o valor. Tente de novo!');return;}
+
+  if(d.tipo==='receita'){
+    var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
+    vars.push({id:Date.now(),desc:d.desc||'Receita por voz',val:val,data:hoje(),obs:'Voz IA',carteira:d.carteira_id||0,status:d.status||'confirmado'});
+    await set(docId()+'_receitas_var',JSON.stringify(vars));
+    if(d.carteira_id&&val&&d.status!=='previsto') await creditarCarteira(d.carteira_id,val,d.desc);
+    mostrarToast('✅ Receita lançada: '+fmt(val));
+  } else {
+    var gastos=carregarGastos();
+    gastos.push({id:Date.now(),desc:d.desc||'Gasto por voz',valor:val,cat:d.cat||'outros',pag:d.pag||'debito',data:hoje(),obs:'Voz IA',carteira:d.carteira_id||0});
+    await set(docId()+'_gastos',JSON.stringify(gastos));
+    if(d.carteira_id&&val) await debitarCarteira(d.carteira_id,val,d.desc,d.pag==='credito');
+    mostrarToast('✅ Gasto lançado: '+fmt(val));
+  }
+
+  fecharModal('overlayVoz');
+  _vozDados=null;
+  renderAll();
+}
+
 function parsearVoz(texto){
   if(!texto) return;
   var num=texto.match(/(\d+(?:[.,]\d+)?)/g);var val=num?parseFloat(num[0].replace(',','.')):0;
