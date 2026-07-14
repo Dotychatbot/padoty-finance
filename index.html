@@ -247,6 +247,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
   <button class="nav-item" data-sec="relatorio" onclick="setSecaoDrawer(this)"><span class="ni">📄</span>Relatório</button>
   <button class="nav-item" data-sec="metas" onclick="setSecaoDrawer(this)"><span class="ni">🏆</span>Metas</button>
   <button class="nav-item" data-sec="simulador" onclick="setSecaoDrawer(this)"><span class="ni">🧮</span>Simulador</button>
+  <button class="nav-item" data-sec="dividas" onclick="setSecaoDrawer(this)"><span class="ni">🧹</span>Dívidas</button>
   <button class="nav-item" data-sec="config" onclick="setSecaoDrawer(this)"><span class="ni">⚙️</span>Configurações</button>
   <div style="border-top:1px solid var(--border);margin:12px 0"></div>
   <button class="nav-item" onclick="fecharDrawer();sair()" style="color:var(--red2)"><span class="ni">🚪</span>Sair</button>
@@ -279,6 +280,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
   <button class="nav-item" data-sec="metas" onclick="setSecao(this)"><span class="ni">🏆</span>Metas & Conquistas</button>
   <div class="nav-div"></div>
   <button class="nav-item" data-sec="simulador" onclick="setSecao(this)"><span class="ni">🧮</span>Simulador</button>
+  <button class="nav-item" data-sec="dividas" onclick="setSecao(this)"><span class="ni">🧹</span>Dívidas</button>
   <button class="nav-item" data-sec="config" onclick="setSecao(this)"><span class="ni">⚙️</span>Configurações</button>
 </aside>
 
@@ -434,17 +436,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
       <div class="full"><label>Descrição</label><input type="text" id="g-desc" placeholder="Ex: Mercado, Gasolina..."/></div>
       <div><label>Valor (R$)</label><input type="number" id="g-val" placeholder="0,00" min="0" step="0.01"/></div>
       <div><label>Categoria</label>
-        <select id="g-cat">
-          <option value="diario">⚡ Gasto Diário</option>
-          <option value="pessoal">👤 Pessoal</option>
-          <option value="domestico">🛒 Doméstico</option>
-          <option value="saude">💊 Saúde</option>
-          <option value="transporte">🚗 Transporte</option>
-          <option value="lazer">🎬 Lazer</option>
-          <option value="seguro">🛡️ Seguro</option>
-          <option value="educacao">📚 Educação</option>
-          <option value="outros">📦 Outros</option>
-        </select>
+        <select id="g-cat"></select>
       </div>
       <div><label>Pagamento</label>
         <select id="g-pag">
@@ -553,13 +545,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
       <div><label>Descrição</label><input type="text" id="rec-desc" placeholder="Ex: Spotify, Netflix..."/></div>
       <div><label>Valor (R$)</label><input type="number" id="rec-val" placeholder="0,00" min="0" step="0.01"/></div>
       <div><label>Categoria</label>
-        <select id="rec-cat">
-          <option value="assinatura">📱 Assinatura</option>
-          <option value="financiamento">🏦 Financiamento</option>
-          <option value="saude">💊 Saúde</option>
-          <option value="educacao">📚 Educação</option>
-          <option value="outros">📦 Outros</option>
-        </select>
+        <select id="rec-cat" onchange=""></select>
       </div>
       <div><label>Dia vencimento</label><input type="number" id="rec-dia" placeholder="Ex: 10" min="1" max="31"/></div>
       <div><label>Tipo</label>
@@ -666,14 +652,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
       <div class="fields">
         <div><label>Categoria</label>
-          <select id="orc-cat">
-            <option value="diario">⚡ Diário</option>
-            <option value="pessoal">👤 Pessoal</option>
-            <option value="domestico">🛒 Doméstico</option>
-            <option value="saude">💊 Saúde</option>
-            <option value="transporte">🚗 Transporte</option>
-            <option value="lazer">🎬 Lazer</option>
-          </select>
+          <select id="orc-cat" onchange=""></select>
         </div>
         <div><label>Limite (R$)</label><input type="number" id="orc-val" placeholder="Ex: 800" min="0" step="0.01"/></div>
         <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--gold),var(--gold2));color:#111" onclick="salvarOrcamento()">💾 Salvar limite</button></div>
@@ -705,10 +684,12 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
       <div><label>Valor (R$)</label><input type="number" id="inv-val" placeholder="0,00" min="0" step="0.01"/></div>
       <div><label>Tipo</label>
         <select id="inv-tipo">
-          <option value="tesouro">🏛️ Tesouro Direto</option>
+          <option value="caixinha">🟣 Caixinha Nubank</option>
+          <option value="reserva">💚 Reserva de Emergência</option>
+          <option value="tesouro">🏛️ Tesouro Selic</option>
           <option value="cdb">🏦 CDB</option>
           <option value="acoes">📈 Ações</option>
-          <option value="fii">🏢 FIIs</option>
+          <option value="fii">🏢 FII</option>
           <option value="cripto">₿ Cripto</option>
           <option value="poupanca">🐷 Poupança</option>
           <option value="outros">📦 Outros</option>
@@ -786,6 +767,60 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     </div>
   </div>
   <div id="sim-resultado" style="margin-top:4px"></div>
+</section>
+
+<!-- DÍVIDAS -->
+<section class="secao" id="sec-dividas">
+  <div class="page-header"><h2>Dívidas & Nome Limpo 🧹</h2><p>Controle suas dívidas e planeje a quitação</p></div>
+
+  <!-- PROGRESSO GERAL -->
+  <div id="dividas-progresso" style="margin-bottom:12px"></div>
+
+  <!-- ADICIONAR DÍVIDA -->
+  <div class="form-box" style="margin-bottom:12px">
+    <div class="form-tit"><span class="bar" style="background:var(--red2)"></span>+ Registrar dívida</div>
+    <div class="fields">
+      <div class="full"><label>Credor</label><input type="text" id="div-credor" placeholder="Ex: Banco BV, Nubank, Cartão X..."/></div>
+      <div><label>Valor original (R$)</label><input type="number" id="div-orig" placeholder="0,00" min="0" step="0.01"/></div>
+      <div><label>Valor atual com juros (R$)</label><input type="number" id="div-atual" placeholder="0,00" min="0" step="0.01"/></div>
+      <div><label>Situação</label>
+        <select id="div-sit">
+          <option value="pendente">⏳ Pendente</option>
+          <option value="negociando">🤝 Em negociação</option>
+          <option value="acordado">📋 Acordo feito</option>
+          <option value="quitado">✅ Quitada</option>
+        </select>
+      </div>
+      <div><label>Vencimento / Data acordo</label><input type="date" id="div-data"/></div>
+      <div class="full"><label>Obs</label><input type="text" id="div-obs" placeholder="Ex: Proposta de 40% desconto..."/></div>
+      <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--red),var(--red2))" onclick="addDivida()">+ Registrar dívida</button></div>
+    </div>
+  </div>
+
+  <!-- LISTA DE DÍVIDAS -->
+  <div class="form-box" style="margin-bottom:12px">
+    <div class="form-tit"><span class="bar" style="background:var(--warn2)"></span>Minhas dívidas</div>
+    <div id="lista-dividas"></div>
+  </div>
+
+  <!-- CALCULADORA DE PRIORIDADE -->
+  <div class="form-box" style="margin-bottom:12px">
+    <div class="form-tit"><span class="bar" style="background:var(--gold2)"></span>🎯 Qual quitar primeiro?</div>
+    <div id="dividas-prioridade"></div>
+    <button class="btn-add" style="background:linear-gradient(135deg,var(--gold),var(--gold2));color:#111;margin-top:10px" onclick="calcularPrioridadeDividas()">🧮 Calcular prioridade</button>
+  </div>
+
+  <!-- IA CONSULTORA -->
+  <div class="form-box">
+    <div class="form-tit"><span class="bar" style="background:var(--invest2)"></span>🤖 IA — Como quitar e limpar o nome</div>
+    <div id="div-chat-msgs" style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px;min-height:60px">
+      <div style="background:var(--bg2);border-radius:10px;padding:10px;font-size:.8rem;color:var(--muted)">Olá! Sou sua consultora financeira. Me conte sua situação e vou te orientar sobre como quitar as dívidas, negociar desconto, usar o Serasa Limpa Nome e recuperar seu crédito!</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <input type="text" id="div-chat-input" placeholder="Ex: Tenho R$500 disponível, qual quito primeiro?" onkeydown="if(event.key==='Enter') enviarChatDividas()"/>
+      <button class="btn-add" style="width:auto;padding:10px 14px;flex-shrink:0;background:linear-gradient(135deg,var(--invest),var(--invest2))" onclick="enviarChatDividas()">→</button>
+    </div>
+  </div>
 </section>
 
 <!-- CONFIG -->
@@ -2064,6 +2099,254 @@ async function togglePagoConta(id){
   renderContas();renderAll();
 }
 
+// ══ CATEGORIAS ══
+var CATS_PADRAO = [{"id": "alimentacao", "nome": "Alimentação", "icon": "🛒", "padrao": true}, {"id": "mercado", "nome": "Mercado", "icon": "🏪", "padrao": true}, {"id": "restaurante", "nome": "Restaurante", "icon": "🍽️", "padrao": true}, {"id": "transporte", "nome": "Transporte", "icon": "🚗", "padrao": true}, {"id": "saude", "nome": "Saúde", "icon": "💊", "padrao": true}, {"id": "pessoal", "nome": "Pessoal", "icon": "👤", "padrao": true}, {"id": "lazer", "nome": "Lazer", "icon": "🎬", "padrao": true}, {"id": "seguro", "nome": "Seguro", "icon": "🛡️", "padrao": true}, {"id": "educacao", "nome": "Educação", "icon": "📚", "padrao": true}, {"id": "academia", "nome": "Academia/Sport", "icon": "🏋️", "padrao": true}, {"id": "pet", "nome": "Pet", "icon": "🐾", "padrao": true}, {"id": "casa", "nome": "Casa/Moradia", "icon": "🏠", "padrao": true}, {"id": "financiamento", "nome": "Financiamento", "icon": "🏦", "padrao": true}, {"id": "outros", "nome": "Outros", "icon": "📦", "padrao": true}];
+
+function carregarCats(){
+  var custom=JSON.parse(localStorage.getItem(docIdG('cats_custom'))||'[]');
+  return CATS_PADRAO.concat(custom);
+}
+function carregarCatsCustom(){
+  return JSON.parse(localStorage.getItem(docIdG('cats_custom'))||'[]');
+}
+async function salvarCatsCustom(cats){
+  localStorage.setItem(docIdG('cats_custom'),JSON.stringify(cats));
+  await set(docIdG('cats_custom'),JSON.stringify(cats));
+}
+async function addCategoria(){
+  var icon=document.getElementById('cat-icon').value.trim()||'🏷️';
+  var nome=document.getElementById('cat-nome').value.trim();
+  if(!nome){alert('Digite o nome da categoria!');return;}
+  var id='cat_'+Date.now();
+  var cats=carregarCatsCustom();
+  if(cats.some(function(c){return c.nome.toLowerCase()===nome.toLowerCase()})){
+    mostrarToast('Categoria já existe!');return;
+  }
+  cats.push({id:id,nome:nome,icon:icon,padrao:false});
+  await salvarCatsCustom(cats);
+  document.getElementById('cat-icon').value='';
+  document.getElementById('cat-nome').value='';
+  renderCatsConfig();
+  atualizarDropdownsCats();
+  mostrarToast('✅ Categoria "'+nome+'" criada!');
+}
+async function delCategoria(id){
+  var cats=carregarCatsCustom().filter(function(c){return c.id!==id;});
+  await salvarCatsCustom(cats);
+  renderCatsConfig();
+  atualizarDropdownsCats();
+  mostrarToast('Categoria removida!');
+}
+function delCatBtn(btn){delCategoria(btn.dataset.id);}
+
+function renderCatsConfig(){
+  var el=document.getElementById('lista-cats-config');
+  if(!el) return;
+  var todas=carregarCats();
+  var custom=carregarCatsCustom();
+  el.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">'+
+    todas.map(function(c){
+      return '<div style="display:flex;align-items:center;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:.76rem">'+
+        '<span>'+c.icon+'</span><span>'+c.nome+'</span>'+
+        (!c.padrao?'<button data-id="'+c.id+'" onclick="delCatBtn(this)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.68rem;padding:0 0 0 4px">✕</button>':'')+
+        '</div>';
+    }).join('')+
+    '</div>'+
+    (custom.length?'<div style="font-size:.68rem;color:var(--muted)">'+custom.length+' categoria(s) personalizada(s) — toque ✕ para remover</div>':'');
+}
+
+function buildCatOptions(selectedVal){
+  var cats=carregarCats();
+  return cats.map(function(c){
+    return '<option value="'+c.id+'"'+(c.id===selectedVal?' selected':'')+'>'+c.icon+' '+c.nome+'</option>';
+  }).join('');
+}
+
+function atualizarDropdownsCats(){
+  // Update all category dropdowns in the app
+  var selects=['g-cat','rec-cat','orc-cat'];
+  selects.forEach(function(id){
+    var sel=document.getElementById(id);
+    if(!sel) return;
+    var curr=sel.value;
+    sel.innerHTML=buildCatOptions(curr);
+    if(curr) sel.value=curr;
+  });
+  // Also update filtro-cat with blank option
+  var fc=document.getElementById('filtro-cat');
+  if(fc){
+    var currF=fc.value;
+    fc.innerHTML='<option value="">Todas categorias</option>'+buildCatOptions(currF);
+    if(currF) fc.value=currF;
+  }
+}
+
+// ══ DÍVIDAS & NOME LIMPO ══
+var _divChatHistory = [];
+
+function carregarDividas(){
+  var r=localStorage.getItem(docIdG('dividas'));
+  return r?JSON.parse(r):[];
+}
+async function salvarDividas(d){
+  localStorage.setItem(docIdG('dividas'),JSON.stringify(d));
+  await set(docIdG('dividas'),JSON.stringify(d));
+}
+
+async function addDivida(){
+  var credor=document.getElementById('div-credor').value.trim();
+  var orig=parseFloat(document.getElementById('div-orig').value)||0;
+  var atual=parseFloat(document.getElementById('div-atual').value)||orig;
+  var sit=document.getElementById('div-sit').value;
+  var data=document.getElementById('div-data').value||hoje();
+  var obs=document.getElementById('div-obs').value.trim();
+  if(!credor||!orig){alert('Preencha credor e valor!');return;}
+  var divs=carregarDividas();
+  divs.push({id:Date.now(),credor:credor,orig:orig,atual:atual,sit:sit,data:data,obs:obs});
+  await salvarDividas(divs);
+  ['div-credor','div-orig','div-atual','div-obs'].forEach(function(id){var el=document.getElementById(id);if(el) el.value='';});
+  var dd=document.getElementById('div-sit');if(dd) dd.value='pendente';
+  renderDividas();
+  mostrarToast('✅ Dívida registrada!');
+}
+
+async function atualizarSitDivida(id,sit){
+  var divs=carregarDividas().map(function(d){if(d.id===id) d.sit=sit;return d;});
+  await salvarDividas(divs);renderDividas();
+}
+
+async function delDivida(id){
+  var divs=carregarDividas().filter(function(d){return d.id!==id;});
+  await salvarDividas(divs);renderDividas();mostrarToast('Dívida removida!');
+}
+function delDividaBtn(btn){if(confirm('Remover esta dívida?')) delDivida(parseInt(btn.dataset.id));}
+function sitDividaBtn(sel){atualizarSitDivida(parseInt(sel.dataset.id),sel.value);}
+
+function renderDividas(){
+  var divs=carregarDividas();
+  var ativas=divs.filter(function(d){return d.sit!=='quitado';});
+  var quitadas=divs.filter(function(d){return d.sit==='quitado';});
+  var totalOrig=ativas.reduce(function(a,d){return a+d.orig;},0);
+  var totalAtual=ativas.reduce(function(a,d){return a+d.atual;},0);
+  var totalQuit=quitadas.reduce(function(a,d){return a+d.orig;},0);
+  var totalGeral=divs.reduce(function(a,d){return a+d.orig;},0);
+  var pctLimpo=totalGeral>0?Math.min(totalQuit/totalGeral*100,100).toFixed(0):0;
+
+  // Progresso
+  var progEl=document.getElementById('dividas-progresso');
+  if(progEl){
+    var corProg=parseInt(pctLimpo)>=100?'var(--green2)':parseInt(pctLimpo)>50?'var(--gold2)':'var(--red2)';
+    progEl.innerHTML=
+      '<div style="background:linear-gradient(135deg,rgba(176,31,31,.15),var(--surface));border:1px solid rgba(176,31,31,.3);border-radius:14px;padding:16px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
+      '<div><div style="font-size:.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Jornada Nome Limpo</div>'+
+      '<div style="font-size:1.6rem;font-weight:700;color:'+corProg+'">'+pctLimpo+'%</div>'+
+      '<div style="font-size:.72rem;color:var(--muted)">'+quitadas.length+' de '+divs.length+' dívidas quitadas</div></div>'+
+      '<div style="font-size:2rem">'+(parseInt(pctLimpo)>=100?'🏆':parseInt(pctLimpo)>=50?'🚀':'💪')+'</div></div>'+
+      '<div style="height:10px;background:var(--bg2);border-radius:99px;overflow:hidden;margin-bottom:10px">'+
+      '<div style="height:100%;border-radius:99px;background:'+corProg+';width:'+pctLimpo+'%;transition:width .8s"></div></div>'+
+      '<div class="cards-row">'+
+      (totalAtual>0?'<div class="mini-card"><div class="lbl">💸 Total em dívidas</div><div class="val" style="color:var(--red2)">'+fmt(totalAtual)+'</div></div>':'')+
+      (totalQuit>0?'<div class="mini-card"><div class="lbl">✅ Já quitado</div><div class="val" style="color:var(--green2)">'+fmt(totalQuit)+'</div></div>':'')+
+      '</div></div>';
+  }
+
+  // Lista
+  var listEl=document.getElementById('lista-dividas');
+  if(!listEl) return;
+  if(!divs.length){listEl.innerHTML='<div class="vazio">Nenhuma dívida registrada 🎉</div>';return;}
+  var SIT={pendente:{label:'⏳ Pendente',cor:'var(--warn2)'},negociando:{label:'🤝 Negociando',cor:'var(--blue2)'},acordado:{label:'📋 Acordado',cor:'var(--invest2)'},quitado:{label:'✅ Quitada',cor:'var(--green2)'}};
+  listEl.innerHTML=divs.map(function(d){
+    var s=SIT[d.sit]||SIT['pendente'];
+    var desc=d.atual>d.orig?fmt(d.atual)+' (original '+fmt(d.orig)+')':fmt(d.orig);
+    return '<div class="form-box" style="margin-bottom:8px;opacity:'+(d.sit==='quitado'?'.6':'1')+'">'+
+      '<div style="display:flex;align-items:flex-start;gap:10px">'+
+      '<div style="flex:1">'+
+      '<div style="font-weight:700;font-size:.85rem">'+d.credor+'</div>'+
+      '<div style="font-family:DM Mono,monospace;color:var(--red2);font-size:.92rem;margin:2px 0">'+desc+'</div>'+
+      (d.obs?'<div style="font-size:.7rem;color:var(--muted)">'+d.obs+'</div>':'')+
+      '<div style="font-size:.68rem;color:var(--muted)">Vence/Acordo: '+fmtD(d.data)+'</div>'+
+      '</div>'+
+      '<button class="item-del" data-id="'+d.id+'" onclick="delDividaBtn(this)">✕</button></div>'+
+      '<div style="margin-top:8px">'+
+      '<select data-id="'+d.id+'" onchange="sitDividaBtn(this)" style="font-size:.76rem;padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:'+s.cor+'">'+
+      '<option value="pendente"'+(d.sit==='pendente'?' selected':'')+'>⏳ Pendente</option>'+
+      '<option value="negociando"'+(d.sit==='negociando'?' selected':'')+'>🤝 Em negociação</option>'+
+      '<option value="acordado"'+(d.sit==='acordado'?' selected':'')+'>📋 Acordo feito</option>'+
+      '<option value="quitado"'+(d.sit==='quitado'?' selected':'')+'>✅ Quitada</option>'+
+      '</select></div></div>';
+  }).join('');
+}
+
+function calcularPrioridadeDividas(){
+  var divs=carregarDividas().filter(function(d){return d.sit!=='quitado';});
+  var el=document.getElementById('dividas-prioridade');
+  if(!el) return;
+  if(!divs.length){el.innerHTML='<div class="vazio">Nenhuma dívida ativa!</div>';return;}
+  // Sort by: menor valor atual primeiro (sair logo do SPC) + maior desconto possível
+  var ordenadas=divs.slice().sort(function(a,b){return a.atual-b.atual;});
+  var saldo=window._totalRenda-(window._totalFinanc||0)-(carregarGastos().reduce(function(a,g){return a+g.valor;},0));
+  el.innerHTML='<div style="margin-bottom:10px;font-size:.78rem;color:var(--muted)">Estratégia: quitar menor valor primeiro para sair do SPC mais rápido e melhorar seu score.</div>'+
+    ordenadas.map(function(d,i){
+      var descPotencial=Math.round((1-d.atual/d.orig)*100);
+      var descExtra=Math.max(0,Math.round(30-i*5));
+      return '<div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:8px;border-left:3px solid '+(i===0?'var(--green2)':'var(--border)')+'">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center">'+
+        '<div><span style="font-size:.65rem;font-weight:700;color:'+(i===0?'var(--green2)':'var(--muted)')+';text-transform:uppercase">'+(i===0?'👉 QUITAR PRIMEIRO':'#'+(i+1))+'</span>'+
+        '<div style="font-weight:700;font-size:.84rem;margin-top:2px">'+d.credor+'</div>'+
+        '<div style="font-size:.72rem;color:var(--muted)">Valor: '+fmt(d.atual)+
+        (descExtra>0?' · Tente '+descExtra+'% de desconto à vista':'')+'</div></div>'+
+        '<div style="text-align:right"><div style="font-family:DM Mono,monospace;color:var(--red2)">'+fmt(d.atual)+'</div>'+
+        (saldo>0&&saldo>=d.atual?'<div style="font-size:.66rem;color:var(--green2)">✅ Você tem saldo!</div>':'<div style="font-size:.66rem;color:var(--muted)">Falta '+fmt(Math.max(0,d.atual-saldo))+'</div>')+
+        '</div></div></div>';
+    }).join('')+
+    '<div style="background:rgba(240,196,74,.1);border:1px solid rgba(240,196,74,.3);border-radius:10px;padding:10px;margin-top:8px;font-size:.76rem">'+
+    '<strong style="color:var(--gold2)">💡 Dica Serasa Limpa Nome:</strong><br/>Acesse serasalimpanome.com.br ou o app do Serasa. Ofertas de até 90% de desconto em dívidas antigas. Negocie sempre à vista para maior desconto!'+
+    '</div>';
+}
+
+async function enviarChatDividas(){
+  var apiKey=window._apiKeyCache||localStorage.getItem('pf_apikey')||sessionStorage.getItem('pf_apikey')||'';
+  var input=document.getElementById('div-chat-input');
+  var msgs=document.getElementById('div-chat-msgs');
+  if(!input||!msgs) return;
+  var pergunta=input.value.trim();
+  if(!pergunta) return;
+  if(!apiKey){mostrarToast('Configure a API key em Configurações!');return;}
+  input.value='';
+  msgs.innerHTML+='<div style="background:rgba(37,65,196,.15);border-radius:10px;padding:10px;font-size:.8rem;align-self:flex-end;max-width:85%">'+pergunta+'</div>';
+  msgs.innerHTML+='<div id="div-typing" style="font-size:.76rem;color:var(--muted);padding:4px">Consultando...</div>';
+  msgs.scrollTop=msgs.scrollHeight;
+  var divs=carregarDividas();
+  var totalDiv=divs.filter(function(d){return d.sit!=='quitado';}).reduce(function(a,d){return a+d.atual;},0);
+  var renda=window._totalRenda||0;
+  var saldo=renda-(window._totalFinanc||0);
+  var nl=String.fromCharCode(10);
+  var ctx='Contexto do usuario:'+nl+'Renda: R$'+renda.toFixed(2)+nl+'Saldo disponivel: R$'+saldo.toFixed(2)+nl+
+    'Total em dividas: R$'+totalDiv.toFixed(2)+nl+
+    'Dividas: '+divs.map(function(d){return d.credor+' R$'+d.atual.toFixed(2)+' ('+d.sit+')';}).join(', ')+nl+nl;
+  _divChatHistory.push({role:'user',content:ctx+pergunta});
+  if(_divChatHistory.length>10) _divChatHistory=_divChatHistory.slice(-10);
+  try{
+    var resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,
+        system:'Voce e uma consultora financeira especialista em quitacao de dividas, nome sujo, SPC e Serasa no Brasil. Responda em portugues do Brasil, de forma direta e pratica. Maximo 4-5 frases. Mencione recursos reais como Serasa Limpa Nome, Acordo Certo, renegociacao bancaria.',
+        messages:_divChatHistory})
+    });
+    var data=await resp.json();
+    var texto=data.content&&data.content[0]?data.content[0].text:'Erro.';
+    _divChatHistory.push({role:'assistant',content:texto});
+    var t=document.getElementById('div-typing');if(t) t.remove();
+    msgs.innerHTML+='<div style="background:var(--bg2);border-radius:10px;padding:10px;font-size:.8rem;max-width:92%">'+texto.split(String.fromCharCode(10)).join('<br/>')+'</div>';
+    msgs.scrollTop=msgs.scrollHeight;
+  }catch(e){
+    var t2=document.getElementById('div-typing');if(t2) t2.remove();
+    msgs.innerHTML+='<div style="color:var(--red2);font-size:.76rem;padding:4px">Erro: '+e.message+'</div>';
+  }
+}
+
 // ══ AUTO-LANÇAMENTO DE FIXOS NO MÊS ══
 function aplicarFixosDoMes(){
   var recs = JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
@@ -2617,7 +2900,7 @@ async function renderGastos(){
       '<div class="item-val neg">'+fmt(f.parcela)+'</div></div>';
   });
   if(!gastos.length&&!pinned){el.innerHTML='<div class="vazio">Nenhum gasto lançado 💸</div>';return;}
-  var CAT_IC={alimentacao:'🛒',mercado:'🏪',restaurante:'🍽️',transporte:'🚗',saude:'💊',pessoal:'👤',lazer:'🎬',seguro:'🛡️',educacao:'📚',outros:'📦',financiamento:'🏦'};
+  var cats=carregarCats();var CAT_IC={};cats.forEach(function(c){CAT_IC[c.id]=c.icon;});
   el.innerHTML=pinned+gastos.map(function(g){
     return '<div class="item">'+
       '<div class="item-ic">'+(CAT_IC[g.cat]||'📦')+'</div>'+
@@ -2806,7 +3089,7 @@ async function renderInvestimentos(){
   if(el) el.innerHTML=total>0?'<div class="mini-card"><div class="lbl">Total investido este mês</div><div class="val" style="color:var(--green2)">'+fmt(total)+'</div></div>':'';
   var listEl=document.getElementById('lista-investimentos');if(!listEl) return;
   if(!invs.length){listEl.innerHTML='<div class="vazio">Nenhum investimento este mês 📈</div>';return;}
-  var TIPOS={tesouro:'🏛️',cdb:'🏦',acoes:'📈',fii:'🏢',cripto:'₿',poupanca:'🐷',outros:'📦'};
+  var TIPOS={caixinha:'🟣',tesouro:'🏛️',cdb:'🏦',reserva:'💚',acoes:'📈',fii:'🏢',cripto:'₿',poupanca:'🐷',outros:'📦'};
   listEl.innerHTML=invs.map(function(i){
     return '<div class="item">'+
       '<div class="item-ic">'+(TIPOS[i.tipo]||'📦')+'</div>'+
@@ -2835,7 +3118,7 @@ function renderRelatorio(){
   var totalRec=window._totalRecorrentes||0;
   var lucro=renda-totalGasto-totalFin-totalAssn-totalRec-totalInv;
   var el=document.getElementById('relatorio-el');if(!el) return;
-  var CAT_IC={alimentacao:'🛒',mercado:'🏪',restaurante:'🍽️',transporte:'🚗',saude:'💊',pessoal:'👤',lazer:'🎬',seguro:'🛡️',educacao:'📚',outros:'📦'};
+  var cats2=carregarCats();var CAT_IC={};cats2.forEach(function(c){CAT_IC[c.id]=c.icon;});
   el.innerHTML=
     '<div class="form-box"><div class="form-tit"><span class="bar" style="background:var(--green2)"></span>'+MESES[mes]+'/'+ano+' — RECEITAS</div>'+
     '<div style="display:flex;justify-content:space-between;padding:7px 0;font-size:.82rem"><span style="color:var(--muted)">Total receitas</span><span style="font-family:DM Mono,monospace;color:var(--green2)">'+fmt(renda)+'</span></div></div>'+
