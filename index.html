@@ -300,6 +300,17 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
   <div class="form-box"><div class="form-tit"><span class="bar" style="background:var(--red2)"></span>Gastos por categoria</div><div id="resumo-grafico"></div></div>
   <div class="form-box"><div class="form-tit"><span class="bar" style="background:var(--green2)"></span>📈 Investimentos — últimos 6 meses</div><div id="patrimonio-chart"></div></div>
   <div id="meta-economia-el" style="margin-top:4px"></div>
+
+  <!-- LANÇAMENTO RÁPIDO -->
+  <div class="form-box" style="margin-top:12px">
+    <div class="form-tit"><span class="bar" style="background:var(--red2)"></span>⚡ Lançar gasto rápido</div>
+    <div class="fields">
+      <div class="full"><input type="text" id="rq-desc" placeholder="O que foi? Ex: Almoço, Gasolina..."/></div>
+      <div><input type="number" id="rq-val" placeholder="Valor R$" min="0" step="0.01"/></div>
+      <div><select id="rq-cat"></select></div>
+      <div class="full"><button class="btn-add" onclick="addGastoRapido()" style="background:linear-gradient(135deg,var(--red),var(--red2))">💸 Lançar agora</button></div>
+    </div>
+  </div>
 </section>
 
 <!-- FINANCIAMENTOS -->
@@ -485,7 +496,11 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
   <div class="form-box" style="margin-bottom:12px">
     <div class="form-tit"><span class="bar" style="background:var(--green2)"></span>Total do mês</div>
     <div id="skyfit-total-el" style="margin-bottom:12px"></div>
-    <button class="btn-add" id="btn-lancar-sf" onclick="lancarSkyFitReceita()" style="background:linear-gradient(135deg,var(--green),var(--green2));display:none">💰 Lançar total nas Receitas</button>
+    <div id="sf-lancar-wrap" style="display:none">
+      <div style="margin-bottom:8px"><label style="font-size:.72rem;color:var(--muted)">Conta que vai receber (aulas Sky Fit)</label>
+      <select id="sf-aulas-carteira" style="width:100%;margin-top:4px;font-size:.82rem;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text)"><option value="">— Selecione a conta —</option></select></div>
+      <button class="btn-add" id="btn-lancar-sf" onclick="lancarSkyFitReceita()" style="background:linear-gradient(135deg,var(--green),var(--green2))">💰 Lançar aulas na Receita</button>
+    </div>
     <div id="sf-lancado-el" style="font-size:.74rem;color:var(--muted);margin-top:6px"></div>
   </div>
 
@@ -1375,7 +1390,15 @@ function iniciarRealtimeSync(){
         changed = true;
       }
     });
-    if(changed) renderAll();
+    if(changed){
+      renderAll();
+      renderContas();
+      renderFinanciamentos();
+      renderSkyFit();
+      // Restore API key if synced
+      var ak=localStorage.getItem('pf_apikey');
+      if(ak){window._apiKeyCache=ak;var el=document.getElementById('config-apikey');if(el) el.value=ak;}
+    }
   }, function(e){ console.warn('onSnapshot err:',e.message); });
 }
 
@@ -1438,9 +1461,13 @@ function mudarMes(d){
   if(mes < 0){ mes=11; ano--; }
   if(mes > 11){ mes=0; ano++; }
   document.getElementById('labelMes').textContent = MESES[mes]+' '+ano;
+  autoAvancarParcelas();
   aplicarFixosDoMes();
+  aplicarReceitasFixasDoMes();
   renderAll();
   renderContas();
+  renderFinanciamentos();
+  renderSkyFit();
 }
 
 function setSecao(btn){
@@ -1871,6 +1898,7 @@ async function lancarSkyFitReceita(){
   var horas=carregarSFHoras();
   var total=mods.reduce(function(a,m){return a+(horas[m.id]||0)*m.valor;},0);
   if(!total){mostrarToast('Nenhuma hora lançada ainda!');return;}
+  var cart=parseInt(document.getElementById('sf-aulas-carteira').value)||0;
   // Salva no histórico
   var hist=carregarSFHistorico();
   var entry={id:Date.now(),mes:mes,ano:ano,mesLabel:MESES[mes]+'/'+ano,total:total,data:hoje(),
@@ -1881,7 +1909,8 @@ async function lancarSkyFitReceita(){
   await salvarSFHistorico(hist);
   // Vai pra receita
   var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
-  vars.push({id:Date.now()+2,desc:'Sky Fit — Aulas '+MESES[mes]+'/'+ano,val:total,data:hoje(),obs:entry.detalhe});
+  vars.push({id:Date.now()+2,desc:'Sky Fit — Aulas '+MESES[mes]+'/'+ano,val:total,data:hoje(),obs:entry.detalhe,carteira:cart,status:'confirmado'});
+  if(cart&&total) await creditarCarteira(cart,total,'Sky Fit Aulas');
   await set(docId()+'_receitas_var',JSON.stringify(vars));
   // Marca como lançado neste mês
   await salvarSFLancado({total:total,data:hoje(),detalhe:entry.detalhe});
@@ -1898,20 +1927,29 @@ function renderSkyFitTotal(){
   var totalGeral=totalAulas+totalPT;
   window._sfTotal=totalGeral;
   var el=document.getElementById('skyfit-total-el');
-  if(el) el.innerHTML='<div class="cards-row">'+
-    '<div class="mini-card"><div class="lbl">🏋️ Aulas</div><div class="val" style="color:var(--gold2)">'+fmt(totalAulas)+'</div></div>'+
-    '<div class="mini-card"><div class="lbl">💪 Personal</div><div class="val" style="color:var(--invest2)">'+fmt(totalPT)+'</div></div>'+
-    '<div class="mini-card"><div class="lbl">✅ Total Sky Fit</div><div class="val" style="color:var(--green2)">'+fmt(totalGeral)+'</div></div>'+
+  if(el) el.innerHTML=
+    '<div style="background:rgba(26,46,140,.1);border-radius:10px;padding:12px;margin-bottom:8px">'+
+    '<div style="font-size:.64rem;font-weight:700;color:var(--blue2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">🏋️ Aulas Sky Fit (CNPJ)</div>'+
+    '<div class="cards-row" style="margin:0">'+
+    mods.filter(function(m){return(horas[m.id]||0)>0;}).map(function(m){return '<div class="mini-card"><div class="lbl">'+m.nome+'</div><div class="val" style="color:var(--gold2)">'+fmt((horas[m.id]||0)*m.valor)+'</div></div>';}).join('')+
+    '<div class="mini-card" style="border-top:2px solid var(--gold2)"><div class="lbl">Total Aulas</div><div class="val" style="color:var(--gold2)">'+fmt(totalAulas)+'</div></div>'+
+    '</div></div>'+
+    '<div style="background:rgba(139,92,246,.1);border-radius:10px;padding:12px">'+
+    '<div style="font-size:.64rem;font-weight:700;color:var(--invest2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">💪 Personal Training (Pessoal)</div>'+
+    (pts.length?'<div class="cards-row" style="margin:0">'+
+    pts.map(function(p){return '<div class="mini-card"><div class="lbl">'+p.aluno+'</div><div class="val" style="color:var(--invest2)">'+fmt(p.val)+'</div></div>';}).join('')+
+    '<div class="mini-card" style="border-top:2px solid var(--invest2)"><div class="lbl">Total PT</div><div class="val" style="color:var(--invest2)">'+fmt(totalPT)+'</div></div>'+
+    '</div>':'<div style="font-size:.74rem;color:var(--muted)">Nenhum aluno este mês</div>')+
     '</div>';
-  var btnLancar=document.getElementById('btn-lancar-sf');
+  var btnWrap=document.getElementById('sf-lancar-wrap');
   var lancado=carregarSFLancado();
   var lancadoEl=document.getElementById('sf-lancado-el');
   if(lancado){
-    if(btnLancar) btnLancar.style.display='none';
-    if(lancadoEl) lancadoEl.innerHTML='<span style="color:var(--green2)">✅ Já lançado em '+lancado.data+' — '+fmt(lancado.total)+'</span>'+
+    if(btnWrap) btnWrap.style.display='none';
+    if(lancadoEl) lancadoEl.innerHTML='<span style="color:var(--green2)">✅ Aulas lançadas em '+lancado.data+' — '+fmt(lancado.total)+'</span>'+
       ' <button style="background:none;border:none;color:var(--muted);font-size:.7rem;cursor:pointer" onclick="reabrirLancamentoSF()">Relançar</button>';
   } else {
-    if(btnLancar) btnLancar.style.display=totalAulas>0?'block':'none';
+    if(btnWrap) btnWrap.style.display=totalAulas>0?'block':'none';
     if(lancadoEl) lancadoEl.innerHTML='';
   }
 }
@@ -2233,13 +2271,11 @@ function atualizarDropdownsCats(){
     sel.innerHTML=buildCatOptions(curr);
     if(curr) sel.value=curr;
   });
-  // Also update filtro-cat with blank option
+  // Also update filtro-cat and quick-launch cats
   var fc=document.getElementById('filtro-cat');
-  if(fc){
-    var currF=fc.value;
-    fc.innerHTML='<option value="">Todas categorias</option>'+buildCatOptions(currF);
-    if(currF) fc.value=currF;
-  }
+  if(fc){var currF=fc.value;fc.innerHTML='<option value="">Todas categorias</option>'+buildCatOptions(currF);if(currF) fc.value=currF;}
+  var rqc=document.getElementById('rq-cat');if(rqc) rqc.innerHTML=buildCatOptions(rqc.value||'outros');
+  var rdc=document.getElementById('rd-cat');if(rdc) rdc.innerHTML=buildCatOptions(rdc.value||'outros');
 }
 
 // ══ DÍVIDAS & NOME LIMPO ══
@@ -2408,7 +2444,76 @@ async function enviarChatDividas(){
   }
 }
 
+// ══ AUTO-AVANÇAR PARCELAS ══
+function autoAvancarParcelas(){
+  var mesKey = 'parcelas_mes_'+ano+'_'+mes;
+  if(localStorage.getItem(mesKey)) return; // already done this month
+  localStorage.setItem(mesKey,'1');
+
+  // Advance Moto
+  var moto=carregarMoto();
+  if(moto.parcela&&moto.atual<moto.total){
+    var motoKey=docIdG('fin_moto');
+    var r=localStorage.getItem(motoKey);
+    if(r){var m=JSON.parse(r);if(m.atual<m.total){m.atual++;localStorage.setItem(motoKey,JSON.stringify(m));set(motoKey,JSON.stringify(m));}}
+  }
+  // Advance Casa
+  var casa=carregarCasa();
+  if(casa.parcela&&casa.atual<casa.total){
+    var casaKey=docIdG('fin_casa');
+    var rc=localStorage.getItem(casaKey);
+    if(rc){var c=JSON.parse(rc);if(c.atual<c.total){c.atual++;localStorage.setItem(casaKey,JSON.stringify(c));set(casaKey,JSON.stringify(c));}}
+  }
+  // Advance outros fins
+  var fins=carregarFins();
+  var changed=false;
+  fins=fins.map(function(f){if(f.atual<f.total){f.atual++;changed=true;}return f;});
+  if(changed) salvarFins(fins);
+  // Advance recorrentes parcelados
+  var recs=JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
+  var rChanged=false;
+  recs=recs.map(function(r){if(r.meses>0&&r.parc&&r.parc<r.meses){r.parc++;rChanged=true;}return r;});
+  if(rChanged){localStorage.setItem(docIdG('recorrentes'),JSON.stringify(recs));set(docIdG('recorrentes'),JSON.stringify(recs));}
+}
+
+// ══ RECEITAS FIXAS AUTOMÁTICAS ══
+function aplicarReceitasFixasDoMes(){
+  var marcaKey = docId()+'_rec_fixas_aplicadas';
+  if(localStorage.getItem(marcaKey)) return;
+  var fixas=JSON.parse(localStorage.getItem(docIdG('receitas_fixas'))||'[]');
+  var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
+  fixas.forEach(function(f){
+    var jaExiste=vars.some(function(v){return v._fixaId===f.id;});
+    if(!jaExiste&&f.status!=='previsto'){
+      vars.push({id:Date.now()+Math.random(),desc:f.desc,val:f.val,data:hoje(),obs:'Auto: renda fixa',carteira:f.carteira||0,status:'confirmado',_fixaId:f.id});
+    }
+  });
+  localStorage.setItem(docId()+'_receitas_var',JSON.stringify(vars));
+  localStorage.setItem(marcaKey,'1');
+  set(docId()+'_receitas_var',JSON.stringify(vars));
+}
+
+// ══ VERIFICAR CONTAS VENCIDAS ══
+function verificarContasVencidas(){
+  var contas=JSON.parse(localStorage.getItem(docIdG('contas'))||'[]');
+  var hoje_dt=new Date();
+  var diaHoje=hoje_dt.getDate();
+  var vencidas=contas.filter(function(c){return !c.pago&&c.dia<diaHoje&&diasParaVencer(c.dia)<0;});
+  var vencendo=contas.filter(function(c){return !c.pago&&diasParaVencer(c.dia)>=0&&diasParaVencer(c.dia)<=3;});
+  var msg='';
+  if(vencidas.length) msg+='🔴 '+vencidas.length+' conta(s) VENCIDA(S)! ';
+  if(vencendo.length) msg+='🔔 '+vencendo.length+' vencendo em breve!';
+
+  // Also check financiamentos
+  var moto=carregarMoto();var casa=carregarCasa();
+  if(moto.data){var dm=parseInt((moto.data.split('-')[2]||'1'));if(diasParaVencer(dm)<=3&&diasParaVencer(dm)>=0) msg+=' 🏍️ Moto vence em '+diasParaVencer(dm)+'d!';}
+  if(casa.data){var dc=parseInt((casa.data.split('-')[2]||'1'));if(diasParaVencer(dc)<=3&&diasParaVencer(dc)>=0) msg+=' 🏠 Casa vence em '+diasParaVencer(dc)+'d!';}
+
+  if(msg) setTimeout(function(){mostrarToast(msg.trim());},1500);
+}
+
 // ══ AUTO-LANÇAMENTO DE FIXOS NO MÊS ══
+
 function aplicarFixosDoMes(){
   var recs = JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
   var fixos = recs.filter(function(r){return r.tipo==='fixo'&&recorrenteAtivo(r);});
@@ -2631,7 +2736,60 @@ async function addRecorrente(){
   renderRecorrentes();mostrarToast('✅ '+(tipo==='fixo'?'Fixo':'Recorrente')+' adicionado!');
 }
 
+// ══ LANÇAMENTO RÁPIDO ══
+async function addGastoRapido(){
+  var desc=document.getElementById('rq-desc').value.trim();
+  var val=parseFloat(document.getElementById('rq-val').value)||0;
+  var cat=document.getElementById('rq-cat').value||'outros';
+  if(!desc||!val){mostrarToast('Preencha descrição e valor!');return;}
+  var gastos=carregarGastos();
+  gastos.push({id:Date.now(),desc:desc,valor:val,cat:cat,pag:'debito',data:hoje(),obs:'Lançamento rápido'});
+  await set(docId()+'_gastos',JSON.stringify(gastos));
+  document.getElementById('rq-desc').value='';
+  document.getElementById('rq-val').value='';
+  renderAll();
+  mostrarToast('✅ Gasto lançado!');
+}
+
+async function addDespesaRapida(){
+  var desc=document.getElementById('rd-desc').value.trim();
+  var val=parseFloat(document.getElementById('rd-val').value)||0;
+  var cat=document.getElementById('rd-cat').value||'outros';
+  var data=document.getElementById('rd-data').value||hoje();
+  if(!desc||!val){mostrarToast('Preencha descrição e valor!');return;}
+  var gastos=carregarGastos();
+  gastos.push({id:Date.now(),desc:desc,valor:val,cat:cat,pag:'debito',data:data,obs:''});
+  await set(docId()+'_gastos',JSON.stringify(gastos));
+  document.getElementById('rd-desc').value='';
+  document.getElementById('rd-val').value='';
+  var rd=document.getElementById('rd-data');if(rd) rd.value=hoje();
+  renderAll();
+  mostrarToast('✅ Despesa lançada!');
+}
+
+function switchRecTab(tab){
+  var tabRec=document.getElementById('rec-tab-receita');
+  var tabDesp=document.getElementById('rec-tab-despesa');
+  var btnRec=document.getElementById('tab-receita');
+  var btnDesp=document.getElementById('tab-despesa');
+  if(tab==='receita'){
+    if(tabRec) tabRec.style.display='block';
+    if(tabDesp) tabDesp.style.display='none';
+    if(btnRec){btnRec.style.background='var(--green2)';btnRec.style.borderColor='var(--green2)';btnRec.style.color='#fff';}
+    if(btnDesp){btnDesp.style.background='var(--surface)';btnDesp.style.borderColor='var(--border)';btnDesp.style.color='var(--muted)';}
+  } else {
+    if(tabRec) tabRec.style.display='none';
+    if(tabDesp) tabDesp.style.display='block';
+    if(btnDesp){btnDesp.style.background='var(--red2)';btnDesp.style.borderColor='var(--red2)';btnDesp.style.color='#fff';}
+    if(btnRec){btnRec.style.background='var(--surface)';btnRec.style.borderColor='var(--border)';btnRec.style.color='var(--muted)';}
+    // populate rd-cat
+    var rdCat=document.getElementById('rd-cat');if(rdCat) rdCat.innerHTML=buildCatOptions('outros');
+    var rdData=document.getElementById('rd-data');if(rdData) rdData.value=hoje();
+  }
+}
+
 // ══ HISTÓRICO PAGAMENTOS CASA ══
+
 function carregarHistCasa(){
   var r=localStorage.getItem(docIdG('hist_casa'));
   return r?JSON.parse(r):[];
@@ -3100,7 +3258,7 @@ async function renderCarteiras(){
   var cart=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
   var sels=[
     {id:'g-carteira',all:true},{id:'r-carteira',debit:true},
-    {id:'sf-pt-carteira',all:true},
+    {id:'sf-pt-carteira',all:true},{id:'sf-aulas-carteira',all:true},
     {id:'transf-de',all:true},{id:'transf-para',all:true},
     {id:'fatura-cartao',credit:true},{id:'fatura-conta',debit:true}
   ];
@@ -3537,10 +3695,12 @@ async function init(){
   if(lblMes) lblMes.textContent = MESES[mes]+' '+ano;
 
   // Set dates to today
-  ['g-data','r-data','inv-data','ob-data','cv-dia'].forEach(function(id){
+  ['g-data','r-data','inv-data','ob-data','cv-dia','hist-data','hist-moto-data','sf-pt-data','div-data'].forEach(function(id){
     var el = document.getElementById(id);
     if(el && el.type==='date') el.value=hoje();
   });
+  var nfEl=document.getElementById('nf-data');if(nfEl) nfEl.value=hoje();
+  var efEl=document.getElementById('ef-data');if(efEl) efEl.value=hoje();
 
   // Load tema
   if(localStorage.getItem('pf_tema')==='dark'){
@@ -3548,13 +3708,40 @@ async function init(){
     var bt = document.getElementById('btnTema'); if(bt) bt.textContent='☀️';
   }
 
+  // Restore API key
+  var savedKey=localStorage.getItem('pf_apikey')||sessionStorage.getItem('pf_apikey')||'';
+  if(savedKey){window._apiKeyCache=savedKey;var akEl=document.getElementById('config-apikey');if(akEl) akEl.value=savedKey;}
+
+  // Load from Firebase first if available
+  if(_db && _userId){
+    try{
+      var snap = await _db.collection('dados').doc(_userId).get();
+      if(snap.exists){
+        var data = snap.data()||{};
+        Object.keys(data).forEach(function(k){if(data[k]) localStorage.setItem(k,data[k]);});
+      }
+    }catch(e){ console.warn('Firebase load err:',e.message); }
+  }
+
+  // Auto-advance parcelas for current month
+  autoAvancarParcelas();
+
+  // Apply fixed monthly expenses
+  aplicarFixosDoMes();
+  aplicarReceitasFixasDoMes();
+
+  // Populate dropdowns
+  atualizarDropdownsCats();
+  renderCatsConfig();
+  popularSimuladorFins();
+
   await renderAll();
   await renderContas();
+  renderFinanciamentos();
+  renderSkyFit();
 
-  // Check due bills notification
-  var contas = JSON.parse(localStorage.getItem(docIdG('contas'))||'[]');
-  var urgentes = contas.filter(function(c){ return !c.pago&&diasParaVencer(c.dia)<=3; });
-  if(urgentes.length) mostrarToast('🔔 '+urgentes.length+' conta(s) vencendo em breve!');
+  // Alert for due/overdue bills
+  verificarContasVencidas();
 }
 
 // ══ DOM READY ══
