@@ -496,6 +496,8 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
       <div><label>Aluno</label><input type="text" id="sf-pt-aluno" placeholder="Nome do aluno"/></div>
       <div><label>Valor (R$)</label><input type="number" id="sf-pt-val" placeholder="0,00" min="0" step="0.01"/></div>
       <div><label>Data</label><input type="date" id="sf-pt-data"/></div>
+      <div><label>Conta que recebeu</label><select id="sf-pt-carteira"><option value="">— Selecione —</option></select></div>
+      <div class="full"><label>Status</label><select id="sf-pt-status"><option value="confirmado">✅ Já recebi</option><option value="previsto">📅 Ainda vou receber</option></select></div>
       <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--invest),var(--invest2))" onclick="addPersonalSkyFit()">+ Confirmar e lançar na Receita</button></div>
     </div>
     <div id="skyfit-personais" style="margin-top:10px"></div>
@@ -710,6 +712,27 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     </div>
   </div>
   <div class="lista" id="lista-investimentos"></div>
+
+  <!-- SIMULADOR CAIXINHA -->
+  <div class="form-box" style="margin-top:12px;margin-bottom:12px">
+    <div class="form-tit"><span class="bar" style="background:var(--invest2)"></span>🟣 Simulador — Caixinha & Rendimentos</div>
+    <div class="fields">
+      <div><label>Valor investido (R$)</label><input type="number" id="sim-inv-val" placeholder="Ex: 1000" min="0" step="0.01"/></div>
+      <div><label>Tipo</label>
+        <select id="sim-inv-tipo">
+          <option value="caixinha">🟣 Caixinha Nubank (100% CDI)</option>
+          <option value="cdb110">🏦 CDB 110% CDI</option>
+          <option value="cdb100">🏦 CDB 100% CDI</option>
+          <option value="tesouro">🏛️ Tesouro Selic</option>
+          <option value="poupanca">🐷 Poupança</option>
+        </select>
+      </div>
+      <div><label>CDI atual (% ao ano)</label><input type="number" id="sim-inv-cdi" value="10.65" min="0" step="0.01"/></div>
+      <div><label>Prazo (meses)</label><input type="number" id="sim-inv-prazo" placeholder="Ex: 12" min="1" max="360"/></div>
+      <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--invest),var(--invest2))" onclick="simularCaixinha()">📊 Simular rendimento</button></div>
+    </div>
+    <div id="sim-inv-resultado" style="margin-top:10px"></div>
+  </div>
 
   <!-- IA CHAT INVESTIMENTOS -->
   <div class="form-box" style="margin-top:12px">
@@ -1049,6 +1072,37 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
   </div>
 </div>
 
+
+<!-- MODAL EDITAR INVESTIMENTO -->
+<div class="overlay" id="overlayEditarInv" onclick="fecharOverlay('overlayEditarInv',event)">
+  <div class="modal">
+    <h2>✏️ Editar Investimento</h2>
+    <input type="hidden" id="ei-id"/>
+    <div class="fields">
+      <div class="full"><label>Descrição</label><input type="text" id="ei-desc"/></div>
+      <div><label>Valor (R$)</label><input type="number" id="ei-val" min="0" step="0.01"/></div>
+      <div><label>Tipo</label>
+        <select id="ei-tipo">
+          <option value="caixinha">🟣 Caixinha Nubank</option>
+          <option value="reserva">💚 Reserva de Emergência</option>
+          <option value="tesouro">🏛️ Tesouro Selic</option>
+          <option value="cdb">🏦 CDB</option>
+          <option value="acoes">📈 Ações</option>
+          <option value="fii">🏢 FII</option>
+          <option value="cripto">₿ Cripto</option>
+          <option value="poupanca">🐷 Poupança</option>
+          <option value="outros">📦 Outros</option>
+        </select>
+      </div>
+      <div><label>Data</label><input type="date" id="ei-data"/></div>
+      <div class="full"><label>Obs</label><input type="text" id="ei-obs"/></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal('overlayEditarInv')">Cancelar</button>
+      <button class="btn-confirm" onclick="salvarEdicaoInv()">✅ Salvar</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL META ECONOMIA -->
 <div class="overlay" id="overlayMetaEco" onclick="fecharOverlay('overlayMetaEco',event)">
@@ -1783,19 +1837,26 @@ async function addPersonalSkyFit(){
   var aluno=document.getElementById('sf-pt-aluno').value.trim();
   var val=parseFloat(document.getElementById('sf-pt-val').value)||0;
   var data=document.getElementById('sf-pt-data').value||hoje();
+  var cart=parseInt(document.getElementById('sf-pt-carteira').value)||0;
+  var stEl=document.getElementById('sf-pt-status');
+  var status=stEl?stEl.value:'confirmado';
   if(!aluno||!val){alert('Preencha aluno e valor!');return;}
   var pts=carregarSFPersonais();
-  pts.push({id:Date.now(),aluno:aluno,val:val,data:data});
+  pts.push({id:Date.now(),aluno:aluno,val:val,data:data,cart:cart,status:status});
   await salvarSFPersonais(pts);
-  // Vai direto pra receita
+  // Lança na receita com status e carteira
   var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
-  vars.push({id:Date.now()+1,desc:'Personal — '+aluno,val:val,data:data,obs:'Sky Fit Personal'});
+  vars.push({id:Date.now()+1,desc:'Personal — '+aluno,val:val,data:data,obs:'Sky Fit Personal',carteira:cart,status:status});
   await set(docId()+'_receitas_var',JSON.stringify(vars));
+  // Só credita carteira se confirmado
+  if(cart&&val&&status==='confirmado') await creditarCarteira(cart,val,'Personal — '+aluno);
   document.getElementById('sf-pt-aluno').value='';
   document.getElementById('sf-pt-val').value='';
   var pd=document.getElementById('sf-pt-data');if(pd) pd.value=hoje();
   renderSkyFit();renderAll();
-  mostrarToast('✅ '+aluno+' lançado na Receita!');
+  var cartNome='';
+  if(cart){var carts=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');var cc=carts.find(function(c){return c.id===cart;});if(cc) cartNome=' → '+cc.icon+' '+cc.nome;}
+  mostrarToast(status==='confirmado'?'✅ '+aluno+' confirmado'+cartNome:'📅 '+aluno+' previsto — lembre de confirmar!');
 }
 
 async function delSFPersonal(id){
@@ -2676,6 +2737,20 @@ async function delGasto(id){
 }
 function delGastoBtn(btn){delGasto(parseInt(btn.dataset.id));}
 function editarGastoBtn(btn){abrirEdicao(parseInt(btn.dataset.id));}
+function confirmarReceitaBtn(btn){confirmarReceita(parseInt(btn.dataset.id),btn.dataset.tipo);}
+async function confirmarReceita(id,tipo){
+  var key=tipo==='fixa'?docIdG('receitas_fixas'):docId()+'_receitas_var';
+  var lista=JSON.parse(localStorage.getItem(key)||'[]');
+  var item=lista.find(function(r){return r.id===id;});
+  if(!item) return;
+  item.status='confirmado';
+  lista=lista.map(function(r){return r.id===id?item:r;});
+  await set(key,JSON.stringify(lista));
+  // Credita carteira agora que confirmou
+  if(item.carteira&&item.val) await creditarCarteira(item.carteira,item.val,item.desc);
+  renderAll();
+  mostrarToast('✅ Receita confirmada! Carteira atualizada.');
+}
 async function delReceita(id,tipo){
   if(tipo==='fixa'){var k=docIdG('receitas_fixas');var l=JSON.parse(localStorage.getItem(k)||'[]').filter(function(f){return f.id!==id;});await set(k,JSON.stringify(l));}
   else{var k2=docId()+'_receitas_var';var l2=JSON.parse(localStorage.getItem(k2)||'[]').filter(function(v){return v.id!==id;});await set(k2,JSON.stringify(l2));}
@@ -2917,15 +2992,18 @@ async function renderGastos(){
 function renderReceitas(){
   var fixas=JSON.parse(localStorage.getItem(docIdG('receitas_fixas'))||'[]');
   var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
-  var totalF=fixas.reduce(function(a,f){return a+f.val;},0);
-  var totalV=vars.reduce(function(a,v){return a+v.val;},0);
+  // Only confirmed income counts in total
+  var totalF=fixas.filter(function(f){return f.status!=='previsto';}).reduce(function(a,f){return a+f.val;},0);
+  var totalV=vars.filter(function(v){return v.status!=='previsto';}).reduce(function(a,v){return a+v.val;},0);
+  var totalFprev=fixas.filter(function(f){return f.status==='previsto';}).reduce(function(a,f){return a+f.val;},0);
+  var totalVprev=vars.filter(function(v){return v.status==='previsto';}).reduce(function(a,v){return a+v.val;},0);
   window._totalRenda=totalF+totalV;
   var resumoEl=document.getElementById('receita-resumo');
   if(resumoEl) resumoEl.innerHTML='<div class="cards-row">'+
-    '<div class="mini-card"><div class="lbl">Renda fixa</div><div class="val" style="color:var(--green2)">'+fmt(totalF)+'</div></div>'+
-    '<div class="mini-card"><div class="lbl">Renda variável</div><div class="val" style="color:var(--gold2)">'+fmt(totalV)+'</div></div>'+
-    '<div class="mini-card"><div class="lbl">Total</div><div class="val" style="color:var(--green2)">'+fmt(totalF+totalV)+'</div></div>'+
-    '</div>';
+    '<div class="mini-card"><div class="lbl">✅ Confirmado</div><div class="val" style="color:var(--green2)">'+fmt(totalF+totalV)+'</div></div>'+
+    ((totalFprev+totalVprev)>0?'<div class="mini-card"><div class="lbl">📅 Previsto</div><div class="val" style="color:var(--gold2)">'+fmt(totalFprev+totalVprev)+'</div></div>':'')+
+    '<div class="mini-card"><div class="lbl">🏦 Total esperado</div><div class="val" style="color:var(--muted)">'+fmt(totalF+totalV+totalFprev+totalVprev)+'</div></div>'+
+    '</div><div style="font-size:.68rem;color:var(--muted);margin-top:4px">⚠️ Somente receitas ✅ Confirmadas entram nos cálculos do mês</div>';
   var listEl=document.getElementById('lista-receitas');if(!listEl) return;
   var todos=fixas.map(function(f){return Object.assign({},f,{_tipo:'fixa'});})
     .concat(vars.map(function(v){return Object.assign({},v,{_tipo:'var'});}));
@@ -2937,7 +3015,8 @@ function renderReceitas(){
       '<div class="item-info"><div class="item-nome">'+r.desc+
       '<span class="tag" style="background:'+(r._tipo==='fixa'?'rgba(34,197,94,.15)':'rgba(240,196,74,.15)')+';color:'+(r._tipo==='fixa'?'var(--green2)':'var(--gold2)')+'">'+( r._tipo==='fixa'?'Fixa':'Variável')+'</span></div>'+
       '<div class="item-meta">'+fmtD(r.data)+(r.obs?' · '+r.obs:'')+'</div></div>'+
-      '<div class="item-val pos">+'+fmt(r.val)+'</div>'+
+      '<div class="item-val '+(r.status==="previsto"?'':'pos')+'">'+( r.status==="previsto"?'':'+')+fmt(r.val)+'</div>'+
+      (r.status==="previsto"?'<button style="background:rgba(34,197,94,.2);border:1px solid var(--green2);border-radius:8px;color:var(--green2);cursor:pointer;font-size:.7rem;padding:4px 8px" data-id="'+r.id+'" data-tipo="'+r._tipo+'" onclick="confirmarReceitaBtn(this)" title="Confirmar recebimento">✅ Confirmar</button>':'')+
       '<button style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.76rem;padding:3px" data-id="'+r.id+'" data-tipo="'+r._tipo+'" onclick="editarReceitaBtn(this)" title="Editar">✏️</button>'+
       '<button class="item-del" data-id="'+r.id+'" data-tipo="'+r._tipo+'" onclick="delReceitaBtn(this)">&#x2715;</button></div>';
   }).join('');
@@ -2949,8 +3028,10 @@ async function addReceita(){
   var cart=parseInt(document.getElementById('r-carteira').value)||0;
   var data=document.getElementById('r-data').value||hoje();
   var obs=document.getElementById('r-obs').value.trim();
+  var stEl=document.getElementById('r-status');
+  var status=stEl?stEl.value:'confirmado';
   if(!desc||!val){alert('Preencha descrição e valor!');return;}
-  var item={id:Date.now(),desc:desc,val:val,data:data,obs:obs,carteira:cart};
+  var item={id:Date.now(),desc:desc,val:val,data:data,obs:obs,carteira:cart,status:status};
   if(tipo==='fixa'){
     var fixas=JSON.parse(localStorage.getItem(docIdG('receitas_fixas'))||'[]');fixas.push(item);
     await set(docIdG('receitas_fixas'),JSON.stringify(fixas));
@@ -2958,10 +3039,12 @@ async function addReceita(){
     var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');vars.push(item);
     await set(docId()+'_receitas_var',JSON.stringify(vars));
   }
-  if(cart&&val) await creditarCarteira(cart,val,desc);
+  // Só credita carteira se já confirmado
+  if(cart&&val&&status==='confirmado') await creditarCarteira(cart,val,desc);
   ['r-desc','r-val','r-obs'].forEach(function(id){var el=document.getElementById(id);if(el) el.value='';});
   var rd=document.getElementById('r-data');if(rd) rd.value=hoje();
-  renderAll();mostrarToast('✅ Renda adicionada!');
+  renderAll();
+  mostrarToast(status==='confirmado'?'✅ Renda confirmada!':'📅 Renda prevista registrada!');
 }
 
 // ══ RECORRENTES ══
@@ -3017,6 +3100,7 @@ async function renderCarteiras(){
   var cart=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
   var sels=[
     {id:'g-carteira',all:true},{id:'r-carteira',debit:true},
+    {id:'sf-pt-carteira',all:true},
     {id:'transf-de',all:true},{id:'transf-para',all:true},
     {id:'fatura-cartao',credit:true},{id:'fatura-conta',debit:true}
   ];
@@ -3096,6 +3180,7 @@ async function renderInvestimentos(){
       '<div class="item-info"><div class="item-nome">'+i.desc+'</div>'+
       '<div class="item-meta">'+fmtD(i.data)+' · '+i.tipo+(i.obs?' · '+i.obs:'')+'</div></div>'+
       '<div class="item-val pos">'+fmt(i.valor)+'</div>'+
+      '<button style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.76rem;padding:3px" data-id="'+i.id+'" onclick="editarInvBtn(this)" title="Editar">✏️</button>'+
       '<button class="item-del" data-id="'+i.id+'" onclick="delInvBtn(this)">&#x2715;</button></div>';
   }).join('');
 }
