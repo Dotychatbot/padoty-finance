@@ -3474,11 +3474,24 @@ async function renderGastos(){
     '<div class="item-meta">Parcela '+casaPin.atual+'/'+casaPin.total+(casaPin.data?' · Vence '+fmtD(casaPin.data):'')+(totalObrasPin>0?' + Obras: '+fmt(totalObrasPin):'')+'</div></div>'+
     '<div class="item-val neg">'+fmt(casaPin.parcela+totalObrasPin)+'</div></div>';
   finsPin.forEach(function(f){
-    pinned+='<div class="item" style="border-left:3px solid var(--border)">'+
+    pinned+=
+      '<div class="item" style="border-left:3px solid var(--border)">'+
       '<div class="item-ic">🏦</div>'+
-      '<div class="item-info"><div class="item-nome">'+f.icon+' '+f.nome+'<span class="tag" style="background:rgba(37,65,196,.15);color:var(--blue2);margin-left:4px">fixo</span></div>'+
-      '<div class="item-meta">Parcela '+f.atual+'/'+f.total+'</div></div>'+
+      '<div class="item-info"><div class="item-nome">'+f.icon+' '+f.nome+
+      '<span class="tag" style="background:rgba(37,65,196,.15);color:var(--blue2);margin-left:4px">fixo</span></div>'+
+      '<div class="item-meta">Parcela '+f.atual+'/'+f.total+(f.dataVenc?' · Vence '+fmtD(f.dataVenc):'')+'</div></div>'+
       '<div class="item-val neg">'+fmt(f.parcela)+'</div></div>';
+  });
+  // ASSINATURAS pinned
+  var assnsPin=carregarAssinaturas();
+  assnsPin.forEach(function(a){
+    pinned+=
+      '<div class="item" style="border-left:3px solid var(--invest2)">'+
+      '<div class="item-ic">📱</div>'+
+      '<div class="item-info"><div class="item-nome">'+a.nome+
+      '<span class="tag" style="background:rgba(139,92,246,.15);color:var(--invest2);margin-left:4px">assinatura</span></div>'+
+      '<div class="item-meta">Todo dia '+a.dia+(a.obs?' · '+a.obs:'')+'</div></div>'+
+      '<div class="item-val neg">'+fmt(a.val)+'</div></div>';
   });
   if(!gastos.length&&!pinned){el.innerHTML='<div class="vazio">Nenhum gasto lançado 💸</div>';return;}
   var cats=carregarCats();var CAT_IC={};cats.forEach(function(c){CAT_IC[c.id]=c.icon;});
