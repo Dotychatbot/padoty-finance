@@ -4052,18 +4052,20 @@ function buildBarWidget(label,valor,total,cor){
     '<div style="height:100%;background:'+cor+';width:'+pct+'%;border-radius:99px;transition:width .6s"></div></div></div>';
 }
 
+function abrirMetaEco(){document.getElementById('overlayMetaEco').classList.add('aberto');}
 function metaEconomiaEl(){
   var meta=parseFloat(localStorage.getItem(docIdG('meta_economia'))||'0');
-  if(!meta) return '<button onclick="document.getElementById('overlayMetaEco').classList.add('aberto')" style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:.72rem;padding:5px 10px;cursor:pointer">🎯 Definir meta</button>';
+  if(!meta) return '<button onclick="abrirMetaEco()" style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:.72rem;padding:5px 10px;cursor:pointer">🎯 Definir meta</button>';
   var renda=window._totalRenda||0;
   var gastos=JSON.parse(localStorage.getItem(docId()+'_gastos')||'[]');
   var totalG=gastos.reduce(function(a,g){return a+g.valor;},0)+(window._totalFinanc||0)+(window._totalAssinaturas||0);
   var economia=Math.max(0,renda-totalG);
   var pct=meta>0?Math.min(economia/meta*100,100).toFixed(0):0;
+  var cor=economia>=meta?'var(--green2)':'var(--gold2)';
   return '<div style="text-align:right"><div style="font-size:.62rem;color:var(--muted)">🎯 Meta economia</div>'+
-    '<div style="font-size:.84rem;font-weight:700;color:'+(economia>=meta?'var(--green2)':'var(--gold2)')+'">'+fmt(economia)+' / '+fmt(meta)+'</div>'+
+    '<div style="font-size:.84rem;font-weight:700;color:'+cor+'">'+fmt(economia)+' / '+fmt(meta)+'</div>'+
     '<div style="height:4px;background:var(--bg2);border-radius:99px;overflow:hidden;width:80px;margin-left:auto;margin-top:3px">'+
-    '<div style="height:100%;background:'+(economia>=meta?'var(--green2)':'var(--gold2)')+';width:'+pct+'%;border-radius:99px"></div></div></div>';
+    '<div style="height:100%;background:'+cor+';width:'+pct+'%;border-radius:99px"></div></div></div>';
 }
 
 function renderWidgetInteligente(){
