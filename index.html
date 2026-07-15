@@ -2690,28 +2690,6 @@ function renderSemaforo(){
 }
 
 // ══ QUANTO POSSO GASTAR HOJE ══
-function renderWidgetHoje(){
-  var el = document.getElementById('widget-hoje-el');
-  if(!el) return;
-  var renda = window._totalRenda||0;
-  if(!renda){el.innerHTML='';return;}
-  var gastos = JSON.parse(localStorage.getItem(docId()+'_gastos')||'[]');
-  var totalG = gastos.reduce(function(a,g){return a+g.valor;},0);
-  var fins = window._totalFinanc||0;
-  var assns = window._totalAssinaturas||0;
-  var disponivel = renda-totalG-fins-assns;
-  var hoje_dt = new Date();
-  var diasRestantes = new Date(ano,mes+1,0).getDate()-hoje_dt.getDate();
-  var porDia = diasRestantes>0 ? disponivel/diasRestantes : 0;
-  var cor = porDia>=0 ? 'var(--green2)' : 'var(--red2)';
-  el.innerHTML='<div style="background:linear-gradient(135deg,rgba(26,46,140,.15),var(--surface));border:1px solid var(--border);border-radius:12px;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">'+
-    '<div><div style="font-size:.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">⚡ Pode gastar por dia</div>'+
-    '<div style="font-family:DM Mono,monospace;font-size:1.3rem;font-weight:600;color:'+cor+'">'+fmt(Math.max(0,porDia))+'</div>'+
-    '<div style="font-size:.68rem;color:var(--muted)">'+diasRestantes+' dias restantes</div></div>'+
-    '<div style="text-align:right"><div style="font-size:.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Disponível total</div>'+
-    '<div style="font-family:DM Mono,monospace;font-size:1rem;color:'+cor+'">'+fmt(Math.max(0,disponivel))+'</div></div>'+
-    '</div>';
-}
 
 // ══ GRÁFICO PATRIMÔNIO ══
 function renderGraficoPatrimonio(){
@@ -3029,8 +3007,23 @@ function parcelaAtual(r){
 }
 async function delGasto(id){
   var gastos=JSON.parse(localStorage.getItem(docId()+'_gastos')||'[]');
+  var gasto=gastos.find(function(g){return g.id==id;});
+  // Restore wallet balance if had one
+  if(gasto&&gasto.carteira&&gasto.valor){
+    if(gasto.pag==='credito'){
+      // Restore credit card fatura
+      var cart=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
+      cart=cart.map(function(c){if(c.id==gasto.carteira) c.fatura=Math.max(0,(c.fatura||0)-gasto.valor);return c;});
+      await set(docIdG('carteiras'),JSON.stringify(cart));
+    } else {
+      // Restore debit balance
+      await creditarCarteira(gasto.carteira,gasto.valor,'Estorno: '+gasto.desc);
+    }
+  }
   gastos=gastos.filter(function(g){return g.id!=id;});
-  await set(docId()+'_gastos',JSON.stringify(gastos));renderAll();
+  await set(docId()+'_gastos',JSON.stringify(gastos));
+  renderAll();
+  mostrarToast('✅ Gasto excluído — saldo restaurado!');
 }
 function delGastoBtn(btn){delGasto(parseFloat(btn.dataset.id));}
 function editarGastoBtn(btn){abrirEdicao(parseFloat(btn.dataset.id));}
@@ -4046,7 +4039,96 @@ async function pagarFatura(){
   renderCarteiras();mostrarToast('✅ Fatura paga!');
 }
 
+// ══ WIDGET INTELIGENTE ══
+function renderWidgetHoje(){ renderWidgetInteligente(); }
+
+function buildBarWidget(label,valor,total,cor){
+  var pct=total>0?Math.min(valor/total*100,100).toFixed(0):0;
+  return '<div style="margin-bottom:6px">'+
+    '<div style="display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:2px">'+
+    '<span style="color:var(--muted)">'+label+'</span>'+
+    '<span style="font-family:DM Mono,monospace;color:'+cor+'">'+fmt(valor)+'</span></div>'+
+    '<div style="height:5px;background:var(--bg2);border-radius:99px;overflow:hidden">'+
+    '<div style="height:100%;background:'+cor+';width:'+pct+'%;border-radius:99px;transition:width .6s"></div></div></div>';
+}
+
+function metaEconomiaEl(){
+  var meta=parseFloat(localStorage.getItem(docIdG('meta_economia'))||'0');
+  if(!meta) return '<button onclick="document.getElementById('overlayMetaEco').classList.add('aberto')" style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:.72rem;padding:5px 10px;cursor:pointer">🎯 Definir meta</button>';
+  var renda=window._totalRenda||0;
+  var gastos=JSON.parse(localStorage.getItem(docId()+'_gastos')||'[]');
+  var totalG=gastos.reduce(function(a,g){return a+g.valor;},0)+(window._totalFinanc||0)+(window._totalAssinaturas||0);
+  var economia=Math.max(0,renda-totalG);
+  var pct=meta>0?Math.min(economia/meta*100,100).toFixed(0):0;
+  return '<div style="text-align:right"><div style="font-size:.62rem;color:var(--muted)">🎯 Meta economia</div>'+
+    '<div style="font-size:.84rem;font-weight:700;color:'+(economia>=meta?'var(--green2)':'var(--gold2)')+'">'+fmt(economia)+' / '+fmt(meta)+'</div>'+
+    '<div style="height:4px;background:var(--bg2);border-radius:99px;overflow:hidden;width:80px;margin-left:auto;margin-top:3px">'+
+    '<div style="height:100%;background:'+(economia>=meta?'var(--green2)':'var(--gold2)')+';width:'+pct+'%;border-radius:99px"></div></div></div>';
+}
+
+function renderWidgetInteligente(){
+  var el=document.getElementById('widget-inteligente-el');
+  if(!el) return;
+  var renda=window._totalRenda||0;
+  if(!renda){el.innerHTML='<div style="font-size:.76rem;color:var(--muted);padding:10px;text-align:center">Lance suas receitas para ver a análise 💡</div>';return;}
+  var gastos=JSON.parse(localStorage.getItem(docId()+'_gastos')||'[]');
+  var totalGasto=gastos.reduce(function(a,g){return a+g.valor;},0);
+  var fins=window._totalFinanc||0;
+  var assns=window._totalAssinaturas||0;
+  var recs=window._totalRecorrentes||0;
+  var contas=JSON.parse(localStorage.getItem(docIdG('contas'))||'[]');
+  var totalCV=contas.filter(function(c){return !c.pago;}).reduce(function(a,c){return a+c.valor;},0);
+  var carts=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
+  var totalFatura=carts.filter(function(c){return c.tipo==='credito';}).reduce(function(a,c){return a+(c.fatura||0);},0);
+  var comprometido=fins+assns+recs+totalGasto;
+  var disponivel=renda-comprometido;
+  var meta10=renda*0.1;
+  var metaLaz=renda*0.1;
+  var hoje_dt=new Date();
+  var diaAtual=hoje_dt.getDate();
+  var diasMes=new Date(ano,mes+1,0).getDate();
+  var diasRestantes=Math.max(1,diasMes-diaAtual);
+  var porDia=disponivel>0?disponivel/diasRestantes:0;
+  var mediaGasto=diaAtual>0?(totalGasto+fins+assns)/diaAtual:0;
+  var projecao=mediaGasto*diasMes;
+  var projecaoSaldo=renda-projecao;
+  var corDia=porDia>=30?'var(--green2)':porDia>=10?'var(--gold2)':'var(--red2)';
+  var corDisp=disponivel>0?'var(--green2)':'var(--red2)';
+  var fatAlert='';
+  carts.filter(function(c){return c.tipo==='credito'&&(c.fatura||0)>0&&diasParaVencer(c.diaFatura||1)<=5&&diasParaVencer(c.diaFatura||1)>=0;}).forEach(function(c){
+    fatAlert+='<div style="background:rgba(224,48,48,.1);border-left:3px solid var(--red2);padding:8px 12px;border-radius:0 8px 8px 0;font-size:.74rem;margin-bottom:6px">⚠️ Fatura '+c.nome+': '+fmt(c.fatura||0)+' vence em '+diasParaVencer(c.diaFatura||1)+'d!</div>';
+  });
+  el.innerHTML=fatAlert+
+    '<div style="background:linear-gradient(135deg,rgba(26,46,140,.15),var(--surface));border:1px solid rgba(37,65,196,.2);border-radius:14px;padding:14px;margin-bottom:8px">'+
+    '<div style="font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">⚡ Como usar seu dinheiro — '+MESES[mes]+'/'+ano+'</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'+
+    '<div style="background:var(--bg2);border-radius:10px;padding:10px;text-align:center">'+
+      '<div style="font-size:.6rem;color:var(--muted);margin-bottom:3px">Por dia disponível</div>'+
+      '<div style="font-family:DM Mono,monospace;font-size:1.2rem;font-weight:700;color:'+corDia+'">'+fmt(Math.max(0,porDia))+'</div>'+
+      '<div style="font-size:.6rem;color:var(--muted)">'+diasRestantes+' dias restantes</div>'+
+    '</div>'+
+    '<div style="background:var(--bg2);border-radius:10px;padding:10px;text-align:center">'+
+      '<div style="font-size:.6rem;color:var(--muted);margin-bottom:3px">Disponível total</div>'+
+      '<div style="font-family:DM Mono,monospace;font-size:1.2rem;font-weight:700;color:'+corDisp+'">'+fmt(Math.max(0,disponivel))+'</div>'+
+      '<div style="font-size:.6rem;color:var(--muted)">após compromissos</div>'+
+    '</div>'+
+    '</div>'+
+    '<div style="font-size:.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">📊 Distribuição sugerida da sua renda</div>'+
+    buildBarWidget('🏠 Compromissos fixos',comprometido,renda,'var(--red2)')+
+    buildBarWidget('📈 Investir (10%)',meta10,renda,'var(--invest2)')+
+    buildBarWidget('🎉 Lazer (10%)',metaLaz,renda,'var(--gold2)')+
+    buildBarWidget('💰 Sobra / Economia',Math.max(0,disponivel-meta10-metaLaz),renda,'var(--green2)')+
+    '</div>'+
+    '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">'+
+    '<div><div style="font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">📈 Projeção fim do mês</div>'+
+    '<div style="font-family:DM Mono,monospace;color:'+(projecaoSaldo>=0?'var(--green2)':'var(--red2)')+';font-size:.92rem;font-weight:700">'+fmt(Math.abs(projecaoSaldo))+'</div>'+
+    '<div style="font-size:.66rem;color:var(--muted)">'+(projecaoSaldo>=0?'✅ no azul no ritmo atual':'🔴 no vermelho — reduza os gastos!')+'</div></div>'+
+    metaEconomiaEl()+
+    '</div>';
+}
+
 // ══ RENDER ALL ══
+
 
 
 
