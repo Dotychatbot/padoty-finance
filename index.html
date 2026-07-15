@@ -327,7 +327,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
           <div id="moto-parcela-lbl" style="font-size:.68rem;color:var(--muted)">Não configurado</div>
         </div>
       </div>
-      <button class="btn-sm" onclick="document.getElementById('overlayConfigMoto').classList.add('aberto')">⚙️ Configurar</button>
+      <button class="btn-sm" onclick="abrirConfigMoto()">⚙️ Configurar</button>
     </div>
     <div id="moto-val-el" style="font-family:'DM Mono',monospace;font-size:1.3rem;color:var(--gold2);margin-bottom:8px"></div>
     <div id="moto-bar-el"></div>
@@ -356,7 +356,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
           <div id="casa-parcela-lbl" style="font-size:.68rem;color:var(--muted)">Não configurado</div>
         </div>
       </div>
-      <button class="btn-sm" onclick="document.getElementById('overlayConfigCasa').classList.add('aberto')">⚙️ Configurar</button>
+      <button class="btn-sm" onclick="abrirConfigCasa()">⚙️ Configurar</button>
     </div>
     <div id="casa-val-el" style="font-family:'DM Mono',monospace;font-size:1.3rem;color:var(--gold2);margin-bottom:8px"></div>
     <div id="casa-bar-el"></div>
@@ -1729,7 +1729,8 @@ function renderFinanciamentos(){
         var teTotal=ep.reduce(function(a,e){return a+e.valor;},0);
         var pct2=f.total>0?Math.min(f.atual/f.total*100,100):0;
         return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:12px;margin-bottom:8px;position:relative">'+
-          '<button style="position:absolute;top:8px;right:8px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.72rem" data-id="'+f.id+'" onclick="delFinBtn(this)">✕</button>'+
+          '<button style="position:absolute;top:8px;right:30px;background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.72rem" data-id="'+f.id+'" onclick="editarFinBtn(this)" title="Editar">✏️</button>'+
+        '<button style="position:absolute;top:8px;right:8px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.72rem" data-id="'+f.id+'" onclick="delFinBtn(this)">✕</button>'+
           '<div style="font-weight:700;margin-bottom:4px">'+f.icon+' '+f.nome+'</div>'+
           '<div style="font-family:DM Mono,monospace;color:var(--gold2);font-size:.9rem">'+fmt(f.parcela)+'/mês</div>'+
           '<div style="font-size:.68rem;color:var(--muted)">Parcela '+f.atual+'/'+f.total+' · Vence '+(f.dataVenc?fmtD(f.dataVenc):'dia '+f.dia)+'</div>'+
@@ -3436,11 +3437,19 @@ async function renderGastos(){
   var totalObrasPin=obrasPin.reduce(function(a,o){return a+o.valor;},0);
   var finsPin=carregarFins();
   var pinned='';
-  if(motoPin.parcela) pinned+='<div class="item" style="border-left:3px solid var(--red2)">'+
-    '<div class="item-ic">🏍️</div>'+
-    '<div class="item-info"><div class="item-nome">Financiamento Moto<span class="tag" style="background:rgba(176,31,31,.15);color:var(--red2);margin-left:4px">fixo</span></div>'+
-    '<div class="item-meta">Parcela '+motoPin.atual+'/'+motoPin.total+(motoPin.data?' · Vence '+fmtD(motoPin.data):'')+'</div></div>'+
-    '<div class="item-val neg">'+fmt(motoPin.parcela)+'</div></div>';
+  if(motoPin.parcela){
+    pinned+='<div class="item" style="border-left:3px solid var(--red2)">'+
+      '<div class="item-ic">🏍️</div>'+
+      '<div class="item-info"><div class="item-nome">Financiamento Moto<span class="tag" style="background:rgba(176,31,31,.15);color:var(--red2);margin-left:4px">fixo</span></div>'+
+      '<div class="item-meta">Parcela '+motoPin.atual+'/'+motoPin.total+(motoPin.data?' · Vence '+fmtD(motoPin.data):'')+'</div></div>'+
+      '<div class="item-val neg">'+fmt(motoPin.parcela)+'</div></div>';
+  } else {
+    pinned+='<div class="item" style="border-left:3px solid var(--red2);opacity:.6;cursor:pointer" onclick="abrirConfigMoto()">'+
+      '<div class="item-ic">🏍️</div>'+
+      '<div class="item-info"><div class="item-nome">Financiamento Moto</div>'+
+      '<div class="item-meta" style="color:var(--red2)">⚙️ Toque aqui para configurar</div></div>'+
+      '<div style="font-size:.7rem;color:var(--muted)">—</div></div>';
+  }
   if(casaPin.parcela){
     var casaPinPct=casaPin.pct||100;
     var casaPinMinha=casaPin.minhaParte||(casaPin.parcela*(casaPinPct/100));
@@ -4072,7 +4081,11 @@ function renderWidgetInteligente(){
   var el=document.getElementById('widget-inteligente-el');
   if(!el) return;
   var renda=window._totalRenda||0;
-  if(!renda){el.innerHTML='<div style="font-size:.76rem;color:var(--muted);padding:10px;text-align:center">Lance suas receitas para ver a análise 💡</div>';return;}
+  if(!renda){el.innerHTML='<div style="background:var(--bg2);border-radius:12px;padding:14px;text-align:center">'+
+    '<div style="font-size:1.5rem;margin-bottom:6px">💡</div>'+
+    '<div style="font-size:.8rem;font-weight:600;margin-bottom:4px">Lance suas receitas primeiro</div>'+
+    '<div style="font-size:.72rem;color:var(--muted)">Vá em Fontes de Renda e registre o que você recebe este mês. O widget de análise aparece automaticamente!</div>'+
+    '</div>';return;}
   var gastos=JSON.parse(localStorage.getItem(docId()+'_gastos')||'[]');
   var totalGasto=gastos.reduce(function(a,g){return a+g.valor;},0);
   var fins=window._totalFinanc||0;
