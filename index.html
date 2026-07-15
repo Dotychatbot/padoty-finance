@@ -444,23 +444,41 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
       <button onclick="iniciarVoz('gasto')" style="margin-left:auto;background:var(--blue);border:none;color:white;border-radius:8px;padding:4px 10px;font-size:.7rem;cursor:pointer">🎤 Voz</button>
     </div>
     <div class="fields">
-      <div class="full"><label>Descrição</label><input type="text" id="g-desc" placeholder="Ex: Mercado, Gasolina..."/></div>
+      <div class="full"><label>Descrição</label><input type="text" id="g-desc" placeholder="Ex: Mercado, Gasolina, Netflix..."/></div>
       <div><label>Valor (R$)</label><input type="number" id="g-val" placeholder="0,00" min="0" step="0.01"/></div>
-      <div><label>Categoria</label>
-        <select id="g-cat"></select>
-      </div>
-      <div><label>Pagamento</label>
-        <select id="g-pag">
-          <option value="debito">Débito</option>
-          <option value="credito">Crédito</option>
-          <option value="dinheiro">Dinheiro</option>
-          <option value="pix">Pix</option>
+      <div><label>Data</label><input type="date" id="g-data"/></div>
+      <div><label>Categoria</label><select id="g-cat"></select></div>
+      <div><label>Forma de pagamento</label>
+        <select id="g-pag" onchange="toggleGastoPag()">
+          <option value="debito">💳 Débito</option>
+          <option value="pix">⚡ PIX</option>
+          <option value="credito">💳 Crédito</option>
+          <option value="dinheiro">💵 Dinheiro</option>
         </select>
       </div>
-      <div><label>Data</label><input type="date" id="g-data"/></div>
-      <div><label>Cartão/Conta</label><select id="g-carteira"><option value="">— Nenhum —</option></select></div>
-      <div class="full"><label>Obs (opcional)</label><input type="text" id="g-obs" placeholder="Detalhe..."/></div>
-      <div class="full"><button class="btn-add" onclick="addGasto()">+ Adicionar Gasto</button></div>
+      <div><label>Conta / Cartão</label><select id="g-carteira"><option value="">— Nenhuma —</option></select></div>
+      <div id="g-parc-wrap" style="display:none"><label>Parcelado em</label>
+        <select id="g-parcelas">
+          <option value="1">1x (à vista)</option>
+          <option value="2">2x</option>
+          <option value="3">3x</option>
+          <option value="4">4x</option>
+          <option value="5">5x</option>
+          <option value="6">6x</option>
+          <option value="10">10x</option>
+          <option value="12">12x</option>
+          <option value="18">18x</option>
+          <option value="24">24x</option>
+        </select>
+      </div>
+      <div><label>Recorrente?</label>
+        <select id="g-recorrente">
+          <option value="nao">Não — lançamento único</option>
+          <option value="sim">🔄 Sim — lançar todo mês</option>
+        </select>
+      </div>
+      <div class="full"><label>Obs (opcional)</label><input type="text" id="g-obs" placeholder="Detalhe, estabelecimento..."/></div>
+      <div class="full"><button class="btn-add" onclick="addGasto()" style="background:linear-gradient(135deg,var(--red),var(--red2))">💸 Lançar gasto</button></div>
     </div>
   </div>
 
@@ -674,7 +692,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     <div class="fields">
       <div><label>Nome</label><input type="text" id="cv-nome" placeholder="Ex: IPVA, Conta de luz..."/></div>
       <div><label>Valor (R$)</label><input type="number" id="cv-val" placeholder="0,00" min="0" step="0.01"/></div>
-      <div><label>Dia vencimento</label><input type="number" id="cv-dia" placeholder="Ex: 15" min="1" max="31"/></div>
+      <div><label>Data vencimento</label><input type="date" id="cv-data"/></div>
       <div><label>Recorrente?</label>
         <select id="cv-rec" onchange="toggleCvRec()">
           <option value="nao">Não</option>
@@ -683,6 +701,15 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
         </select>
       </div>
       <div id="cv-parc-wrap" style="display:none"><label>Total parcelas</label><input type="number" id="cv-parc" placeholder="Ex: 12" min="1"/></div>
+      <div><label>Forma de pagamento</label>
+        <select id="cv-pag">
+          <option value="debito">💳 Débito</option>
+          <option value="pix">⚡ PIX</option>
+          <option value="credito">💳 Crédito</option>
+          <option value="boleto">🏦 Boleto</option>
+          <option value="dinheiro">💵 Dinheiro</option>
+        </select>
+      </div>
       <div><label>Categoria</label>
         <select id="cv-cat">
           <option value="financiamento">🏦 Financiamento</option>
@@ -3301,15 +3328,21 @@ function renderComparativo(){
 // ══ CONTAS A VENCER ══
 function toggleCvRec(){var v=document.getElementById('cv-rec').value;var pw=document.getElementById('cv-parc-wrap');if(pw) pw.style.display=v==='parcelado'?'block':'none';}
 async function addConta(){
-  var nome=document.getElementById('cv-nome').value.trim();var val=parseFloat(document.getElementById('cv-val').value)||0;
-  var dia=parseInt(document.getElementById('cv-dia').value)||1;var rec=document.getElementById('cv-rec').value;
-  var parc=parseInt(document.getElementById('cv-parc').value)||0;var cat=document.getElementById('cv-cat').value;
+  var nome=document.getElementById('cv-nome').value.trim();
+  var val=parseFloat(document.getElementById('cv-val').value)||0;
+  var dataVenc=document.getElementById('cv-data').value||hoje();
+  var dia=parseInt(dataVenc.split('-')[2]||'1');
+  var rec=document.getElementById('cv-rec').value;
+  var parc=parseInt(document.getElementById('cv-parc').value)||0;
+  var cat=document.getElementById('cv-cat').value;
+  var pag=document.getElementById('cv-pag')?document.getElementById('cv-pag').value:'debito';
   var obs=document.getElementById('cv-obs').value.trim();
   if(!nome||!val){alert('Preencha nome e valor!');return;}
   var contas=JSON.parse(localStorage.getItem(docIdG('contas'))||'[]');
-  contas.push({id:Date.now(),nome:nome,valor:val,dia:dia,rec:rec,parcelas:parc,cat:cat,obs:obs,pago:false});
+  contas.push({id:Date.now(),nome:nome,valor:val,dia:dia,dataVenc:dataVenc,rec:rec,parcelas:parc,cat:cat,pag:pag,obs:obs,pago:false});
   await set(docIdG('contas'),JSON.stringify(contas));
-  ['cv-nome','cv-val','cv-dia','cv-obs','cv-parc'].forEach(function(id){document.getElementById(id).value='';});
+  ['cv-nome','cv-val','cv-obs','cv-parc'].forEach(function(id){var el=document.getElementById(id);if(el) el.value='';});
+  var cv=document.getElementById('cv-data');if(cv) cv.value=hoje();
   renderContas();mostrarToast('✅ Conta adicionada!');
 }
 function renderContas(){
@@ -3360,7 +3393,7 @@ function renderContas(){
   el.innerHTML=contas.map(function(c){
     var d=diasParaVencer(c.dia);
     var status=c.pago?'pago':d<=0?'vencida':d<=3?'vencendo':'ok';
-    var badge=c.pago?'Pago ✅':d<=0?'Vencida!':d<=3?'Vence em '+d+'d':'Dia '+c.dia+(c.dataVenc?' ('+fmtD(c.dataVenc)+')':'');
+    var badge=c.pago?'Pago ✅':d<=0?'Vencida!':d<=3?'Vence em '+d+'d!':(c.dataVenc?fmtD(c.dataVenc):'Dia '+c.dia);
     var badgeCls=c.pago?'badge-pago':d<=0?'badge-vencida':d<=3?'badge-vencendo':'badge-ok';
     return '<div class="conta-card '+status+'">'+
       '<div style="flex:1"><div style="font-weight:700;font-size:.82rem">'+c.nome+(c._auto?'<span class="tag" style="background:rgba(37,65,196,.15);color:var(--blue2);margin-left:4px">auto</span>':'')+'</div>'+
@@ -3379,6 +3412,12 @@ function carregarGastos(){
   var r=localStorage.getItem(docId()+'_gastos');
   return r?JSON.parse(r):[];
 }
+function toggleGastoPag(){
+  var pag=document.getElementById('g-pag').value;
+  var wrap=document.getElementById('g-parc-wrap');
+  if(wrap) wrap.style.display=pag==='credito'?'block':'none';
+}
+
 async function addGasto(){
   var desc=document.getElementById('g-desc').value.trim();
   var val=parseFloat(document.getElementById('g-val').value)||0;
@@ -3387,16 +3426,32 @@ async function addGasto(){
   var data=document.getElementById('g-data').value||hoje();
   var cart=parseInt(document.getElementById('g-carteira').value)||0;
   var obs=document.getElementById('g-obs').value.trim();
+  var parcEl=document.getElementById('g-parcelas');
+  var parc=pag==='credito'?(parseInt(parcEl?parcEl.value:1)||1):1;
+  var recEl=document.getElementById('g-recorrente');
+  var recorrente=recEl?recEl.value==='sim':false;
   if(!desc||!val){alert('Preencha descrição e valor!');return;}
   var gastos=carregarGastos();
-  var item={id:Date.now(),desc:desc,valor:val,cat:cat,pag:pag,data:data,obs:obs};
+  var valorParc=parc>1?parseFloat((val/parc).toFixed(2)):val;
+  var item={id:Date.now(),desc:desc+(parc>1?' (1/'+parc+')':''),valor:val,cat:cat,pag:pag,data:data,obs:obs,parcelas:parc,parcelaAtualG:1};
   if(cart) item.carteira=cart;
   gastos.push(item);
   await set(docId()+'_gastos',JSON.stringify(gastos));
   if(cart) await debitarCarteira(cart,val,desc,pag==='credito');
+  // Se recorrente → lança nos recorrentes automático
+  if(recorrente){
+    var recs=JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
+    recs.push({id:Date.now()+1,desc:desc,val:val,cat:cat,dia:parseInt(data.split('-')[2])||1,tipo:'recorrente',meses:parc>1?parc:0,obs:'Auto: gasto recorrente',inicio:mes+'/'+ano,parc:1});
+    await set(docIdG('recorrentes'),JSON.stringify(recs));
+    mostrarToast('✅ Gasto lançado e recorrente criado!');
+  } else {
+    mostrarToast('✅ Gasto lançado'+(parc>1?' em '+parc+'x':'')+'!');
+  }
   ['g-desc','g-val','g-obs'].forEach(function(id){var el=document.getElementById(id);if(el) el.value='';});
   var gd=document.getElementById('g-data');if(gd) gd.value=hoje();
-  renderAll();mostrarToast('✅ Gasto lançado!');
+  var pr=document.getElementById('g-parcelas');if(pr) pr.value='1';
+  var rec2=document.getElementById('g-recorrente');if(rec2) rec2.value='nao';
+  renderAll();
 }
 async function renderGastos(){
   var gastos=carregarGastos();
@@ -3438,7 +3493,7 @@ async function renderGastos(){
     return '<div class="item">'+
       '<div class="item-ic">'+(CAT_IC[g.cat]||'📦')+'</div>'+
       '<div class="item-info"><div class="item-nome">'+g.desc+'</div>'+
-      '<div class="item-meta">'+fmtD(g.data)+' · '+(g.cat||'')+(g.obs?' · '+g.obs:'')+'</div></div>'+
+      '<div class="item-meta">'+fmtD(g.data)+' · '+(g.cat||'')+(g.pag?' · '+(g.pag==='credito'?'💳':g.pag==='pix'?'⚡':g.pag==='dinheiro'?'💵':'💳')+'':'')+( g.parcelas>1?' · '+g.parcelas+'x':'')+(g.obs?' · '+g.obs:'')+'</div></div>'+
       '<div class="item-val neg">'+fmt(g.valor)+'</div>'+
       '<button style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.76rem;padding:3px" data-id="'+g.id+'" onclick="editarGastoBtn(this)" title="Editar">✏️</button>'+
       '<button class="item-del" data-id="'+g.id+'" onclick="delGastoBtn(this)">&#x2715;</button>'+
