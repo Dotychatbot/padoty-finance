@@ -1054,11 +1054,15 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
   <div class="modal">
     <h2>🏠 Financiamento Casa</h2>
     <div class="fields">
-      <div><label>Parcela mensal (R$)</label><input type="number" id="cc-parcela" placeholder="Ex: 800,00" min="0" step="0.01"/></div>
+      <div><label>Parcela total (R$)</label><input type="number" id="cc-parcela" placeholder="Ex: 800,00" min="0" step="0.01"/></div>
+      <div><label>Minha parte (%)</label><input type="number" id="cc-pct" placeholder="Ex: 50" min="1" max="100" value="50"/></div>
       <div><label>Parcela atual (nº)</label><input type="number" id="cc-atual" placeholder="Ex: 45" min="1"/></div>
       <div><label>Total de parcelas</label><input type="number" id="cc-total" placeholder="Ex: 360" min="1"/></div>
       <div><label>Data de vencimento</label><input type="date" id="cc-data"/></div>
-      <div class="full"><label>Banco / contrato</label><input type="text" id="cc-obs" placeholder="Ex: Caixa Econômica, contrato..."/></div>
+      <div class="full"><label>Banco / contrato</label><input type="text" id="cc-obs" placeholder="Ex: Caixa Econômica..."/></div>
+      <div class="full" style="background:var(--bg2);border-radius:10px;padding:10px;font-size:.76rem;color:var(--muted)">
+        💡 Parcela compartilhada com companheira? Coloque o valor total e defina sua % de responsabilidade. O app calcula sua parte automaticamente.
+      </div>
     </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="fecharModal('overlayConfigCasa')">Cancelar</button>
@@ -1614,15 +1618,17 @@ async function salvarConfigMoto(){
 }
 async function salvarConfigCasa(){
   var parcela=parseFloat(document.getElementById('cc-parcela').value)||0;
+  var pct=parseFloat(document.getElementById('cc-pct').value)||50;
   var atual=parseInt(document.getElementById('cc-atual').value)||1;
   var total=parseInt(document.getElementById('cc-total').value)||0;
   var data=document.getElementById('cc-data').value||hoje();
   var obs=document.getElementById('cc-obs').value.trim();
   if(!parcela||!total){alert('Preencha parcela e total!');return;}
-  var obj={parcela:parcela,atual:atual,total:total,data:data,obs:obs};
+  var minhaParte=parcela*(pct/100);
+  var obj={parcela:parcela,minhaParte:minhaParte,pct:pct,atual:atual,total:total,data:data,obs:obs};
   await set(docIdG('fin_casa'),JSON.stringify(obj));
   fecharModal('overlayConfigCasa');
-  renderFinanciamentos();renderContas();mostrarToast('✅ Casa salva!');
+  renderFinanciamentos();renderContas();mostrarToast('✅ Casa salva! Sua parte: '+fmt(minhaParte));
 }
 async function addTaxaObra(){
   var desc=document.getElementById('obra-desc').value.trim()||'Taxa de obra';
@@ -1630,7 +1636,8 @@ async function addTaxaObra(){
   if(!val){alert('Digite o valor!');return;}
   var obras=JSON.parse(localStorage.getItem(docId()+'_obras')||'[]');
   var obraId = Date.now();
-  obras.push({id:obraId,desc:desc,valor:val,data:hoje()});
+  var casaCfg=carregarCasa();var obraPct=casaCfg.pct||100;
+  obras.push({id:obraId,desc:desc,valor:val,pct:obraPct,minhaParte:val*(obraPct/100),data:hoje()});
   await set(docId()+'_obras',JSON.stringify(obras));
   // Também vai para Meus Gastos automaticamente
   var gastos=JSON.parse(localStorage.getItem(docId()+'_gastos')||'[]');
@@ -1647,11 +1654,14 @@ async function delObra(id){
   await set(docId()+'_obras',JSON.stringify(obras));
   renderFinanciamentos();
 }
-function renderFinCard(tipo, cfg, obras){
+function renderFinCard(tipo, cfg, obras, hasSplit){
   if(!cfg.parcela) return;
   var obras2=obras||[];
   var totalObras=obras2.reduce(function(a,o){return a+o.valor;},0);
-  var totalMes=cfg.parcela+(tipo==='casa'?totalObras:0);
+  var pct=cfg.pct||100;
+  var minhaParcela=cfg.minhaParte||(cfg.parcela*(pct/100));
+  var minhaObra=totalObras*(pct/100);
+  var totalMes=tipo==='casa'?minhaParcela+minhaObra:cfg.parcela;
   var pct=cfg.total>0?Math.min(cfg.atual/cfg.total*100,100):0;
   var restam=Math.max(0,cfg.total-cfg.atual);
   var cor=pct>80?'var(--green2)':pct>40?'var(--gold2)':'var(--red2)';
@@ -1661,7 +1671,19 @@ function renderFinCard(tipo, cfg, obras){
   var vencEl=document.getElementById(tipo+'-venc-el');
   var parcelaLbl=document.getElementById(tipo+'-parcela-lbl');
   if(parcelaLbl) parcelaLbl.textContent='Parcela '+cfg.atual+'/'+cfg.total+(cfg.obs?' · '+cfg.obs:'');
-  if(valEl) valEl.textContent=fmt(cfg.parcela)+'/mês'+(tipo==='casa'&&totalObras>0?' + '+fmt(totalObras)+' obras = '+fmt(totalMes):'');
+  if(valEl){
+    if(hasSplit&&pct<100){
+      valEl.innerHTML=
+        '<div style="font-family:DM Mono,monospace;font-size:1.1rem;color:var(--gold2)">'+fmt(minhaParcela)+'/mês <span style="font-size:.7rem;color:var(--muted)">('+pct+'% de '+fmt(cfg.parcela)+')</span></div>'+
+        '<div style="display:flex;gap:8px;margin-top:4px;font-size:.72rem">'+
+        '<span style="color:var(--green2)">👤 Você: '+fmt(minhaParcela)+'</span>'+
+        '<span style="color:var(--muted)">👥 Companheira: '+fmt(cfg.parcela-minhaParcela)+'</span>'+
+        '</div>'+
+        (totalObras>0?'<div style="font-size:.72rem;color:var(--invest2);margin-top:3px">🔧 Obra total: '+fmt(totalObras)+' → sua parte: '+fmt(minhaObra)+'</div>':'');
+    } else {
+      valEl.textContent=fmt(cfg.parcela)+'/mês'+(tipo==='casa'&&totalObras>0?' + '+fmt(totalObras)+' obras = '+fmt(totalMes):'');
+    }
+  }
   if(barEl) barEl.innerHTML='<div style="height:6px;background:var(--bg2);border-radius:99px;overflow:hidden;margin-bottom:4px"><div style="height:100%;border-radius:99px;background:'+cor+';width:'+pct.toFixed(0)+'%;transition:width .6s"></div></div><div style="font-size:.68rem;color:var(--muted)">'+pct.toFixed(0)+'% quitado — '+restam+' parcelas restantes</div>';
   if(vencEl) vencEl.textContent=vencimento;
 }
@@ -1673,7 +1695,7 @@ function renderFinanciamentos(){
   // Render moto card
   renderFinCard('moto',moto,null);
   // Render casa card
-  renderFinCard('casa',casa,obras);
+  renderFinCard('casa',casa,obras,true);
   // Render obras list
   var obrasEl=document.getElementById('lista-obras');
   var obrTotalEl=document.getElementById('obras-total-el');
@@ -1682,8 +1704,8 @@ function renderFinanciamentos(){
     obrasEl.innerHTML=!obras.length?'<div style="font-size:.74rem;color:var(--muted)">Nenhuma taxa lançada este mês</div>':
       obras.map(function(o){
         return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:.78rem">'+
-          '<span style="flex:1">🔧 '+o.desc+'</span>'+
-          '<span style="font-family:DM Mono,monospace;color:var(--invest2)">'+fmt(o.valor)+'</span>'+
+          '<span style="flex:1">🔧 '+o.desc+(o.pct&&o.pct<100?' <span style="font-size:.65rem;color:var(--muted)">('+o.pct+'%)</span>':'')+'</span>'+
+          '<span style="font-family:DM Mono,monospace;color:var(--invest2)">'+fmt(o.minhaParte||o.valor)+'</span>'+
           '<button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.72rem" data-id="'+o.id+'" onclick="delObraBtn(this)">✕</button></div>';
       }).join('');
   }
@@ -1709,7 +1731,10 @@ function renderFinanciamentos(){
   renderHistoricoMoto();
   // Calc total
   var totalMoto=moto.parcela||0;
-  var totalCasa=(casa.parcela||0)+totalObras;
+  var casaPct=casa.pct||100;
+  var casaMinha=casa.minhaParte||(( casa.parcela||0)*(casaPct/100));
+  var obrasMinha=totalObras*(casaPct/100);
+  var totalCasa=casaMinha+obrasMinha;
   var totalOutros=fins.reduce(function(a,f){return a+f.parcela;},0);
   var totalGeral=totalMoto+totalCasa+totalOutros;
   window._totalFinanc=totalGeral;
@@ -1732,6 +1757,7 @@ function renderFinanciamentos(){
   }
   if(casa.parcela){
     var el2=document.getElementById('cc-parcela');if(el2) el2.value=casa.parcela;
+    var pctEl=document.getElementById('cc-pct');if(pctEl) pctEl.value=casa.pct||50;
     el2=document.getElementById('cc-atual');if(el2) el2.value=casa.atual;
     el2=document.getElementById('cc-total');if(el2) el2.value=casa.total;
     el2=document.getElementById('cc-data');if(el2&&casa.data) el2.value=casa.data;
@@ -3242,7 +3268,8 @@ function renderContas(){
   if(casaConf.parcela){
     var dC=casaConf.data?parseInt((casaConf.data.split('-')[2]||'1')):1;
     if(!contas.some(function(c){return c._casa;}))
-      contas.push({id:'casa_fin',nome:'🏠 Financiamento Casa'+(totalObrasCv>0?' + Taxa Obra':''),valor:casaConf.parcela+totalObrasCv,dia:dC,dataVenc:casaConf.data||'',cat:'financiamento',obs:'Parcela '+casaConf.atual+'/'+casaConf.total+(totalObrasCv>0?' + '+fmt(totalObrasCv)+' obras':''),pago:false,_casa:true,_auto:true});
+      var casaValorCv=(casaConf.minhaParte||(casaConf.parcela*((casaConf.pct||100)/100)))+(totalObrasCv*((casaConf.pct||100)/100));
+      contas.push({id:'casa_fin',nome:'🏠 Casa'+(casaConf.pct&&casaConf.pct<100?' ('+casaConf.pct+'%)':'')+( totalObrasCv>0?' + Obra':''),valor:casaValorCv,dia:dC,dataVenc:casaConf.data||'',cat:'financiamento',obs:'Parcela '+casaConf.atual+'/'+casaConf.total+(totalObrasCv>0?' + '+fmt(totalObrasCv)+' obras':''),pago:false,_casa:true,_auto:true});
   }
   // Auto: outros fins
   carregarFins().forEach(function(f){
