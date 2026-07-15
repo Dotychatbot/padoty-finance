@@ -1530,7 +1530,8 @@ function iniciarRealtimeSync(){
     Object.keys(data).forEach(function(k){
       var cloud = data[k];
       var local = localStorage.getItem(k);
-      if(cloud && cloud !== local){
+      // Only sync from cloud if: local is empty OR cloud has more data than local
+      if(cloud && (!local || (cloud.length > local.length && local === '[]') || !local)){
         localStorage.setItem(k, cloud);
         changed = true;
       }
@@ -1997,6 +1998,25 @@ function renderFinanciamentos(){
       if(sel&&sel.children.length<=1){cart.forEach(function(c){if(c.tipo!=='credito'){var o=document.createElement('option');o.value=c.id;o.textContent=c.icon+' '+c.nome;sel.appendChild(o);}});}
     });
     if(cHistRes) cHistRes.innerHTML=histC.length?'<div style="font-size:.66rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Histórico de pagamentos</div>':'';
+    // Render obras do mês atual
+    var obrasAtualEl=document.getElementById('lista-obras-atual');
+    var obrasAtual=JSON.parse(localStorage.getItem(docId()+'_obras')||'[]');
+    var casaPctO=casa.pct||100;
+    if(obrasAtualEl){
+      obrasAtualEl.innerHTML=!obrasAtual.length?'<div style="font-size:.72rem;color:var(--muted);margin-top:6px">Nenhuma taxa lançada este mês</div>':
+        '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">'+
+        '<div style="font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Obras lançadas este mês</div>'+
+        obrasAtual.map(function(o){
+          var minhaO=o.minhaParte||o.valor;
+          return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:.78rem">'+
+            '<span style="flex:1">🔧 '+o.desc+' <span style="color:var(--muted);font-size:.68rem">(total: '+fmt(o.valor)+')</span></span>'+
+            '<span style="font-family:DM Mono,monospace;color:var(--invest2)">'+fmt(minhaO)+'</span></div>';
+        }).join('')+
+        '<div style="display:flex;justify-content:space-between;font-size:.76rem;padding-top:6px;margin-top:4px">'+
+        '<span style="color:var(--muted)">Total obras (sua parte)</span>'+
+        '<span style="font-family:DM Mono,monospace;color:var(--invest2);font-weight:700">'+fmt(obrasAtual.reduce(function(a,o){return a+(o.minhaParte||o.valor);},0))+'</span></div>'+
+        '</div>';
+    }
   } else {
     if(cLbl) cLbl.textContent='Toque em ⚙️ Config para configurar';
     if(cProg) cProg.innerHTML='<div style="font-size:.76rem;color:var(--muted);padding:8px">Configure a casa para ver o progresso</div>';
@@ -2162,6 +2182,39 @@ async function delConta(id){
   await set(docIdG('contas'),JSON.stringify(contas));renderContas();
 }
 function pagoContaBtn(btn){togglePagoConta(parseFloat(btn.dataset.id));}
+function editarContaBtn(btn){
+  var id=parseFloat(btn.dataset.id);
+  var contas=JSON.parse(localStorage.getItem(docIdG('contas'))||'[]');
+  var c=contas.find(function(x){return x.id==id;});
+  if(!c) return;
+  document.getElementById('ec-id').value=id;
+  document.getElementById('ec-nome').value=c.nome||'';
+  document.getElementById('ec-val').value=c.valor||0;
+  document.getElementById('ec-data').value=c.dataVenc||hoje();
+  document.getElementById('ec-pag').value=c.pag||'debito';
+  document.getElementById('ec-obs').value=c.obs||'';
+  document.getElementById('overlayEditarConta').classList.add('aberto');
+}
+async function salvarEdicaoConta(){
+  var id=parseFloat(document.getElementById('ec-id').value);
+  var contas=JSON.parse(localStorage.getItem(docIdG('contas'))||'[]');
+  contas=contas.map(function(c){
+    if(c.id==id){
+      c.nome=document.getElementById('ec-nome').value.trim();
+      c.valor=parseFloat(document.getElementById('ec-val').value)||0;
+      var dv=document.getElementById('ec-data').value;
+      c.dataVenc=dv;
+      c.dia=dv?parseInt(dv.split('-')[2]||'1'):c.dia;
+      c.pag=document.getElementById('ec-pag').value;
+      c.obs=document.getElementById('ec-obs').value.trim();
+    }
+    return c;
+  });
+  await set(docIdG('contas'),JSON.stringify(contas));
+  fecharModal('overlayEditarConta');
+  renderContas();
+  mostrarToast('✅ Conta atualizada!');
+}
 function delContaBtn(btn){delConta(parseFloat(btn.dataset.id));}
 function editarContaBtn2(btn){abrirEdicaoConta(parseFloat(btn.dataset.id));}
 async function delCarteira(id){var c=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]').filter(function(x){return x.id!==id;});await set(docIdG('carteiras'),JSON.stringify(c));renderCarteiras();}
@@ -3362,13 +3415,21 @@ async function init(){
   var savedCDI=localStorage.getItem('pf_cdi')||'10.65';
   var cdiEl=document.getElementById('config-cdi');if(cdiEl) cdiEl.value=savedCDI;
 
-  // Load from Firebase first if available
+  // Load from Firebase - SAFE MERGE: never overwrite existing local data
   if(_db && _userId){
     try{
       var snap = await _db.collection('dados').doc(_userId).get();
       if(snap.exists){
-        var data = snap.data()||{};
-        Object.keys(data).forEach(function(k){if(data[k]) localStorage.setItem(k,data[k]);});
+        var fbData = snap.data()||{};
+        Object.keys(fbData).forEach(function(k){
+          var local = localStorage.getItem(k);
+          var cloud = fbData[k];
+          if(cloud && !local){
+            // Only load from Firebase if local doesn't have this key
+            localStorage.setItem(k, cloud);
+          }
+          // If local already has data → keep local (don't overwrite)
+        });
       }
     }catch(e){ console.warn('Firebase load err:',e.message); }
   }
