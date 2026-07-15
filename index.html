@@ -469,6 +469,15 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     <select id="filtro-cat" onchange="renderGastos()" style="flex:1;min-width:140px"><option value="">Todas categorias</option><option value="diario">Diário</option><option value="pessoal">Pessoal</option><option value="domestico">Doméstico</option><option value="saude">Saúde</option><option value="transporte">Transporte</option><option value="lazer">Lazer</option><option value="outros">Outros</option></select>
   </div>
   <div id="gastos-total" style="margin-bottom:8px"></div>
+  <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+    <span style="font-size:.7rem;color:var(--muted)">Não achou a categoria?</span>
+    <button onclick="document.getElementById('gastos-nova-cat').style.display=document.getElementById('gastos-nova-cat').style.display==='none'?'flex':'none'" style="background:none;border:1px solid var(--border);border-radius:20px;color:var(--muted);font-size:.72rem;padding:4px 10px;cursor:pointer">+ Nova categoria</button>
+  </div>
+  <div id="gastos-nova-cat" style="display:none;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+    <input type="text" id="gc-icon" placeholder="🏷️" maxlength="4" style="width:48px;text-align:center;font-size:1rem;padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text)"/>
+    <input type="text" id="gc-nome" placeholder="Nome da categoria" style="flex:1;min-width:120px;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:.82rem"/>
+    <button onclick="addCatRapida('g-cat','gastos-nova-cat')" style="background:var(--gold2);color:#111;border:none;border-radius:8px;padding:7px 12px;font-size:.78rem;font-weight:700;cursor:pointer">✅</button>
+  </div>
   <div class="lista" id="lista-gastos"></div>
 </section>
 
@@ -3810,11 +3819,21 @@ function renderResumo(){
     }).join('');
   }
   var cardsEl=document.getElementById('resumo-cards');
+  // Get wallet balances
+  var carts=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
+  var saldoContas=carts.filter(function(c){return c.tipo!=='credito';}).reduce(function(a,c){return a+(c.saldo||0);},0);
+  var totalInvs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]').reduce(function(a,i){return a+i.valor;},0);
+  var faturaTotal=carts.filter(function(c){return c.tipo==='credito';}).reduce(function(a,c){return a+(c.fatura||0);},0);
+
   if(cardsEl) cardsEl.innerHTML=
-    '<div class="mini-card" style="border-top:2px solid var(--green2)"><div class="lbl">💰 Renda</div><div class="val" style="color:var(--green2)">'+fmt(renda)+'</div></div>'+
+    '<div class="mini-card" style="border-top:2px solid var(--green2)"><div class="lbl">💰 Renda confirmada</div><div class="val" style="color:var(--green2)">'+fmt(renda)+'</div></div>'+
     '<div class="mini-card" style="border-top:2px solid var(--red2)"><div class="lbl">💸 Total despesas</div><div class="val" style="color:var(--red2)">'+fmt(totalTudo)+'</div></div>'+
-    '<div class="mini-card" style="border-top:2px solid '+(saldo>=0?'var(--green2)':'var(--red2)')+'"><div class="lbl">🏦 Saldo</div><div class="val" style="color:'+(saldo>=0?'var(--green2)':'var(--red2)')+'">'+fmt(saldo)+'</div></div>'+
-    '<div class="mini-card" style="border-top:2px solid var(--warn2)"><div class="lbl">⚡ Hoje</div><div class="val" style="color:var(--warn2)">'+fmt(gastoHoje)+'</div></div>';
+    '<div class="mini-card" style="border-top:2px solid '+(saldo>=0?'var(--green2)':'var(--red2)')+'"><div class="lbl">📊 Resultado mês</div><div class="val" style="color:'+(saldo>=0?'var(--green2)':'var(--red2)')+'">'+fmt(saldo)+'</div></div>'+
+    '<div class="mini-card" style="border-top:2px solid var(--blue2)"><div class="lbl">🏦 Saldo em contas</div><div class="val" style="color:var(--blue2)">'+fmt(saldoContas)+'</div></div>'+
+    (totalInvs>0?'<div class="mini-card" style="border-top:2px solid var(--invest2)"><div class="lbl">📈 Investido</div><div class="val" style="color:var(--invest2)">'+fmt(totalInvs)+'</div></div>':'')+
+    (faturaTotal>0?'<div class="mini-card" style="border-top:2px solid var(--red2)"><div class="lbl">💳 Fatura aberta</div><div class="val" style="color:var(--red2)">-'+fmt(faturaTotal)+'</div></div>':'')+
+    (saldoContas>0||totalInvs>0?'<div class="mini-card" style="border-top:2px solid var(--gold2)"><div class="lbl">💎 Patrimônio total</div><div class="val" style="color:var(--gold2)">'+fmt(saldoContas+totalInvs)+'</div></div>':'')+
+    '<div class="mini-card" style="border-top:2px solid var(--warn2)"><div class="lbl">⚡ Gastei hoje</div><div class="val" style="color:var(--warn2)">'+fmt(gastoHoje)+'</div></div>';
   var fluxoEl=document.getElementById('resumo-fluxo');
   if(fluxoEl) fluxoEl.innerHTML=
     '<div style="display:flex;gap:10px;flex-wrap:wrap;font-size:.75rem">'+
