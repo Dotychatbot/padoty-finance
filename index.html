@@ -293,8 +293,8 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
   <div id="resumo-alertas"></div>
   <!-- SEMÁFORO -->
   <div id="semaforo-el" style="margin-bottom:12px"></div>
-  <!-- QUANTO POSSO GASTAR HOJE -->
-  <div id="widget-hoje-el" style="margin-bottom:12px"></div>
+  <!-- WIDGET INTELIGENTE -->
+  <div id="widget-inteligente-el" style="margin-bottom:12px"></div>
   <div class="cards-row" id="resumo-cards"></div>
   <div class="form-box" style="margin-bottom:14px"><div class="form-tit"><span class="bar" style="background:var(--casal,var(--blue2))"></span>Fluxo do mês</div><div id="resumo-fluxo"></div></div>
   <div class="form-box"><div class="form-tit"><span class="bar" style="background:var(--red2)"></span>Gastos por categoria</div><div id="resumo-grafico"></div></div>
@@ -2614,6 +2614,14 @@ function verificarContasVencidas(){
   if(casa.data){var dc=parseInt((casa.data.split('-')[2]||'1'));if(diasParaVencer(dc)<=3&&diasParaVencer(dc)>=0) msg+=' 🏠 Casa vence em '+diasParaVencer(dc)+'d!';}
 
   if(msg) setTimeout(function(){mostrarToast(msg.trim());},1500);
+  // Fatura alert
+  var carts2=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
+  carts2.filter(function(c){return c.tipo==='credito'&&(c.fatura||0)>0;}).forEach(function(c){
+    var dia=c.diaFatura||1;
+    if(diasParaVencer(dia)<=5&&diasParaVencer(dia)>=0){
+      setTimeout(function(){mostrarToast('💳 Fatura '+c.nome+': '+fmt(c.fatura||0)+' vence em '+diasParaVencer(dia)+'d!');},3000);
+    }
+  });
 }
 
 // ══ AUTO-LANÇAMENTO DE FIXOS NO MÊS ══
@@ -3529,7 +3537,8 @@ async function addCarteira(){
   var alerta=parseFloat(document.getElementById('ck-alerta').value)||0;
   if(!nome){alert('Digite o nome!');return;}
   var cart=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
-  cart.push({id:Date.now(),nome:nome,icon:icon,tipo:tipo,saldo:saldo,limite:lim,alerta:alerta,fatura:0});
+  var diaFat=parseInt(document.getElementById('ck-dia-fat').value)||1;
+  cart.push({id:Date.now(),nome:nome,icon:icon,tipo:tipo,saldo:saldo,limite:lim,alerta:alerta,fatura:0,diaFatura:diaFat});
   await set(docIdG('carteiras'),JSON.stringify(cart));
   ['ck-nome','ck-icon','ck-saldo','ck-limite','ck-alerta'].forEach(function(id){var el=document.getElementById(id);if(el) el.value='';});
   renderCarteiras();mostrarToast('✅ Conta adicionada!');
@@ -3550,7 +3559,7 @@ async function renderCarteiras(){
   var cart=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
   var sels=[
     {id:'g-carteira',all:true},{id:'r-carteira',debit:true},
-    {id:'sf-pt-carteira',all:true},{id:'sf-aulas-carteira',all:true},
+    {id:'sf-pt-carteira',all:true},{id:'sf-aulas-carteira',all:true},{id:'inv-carteira',debit:true},
     {id:'transf-de',all:true},{id:'transf-para',all:true},
     {id:'fatura-cartao',credit:true},{id:'fatura-conta',debit:true}
   ];
@@ -3610,8 +3619,11 @@ async function addInvestimento(){
   if(!desc||!val){alert('Preencha descrição e valor!');return;}
   var taxaEl=document.getElementById('inv-taxa');
   var taxa=taxaEl?taxaEl.value.trim():'';
+  var cartEl=document.getElementById('inv-carteira');
+  var cartId=cartEl?parseInt(cartEl.value)||0:0;
   var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]');
-  invs.push({id:Date.now(),desc:desc,valor:val,tipo:tipo,data:data,obs:obs,taxa:taxa});
+  invs.push({id:Date.now(),desc:desc,valor:val,tipo:tipo,data:data,obs:obs,taxa:taxa,carteira:cartId});
+  if(cartId&&val) await debitarCarteira(cartId,val,'Investimento: '+desc,false);
   await set(docId()+'_invs',JSON.stringify(invs));
   ['inv-desc','inv-val','inv-obs'].forEach(function(id){var el=document.getElementById(id);if(el) el.value='';});
   var id2=document.getElementById('inv-data');if(id2) id2.value=hoje();
@@ -3994,7 +4006,7 @@ async function renderAll(){
   await renderInvestimentos();
   renderResumo();
   renderSemaforo();
-  renderWidgetHoje();
+  renderWidgetInteligente();
   renderMetaEconomia();
 }
 
