@@ -1174,6 +1174,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
         </select>
       </div>
       <div><label>Data</label><input type="date" id="ei-data"/></div>
+      <div><label>Taxa CDI % (ex: 115 para Caixinha Turbo)</label><input type="number" id="ei-taxa" placeholder="Ex: 115" min="0" step="0.1"/></div>
       <div class="full"><label>Obs</label><input type="text" id="ei-obs"/></div>
     </div>
     <div class="modal-btns">
@@ -1650,7 +1651,7 @@ async function addTaxaObra(){
 }
 async function delObra(id){
   var obras=JSON.parse(localStorage.getItem(docId()+'_obras')||'[]');
-  obras=obras.filter(function(o){return o.id!==id;});
+  obras=obras.filter(function(o){return o.id!=id;});
   await set(docId()+'_obras',JSON.stringify(obras));
   renderFinanciamentos();
 }
@@ -1764,9 +1765,9 @@ function renderFinanciamentos(){
     el2=document.getElementById('cc-obs');if(el2) el2.value=casa.obs||'';
   }
 }
-function delObraBtn(btn){delObra(parseInt(btn.dataset.id));}
+function delObraBtn(btn){delObra(parseFloat(btn.dataset.id));}
 function delExtraBtn(btn){delExtra(parseInt(btn.dataset.fid),parseInt(btn.dataset.eid));}
-function abrirExtraBtn(btn){abrirModalExtra(parseInt(btn.dataset.id),btn.dataset.nome);}
+function abrirExtraBtn(btn){abrirModalExtra(parseFloat(btn.dataset.id),btn.dataset.nome);}
 
 // ══ ASSINATURAS ══
 function carregarAssinaturas(){var r=localStorage.getItem(docIdG('assinaturas'));return r?JSON.parse(r):[];}
@@ -1787,7 +1788,7 @@ async function addAssinatura(){
 }
 
 async function delAssinatura(id){
-  var assns=carregarAssinaturas();assns=assns.filter(function(a){return a.id!==id;});
+  var assns=carregarAssinaturas();assns=assns.filter(function(a){return a.id!=id;});
   await salvarAssinaturas(assns);renderAssinaturas();
 }
 
@@ -1843,6 +1844,14 @@ async function salvarEdicao(){
 }
 
 // ══ API KEY CONFIG ══
+function salvarCDI(){
+  var val=document.getElementById('config-cdi').value.trim();
+  if(!val){alert('Digite o CDI!');return;}
+  localStorage.setItem('pf_cdi',val);
+  set('pf_cdi_global',val);
+  mostrarToast('✅ CDI atualizado: '+val+'% a.a.');
+  renderInvestimentos();
+}
 function salvarAPIKey(){
   var key=document.getElementById('config-apikey').value.trim();
   if(!key){alert('Cole a API key!');return;}
@@ -1936,15 +1945,15 @@ async function editarSFMod(id){
 }
 
 async function delSFMod(id){
-  var mods=carregarSFMods().filter(function(m){return m.id!==id;});
+  var mods=carregarSFMods().filter(function(m){return m.id!=id;});
   var horas=carregarSFHoras();
   delete horas[id];
   await salvarSFMods(mods);
   await salvarSFHoras(horas);
   renderSkyFit();
 }
-function delSFModBtn(btn){delSFMod(parseInt(btn.dataset.id));}
-function editSFModBtn(btn){editarSFMod(parseInt(btn.dataset.id));}
+function delSFModBtn(btn){delSFMod(parseFloat(btn.dataset.id));}
+function editSFModBtn(btn){editarSFMod(parseFloat(btn.dataset.id));}
 
 async function addPersonalSkyFit(){
   var aluno=document.getElementById('sf-pt-aluno').value.trim();
@@ -1973,11 +1982,11 @@ async function addPersonalSkyFit(){
 }
 
 async function delSFPersonal(id){
-  var pts=carregarSFPersonais().filter(function(p){return p.id!==id;});
+  var pts=carregarSFPersonais().filter(function(p){return p.id!=id;});
   await salvarSFPersonais(pts);
   renderSkyFit();
 }
-function delSFPTBtn(btn){delSFPersonal(parseInt(btn.dataset.id));}
+function delSFPTBtn(btn){delSFPersonal(parseFloat(btn.dataset.id));}
 
 async function lancarSkyFitReceita(){
   var mods=carregarSFMods();
@@ -2144,7 +2153,7 @@ function gerarNotaSkyFit(){
 // ══ EDITAR FINANCIAMENTO ══
 function abrirEdicaoFin(id){
   var fins = carregarFins();
-  var f = fins.find(function(x){return x.id===id;});
+  var f = fins.find(function(x){return x.id==id;});
   if(!f) return;
   document.getElementById('ef-id').value=id;
   document.getElementById('ef-nome').value=f.nome||'';
@@ -2161,7 +2170,7 @@ function abrirEdicaoFin(id){
 function abrirEdicaoReceita(id,tipo){
   var key = tipo==='fixa'?docIdG('receitas_fixas'):docId()+'_receitas_var';
   var lista = JSON.parse(localStorage.getItem(key)||'[]');
-  var r = lista.find(function(x){return x.id===id;});
+  var r = lista.find(function(x){return x.id==id;});
   if(!r) return;
   document.getElementById('er-id').value=id;
   document.getElementById('er-tipo').value=tipo;
@@ -2186,7 +2195,7 @@ async function salvarEdicaoReceita(){
 
 // ══ EDITAR ASSINATURA ══
 function abrirEdicaoAssn(id){
-  var assns=carregarAssinaturas();var a=assns.find(function(x){return x.id===id;});if(!a) return;
+  var assns=carregarAssinaturas();var a=assns.find(function(x){return x.id==id;});if(!a) return;
   document.getElementById('ea-id').value=id;document.getElementById('ea-nome').value=a.nome||'';
   document.getElementById('ea-val').value=a.val||0;document.getElementById('ea-dia').value=a.dia||1;document.getElementById('ea-obs').value=a.obs||'';
   document.getElementById('overlayEditarAssn').classList.add('aberto');
@@ -2214,7 +2223,7 @@ async function salvarEdicaoRec(){
 
 // ══ EDITAR CONTA A VENCER ══
 function abrirEdicaoConta(id){
-  var contas=JSON.parse(localStorage.getItem(docIdG('contas'))||'[]');var c=contas.find(function(x){return x.id===id;});if(!c) return;
+  var contas=JSON.parse(localStorage.getItem(docIdG('contas'))||'[]');var c=contas.find(function(x){return x.id==id;});if(!c) return;
   document.getElementById('ec-id').value=id;document.getElementById('ec-nome').value=c.nome||'';
   document.getElementById('ec-val').value=c.valor||0;document.getElementById('ec-dia').value=c.dia||1;document.getElementById('ec-obs').value=c.obs||'';
   document.getElementById('overlayEditarConta').classList.add('aberto');
@@ -2225,7 +2234,7 @@ async function salvarEdicaoConta(){
   contas=contas.map(function(c){if(c.id===id){c.nome=document.getElementById('ec-nome').value.trim();c.valor=parseFloat(document.getElementById('ec-val').value)||0;c.dia=parseInt(document.getElementById('ec-dia').value)||1;c.obs=document.getElementById('ec-obs').value.trim();}return c;});
   await set(docIdG('contas'),JSON.stringify(contas));fecharModal('overlayEditarConta');renderContas();mostrarToast('✅ Conta atualizada!');
 }
-function editarContaBtn(btn){abrirEdicaoConta(parseInt(btn.dataset.id));}
+function editarContaBtn(btn){abrirEdicaoConta(parseFloat(btn.dataset.id));}
 
 // ══ IA CHAT INVESTIMENTOS ══
 var _invChatHistory = [];
@@ -2316,7 +2325,7 @@ async function addCategoria(){
   mostrarToast('✅ Categoria "'+nome+'" criada!');
 }
 async function delCategoria(id){
-  var cats=carregarCatsCustom().filter(function(c){return c.id!==id;});
+  var cats=carregarCatsCustom().filter(function(c){return c.id!=id;});
   await salvarCatsCustom(cats);
   renderCatsConfig();
   atualizarDropdownsCats();
@@ -2399,11 +2408,11 @@ async function atualizarSitDivida(id,sit){
 }
 
 async function delDivida(id){
-  var divs=carregarDividas().filter(function(d){return d.id!==id;});
+  var divs=carregarDividas().filter(function(d){return d.id!=id;});
   await salvarDividas(divs);renderDividas();mostrarToast('Dívida removida!');
 }
-function delDividaBtn(btn){if(confirm('Remover esta dívida?')) delDivida(parseInt(btn.dataset.id));}
-function sitDividaBtn(sel){atualizarSitDivida(parseInt(sel.dataset.id),sel.value);}
+function delDividaBtn(btn){if(confirm('Remover esta dívida?')) delDivida(parseFloat(btn.dataset.id));}
+function sitDividaBtn(sel){atualizarSitDivida(parseFloat(sel.dataset.id),sel.value);}
 
 function renderDividas(){
   var divs=carregarDividas();
@@ -2571,7 +2580,7 @@ function aplicarReceitasFixasDoMes(){
   fixas.forEach(function(f){
     var jaExiste=vars.some(function(v){return v._fixaId===f.id;});
     if(!jaExiste&&f.status!=='previsto'){
-      vars.push({id:Date.now()+Math.random(),desc:f.desc,val:f.val,data:hoje(),obs:'Auto: renda fixa',carteira:f.carteira||0,status:'confirmado',_fixaId:f.id});
+      vars.push({id:Date.now()+Math.floor(Math.random()*1000),desc:f.desc,val:f.val,data:hoje(),obs:'Auto: renda fixa',carteira:f.carteira||0,status:'confirmado',_fixaId:f.id});
     }
   });
   localStorage.setItem(docId()+'_receitas_var',JSON.stringify(vars));
@@ -2609,7 +2618,7 @@ function aplicarFixosDoMes(){
   fixos.forEach(function(r){
     var jaExiste = gastos.some(function(g){return g._recId===r.id;});
     if(!jaExiste){
-      gastos.push({id:Date.now()+Math.random(),desc:r.desc,valor:r.val,cat:r.cat||'outros',pag:'debito',data:hoje(),obs:'Auto: recorrente fixo',_recId:r.id});
+      gastos.push({id:Date.now()+Math.floor(Math.random()*1000),desc:r.desc,valor:r.val,cat:r.cat||'outros',pag:'debito',data:hoje(),obs:'Auto: recorrente fixo',_recId:r.id});
     }
   });
   localStorage.setItem(docId()+'_gastos',JSON.stringify(gastos));
@@ -2898,7 +2907,7 @@ async function addHistoricoCasa(){
   mostrarToast('✅ Pagamento registrado!');
 }
 async function delHistCasa(id){
-  var hist=carregarHistCasa().filter(function(h){return h.id!==id;});
+  var hist=carregarHistCasa().filter(function(h){return h.id!=id;});
   await salvarHistCasa(hist);
   renderHistoricoCasa();
 }
@@ -2931,11 +2940,11 @@ function renderHistoricoCasa(){
       '</div>';
   }).join('');
 }
-function delHistBtn(btn){delHistCasa(parseInt(btn.dataset.id));}
-function editarHistBtn(btn){abrirEdicaoHist(parseInt(btn.dataset.id));}
+function delHistBtn(btn){delHistCasa(parseFloat(btn.dataset.id));}
+function editarHistBtn(btn){abrirEdicaoHist(parseFloat(btn.dataset.id));}
 function abrirEdicaoHist(id){
   var hist=carregarHistCasa();
-  var h=hist.find(function(x){return x.id===id;});
+  var h=hist.find(function(x){return x.id==id;});
   if(!h) return;
   document.getElementById('eh-id').value=id;
   document.getElementById('eh-tipo').value=h.tipo||'financiamento';
@@ -2976,12 +2985,12 @@ function parcelaAtual(r){
 }
 async function delGasto(id){
   var gastos=JSON.parse(localStorage.getItem(docId()+'_gastos')||'[]');
-  gastos=gastos.filter(function(g){return g.id!==id;});
+  gastos=gastos.filter(function(g){return g.id!=id;});
   await set(docId()+'_gastos',JSON.stringify(gastos));renderAll();
 }
-function delGastoBtn(btn){delGasto(parseInt(btn.dataset.id));}
-function editarGastoBtn(btn){abrirEdicao(parseInt(btn.dataset.id));}
-function confirmarReceitaBtn(btn){confirmarReceita(parseInt(btn.dataset.id),btn.dataset.tipo);}
+function delGastoBtn(btn){delGasto(parseFloat(btn.dataset.id));}
+function editarGastoBtn(btn){abrirEdicao(parseFloat(btn.dataset.id));}
+function confirmarReceitaBtn(btn){confirmarReceita(parseFloat(btn.dataset.id),btn.dataset.tipo);}
 async function confirmarReceita(id,tipo){
   var key=tipo==='fixa'?docIdG('receitas_fixas'):docId()+'_receitas_var';
   var lista=JSON.parse(localStorage.getItem(key)||'[]');
@@ -3000,31 +3009,64 @@ async function delReceita(id,tipo){
   else{var k2=docId()+'_receitas_var';var l2=JSON.parse(localStorage.getItem(k2)||'[]').filter(function(v){return v.id!==id;});await set(k2,JSON.stringify(l2));}
   renderAll();
 }
-function delReceitaBtn(btn){delReceita(parseInt(btn.dataset.id),btn.dataset.tipo);}
-function editarReceitaBtn(btn){abrirEdicaoReceita(parseInt(btn.dataset.id),btn.dataset.tipo);}
+function delReceitaBtn(btn){delReceita(parseFloat(btn.dataset.id),btn.dataset.tipo);}
+function editarReceitaBtn(btn){abrirEdicaoReceita(parseFloat(btn.dataset.id),btn.dataset.tipo);}
 async function delConta(id){
   var contas=JSON.parse(localStorage.getItem(docIdG('contas'))||'[]');
-  contas=contas.filter(function(c){return c.id!==id;});
+  contas=contas.filter(function(c){return c.id!=id;});
   await set(docIdG('contas'),JSON.stringify(contas));renderContas();
 }
-function pagoContaBtn(btn){togglePagoConta(parseInt(btn.dataset.id));}
-function delContaBtn(btn){delConta(parseInt(btn.dataset.id));}
-function editarContaBtn2(btn){abrirEdicaoConta(parseInt(btn.dataset.id));}
+function pagoContaBtn(btn){togglePagoConta(parseFloat(btn.dataset.id));}
+function delContaBtn(btn){delConta(parseFloat(btn.dataset.id));}
+function editarContaBtn2(btn){abrirEdicaoConta(parseFloat(btn.dataset.id));}
 async function delCarteira(id){var c=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]').filter(function(x){return x.id!==id;});await set(docIdG('carteiras'),JSON.stringify(c));renderCarteiras();}
-function delCkBtn(btn){delCarteira(parseInt(btn.dataset.id));}
+function delCkBtn(btn){delCarteira(parseFloat(btn.dataset.id));}
 async function atualizarSaldo(id,v){var cart=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]').map(function(c){if(c.id===id) c.saldo=v;return c;});await set(docIdG('carteiras'),JSON.stringify(cart));renderCarteiras();}
-function atualizarSaldoBtn(btn){var id=parseInt(btn.dataset.id);var inp=document.getElementById('ns-'+id);var val=parseFloat(inp?inp.value:0)||0;if(!val) return;atualizarSaldo(id,val);if(inp) inp.value='';}
-async function delInvestimento(id){var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]').filter(function(i){return i.id!==id;});await set(docId()+'_invs',JSON.stringify(invs));renderInvestimentos();}
-function delInvBtn(btn){delInvestimento(parseInt(btn.dataset.id));}
-async function delMeta(id){var metas=JSON.parse(localStorage.getItem(docIdG('metas'))||'[]').filter(function(m){return m.id!==id;});await set(docIdG('metas'),JSON.stringify(metas));renderMetas();}
-function delMetaBtn(btn){delMeta(parseInt(btn.dataset.id));}
-async function delRecorrente(id){var recs=JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]').filter(function(r){return r.id!==id;});await set(docIdG('recorrentes'),JSON.stringify(recs));renderRecorrentes();}
-function delRecorrenteBtn(btn){delRecorrente(parseInt(btn.dataset.id));}
-function editarRecBtn(btn){abrirEdicaoRec(parseInt(btn.dataset.id));}
-function delAssnBtn(btn){delAssinatura(parseInt(btn.dataset.id));}
-function editarAssnBtn(btn){abrirEdicaoAssn(parseInt(btn.dataset.id));}
-function editarFinBtn(btn){abrirEdicaoFin(parseInt(btn.dataset.id));}
-function delFinBtn(btn){if(confirm('Remover?')) delFinanciamento(parseInt(btn.dataset.id));}
+function atualizarSaldoBtn(btn){var id=parseFloat(btn.dataset.id);var inp=document.getElementById('ns-'+id);var val=parseFloat(inp?inp.value:0)||0;if(!val) return;atualizarSaldo(id,val);if(inp) inp.value='';}
+async function delInvestimento(id){var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]').filter(function(i){return i.id!=id;});await set(docId()+'_invs',JSON.stringify(invs));renderInvestimentos();}
+function delInvBtn(btn){delInvestimento(parseFloat(btn.dataset.id));}
+function editarInvBtn(btn){abrirEdicaoInv(parseFloat(btn.dataset.id));}
+function abrirEdicaoInv(id){
+  var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]');
+  var inv=invs.find(function(x){return x.id==id;});
+  if(!inv) return;
+  document.getElementById('ei-id').value=inv.id;
+  document.getElementById('ei-desc').value=inv.desc||'';
+  document.getElementById('ei-val').value=inv.valor||0;
+  document.getElementById('ei-tipo').value=inv.tipo||'caixinha';
+  document.getElementById('ei-data').value=inv.data||hoje();
+  document.getElementById('ei-obs').value=inv.obs||'';
+  var taxaEl=document.getElementById('ei-taxa');if(taxaEl) taxaEl.value=inv.taxa||'';
+  document.getElementById('overlayEditarInv').classList.add('aberto');
+}
+async function salvarEdicaoInv(){
+  var id=parseFloat(document.getElementById('ei-id').value);
+  var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]');
+  invs=invs.map(function(i){
+    if(i.id==id){
+      i.desc=document.getElementById('ei-desc').value.trim();
+      i.valor=parseFloat(document.getElementById('ei-val').value)||0;
+      i.tipo=document.getElementById('ei-tipo').value;
+      i.data=document.getElementById('ei-data').value;
+      i.obs=document.getElementById('ei-obs').value.trim();
+      var taxaEl=document.getElementById('ei-taxa');if(taxaEl) i.taxa=taxaEl.value.trim();
+    }
+    return i;
+  });
+  await set(docId()+'_invs',JSON.stringify(invs));
+  fecharModal('overlayEditarInv');
+  renderInvestimentos();
+  mostrarToast('✅ Investimento atualizado!');
+}
+async function delMeta(id){var metas=JSON.parse(localStorage.getItem(docIdG('metas'))||'[]').filter(function(m){return m.id!=id;});await set(docIdG('metas'),JSON.stringify(metas));renderMetas();}
+function delMetaBtn(btn){delMeta(parseFloat(btn.dataset.id));}
+async function delRecorrente(id){var recs=JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]').filter(function(r){return r.id!=id;});await set(docIdG('recorrentes'),JSON.stringify(recs));renderRecorrentes();}
+function delRecorrenteBtn(btn){delRecorrente(parseFloat(btn.dataset.id));}
+function editarRecBtn(btn){abrirEdicaoRec(parseFloat(btn.dataset.id));}
+function delAssnBtn(btn){delAssinatura(parseFloat(btn.dataset.id));}
+function editarAssnBtn(btn){abrirEdicaoAssn(parseFloat(btn.dataset.id));}
+function editarFinBtn(btn){abrirEdicaoFin(parseFloat(btn.dataset.id));}
+function delFinBtn(btn){if(confirm('Remover?')) delFinanciamento(parseFloat(btn.dataset.id));}
 async function delFinanciamento(id){var fins=carregarFins().filter(function(f){return f.id!==id;});await salvarFins(fins);renderFinanciamentos();}
 // ══ VOZ INTELIGENTE COM IA ══
 var _vozRecon = null;
@@ -3557,8 +3599,10 @@ async function addInvestimento(){
   var data=document.getElementById('inv-data').value||hoje();
   var obs=document.getElementById('inv-obs').value.trim();
   if(!desc||!val){alert('Preencha descrição e valor!');return;}
+  var taxaEl=document.getElementById('inv-taxa');
+  var taxa=taxaEl?taxaEl.value.trim():'';
   var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]');
-  invs.push({id:Date.now(),desc:desc,valor:val,tipo:tipo,data:data,obs:obs});
+  invs.push({id:Date.now(),desc:desc,valor:val,tipo:tipo,data:data,obs:obs,taxa:taxa});
   await set(docId()+'_invs',JSON.stringify(invs));
   ['inv-desc','inv-val','inv-obs'].forEach(function(id){var el=document.getElementById(id);if(el) el.value='';});
   var id2=document.getElementById('inv-data');if(id2) id2.value=hoje();
@@ -3573,12 +3617,17 @@ async function renderInvestimentos(){
   var listEl=document.getElementById('lista-investimentos');if(!listEl) return;
   if(!invs.length){listEl.innerHTML='<div class="vazio">Nenhum investimento este mês 📈</div>';return;}
   var TIPOS={caixinha:'🟣',tesouro:'🏛️',cdb:'🏦',reserva:'💚',acoes:'📈',fii:'🏢',cripto:'₿',poupanca:'🐷',outros:'📦'};
+  var cdiAnual=parseFloat(localStorage.getItem('pf_cdi')||'10.65');
   listEl.innerHTML=invs.map(function(i){
     return '<div class="item">'+
       '<div class="item-ic">'+(TIPOS[i.tipo]||'📦')+'</div>'+
       '<div class="item-info"><div class="item-nome">'+i.desc+'</div>'+
       '<div class="item-meta">'+fmtD(i.data)+' · '+i.tipo+(i.obs?' · '+i.obs:'')+'</div></div>'+
-      '<div class="item-val pos">'+fmt(i.valor)+'</div>'+
+      '<div style="text-align:right">'+
+        '<div class="item-val pos">'+fmt(i.valor)+'</div>'+
+        (i.taxa?'<div style="font-size:.66rem;color:var(--invest2)">'+i.taxa+'% CDI</div>':'')+
+        (i.taxa&&cdiAnual?'<div style="font-size:.66rem;color:var(--green2)">~'+fmt(i.valor*(parseFloat(i.taxa)/100*cdiAnual/100/12))+'</div>':'')+ // monthly yield
+      '</div>'+
       '<button style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.76rem;padding:3px" data-id="'+i.id+'" onclick="editarInvBtn(this)" title="Editar">✏️</button>'+
       '<button class="item-del" data-id="'+i.id+'" onclick="delInvBtn(this)">&#x2715;</button></div>';
   }).join('');
@@ -3808,7 +3857,7 @@ async function addHistoricoMoto(){
   renderHistoricoMoto();mostrarToast('✅ Pagamento registrado!');
 }
 async function delHistMoto(id){
-  var hist=carregarHistMoto().filter(function(h){return h.id!==id;});
+  var hist=carregarHistMoto().filter(function(h){return h.id!=id;});
   await salvarHistMoto(hist);renderHistoricoMoto();
 }
 function renderHistoricoMoto(){
@@ -3829,7 +3878,7 @@ function renderHistoricoMoto(){
       '<button class="item-del" data-id="'+h.id+'" onclick="delHistMotoBtn(this)">&#x2715;</button></div>';
   }).join('');
 }
-function delHistMotoBtn(btn){delHistMoto(parseInt(btn.dataset.id));}
+function delHistMotoBtn(btn){delHistMoto(parseFloat(btn.dataset.id));}
 
 // ══ IA ANÁLISE ══
 async function analisarIA(){
@@ -3952,6 +4001,8 @@ async function init(){
   // Restore API key
   var savedKey=localStorage.getItem('pf_apikey')||sessionStorage.getItem('pf_apikey')||'';
   if(savedKey){window._apiKeyCache=savedKey;var akEl=document.getElementById('config-apikey');if(akEl) akEl.value=savedKey;}
+  var savedCDI=localStorage.getItem('pf_cdi')||'10.65';
+  var cdiEl=document.getElementById('config-cdi');if(cdiEl) cdiEl.value=savedCDI;
 
   // Load from Firebase first if available
   if(_db && _userId){
