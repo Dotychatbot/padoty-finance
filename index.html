@@ -977,39 +977,10 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
 <!-- TOAST -->
 <div id="toast"></div>
 
-<!-- MODAL FINANCIAMENTO MOTO -->
-<div class="overlay" id="overlayFinMoto" onclick="fecharOverlay('overlayFinMoto',event)">
-  <div class="modal">
-    <h2>🏍️ Financiamento Moto</h2>
-    <div class="fields">
-      <div><label>Parcela mensal (R$)</label><input type="number" id="fm-parcela" placeholder="0,00" min="0" step="0.01"/></div>
-      <div><label>Total de parcelas</label><input type="number" id="fm-total" placeholder="Ex: 48" min="1"/></div>
-      <div><label>Parcela atual (nº)</label><input type="number" id="fm-atual" placeholder="Ex: 1" min="1"/></div>
-      <div><label>Data início</label><input type="date" id="fm-inicio"/></div>
-    </div>
-    <div class="modal-btns">
-      <button class="btn-cancel" onclick="fecharModal('overlayFinMoto')">Cancelar</button>
-      <button class="btn-confirm" onclick="salvarConfigMoto()">💾 Salvar</button>
-    </div>
-  </div>
-</div>
+
 
 <!-- MODAL FINANCIAMENTO CASA -->
-<div class="overlay" id="overlayFinCasa" onclick="fecharOverlay('overlayFinCasa',event)">
-  <div class="modal">
-    <h2>🏠 Financiamento Casa</h2>
-    <div class="fields">
-      <div><label>Parcela mensal (R$)</label><input type="number" id="fc-parcela" placeholder="0,00" min="0" step="0.01"/></div>
-      <div><label>Total de parcelas</label><input type="number" id="fc-total" placeholder="Ex: 360" min="1"/></div>
-      <div><label>Parcela atual (nº)</label><input type="number" id="fc-atual" placeholder="Ex: 1" min="1"/></div>
-      <div><label>Data início</label><input type="date" id="fc-inicio"/></div>
-    </div>
-    <div class="modal-btns">
-      <button class="btn-cancel" onclick="fecharModal('overlayFinCasa')">Cancelar</button>
-      <button class="btn-confirm" onclick="salvarConfigCasa()">💾 Salvar</button>
-    </div>
-  </div>
-</div>
+
 
 <!-- MODAL OBRA/TAXA CASA -->
 <div class="overlay" id="overlayObra" onclick="fecharOverlay('overlayObra',event)">
@@ -1641,6 +1612,8 @@ async function addObra(){
 
 async function carregarMoto(){var r=localStorage.getItem(docIdG('fin_moto'));return r?JSON.parse(r):{parcela:0,atual:1,total:0,data:'',obs:''};}
 function carregarCasa(){var r=localStorage.getItem(docIdG('fin_casa'));return r?JSON.parse(r):{parcela:0,atual:1,total:0,data:'',obs:''};}
+function abrirConfigMoto(){document.getElementById('overlayConfigMoto').classList.add('aberto');}
+function abrirConfigCasa(){document.getElementById('overlayConfigCasa').classList.add('aberto');}
 async function salvarConfigMoto(){
   var parcela=parseFloat(document.getElementById('cm-parcela').value)||0;
   var atual=parseInt(document.getElementById('cm-atual').value)||1;
@@ -3468,11 +3441,25 @@ async function renderGastos(){
     '<div class="item-info"><div class="item-nome">Financiamento Moto<span class="tag" style="background:rgba(176,31,31,.15);color:var(--red2);margin-left:4px">fixo</span></div>'+
     '<div class="item-meta">Parcela '+motoPin.atual+'/'+motoPin.total+(motoPin.data?' · Vence '+fmtD(motoPin.data):'')+'</div></div>'+
     '<div class="item-val neg">'+fmt(motoPin.parcela)+'</div></div>';
-  if(casaPin.parcela) pinned+='<div class="item" style="border-left:3px solid var(--blue2)">'+
-    '<div class="item-ic">🏠</div>'+
-    '<div class="item-info"><div class="item-nome">Financiamento Casa<span class="tag" style="background:rgba(37,65,196,.15);color:var(--blue2);margin-left:4px">fixo</span></div>'+
-    '<div class="item-meta">Parcela '+casaPin.atual+'/'+casaPin.total+(casaPin.data?' · Vence '+fmtD(casaPin.data):'')+(totalObrasPin>0?' + Obras: '+fmt(totalObrasPin):'')+'</div></div>'+
-    '<div class="item-val neg">'+fmt(casaPin.parcela+totalObrasPin)+'</div></div>';
+  if(casaPin.parcela){
+    var casaPinPct=casaPin.pct||100;
+    var casaPinMinha=casaPin.minhaParte||(casaPin.parcela*(casaPinPct/100));
+    var obrasMinhas=totalObrasPin; // já vem calculado com minhaParte
+    pinned+='<div class="item" style="border-left:3px solid var(--blue2)">'+
+      '<div class="item-ic">🏠</div>'+
+      '<div class="item-info"><div class="item-nome">Financiamento Casa'+
+      (casaPinPct<100?'<span class="tag" style="background:rgba(37,65,196,.15);color:var(--blue2);margin-left:4px">'+casaPinPct+'% = '+fmt(casaPinMinha)+'</span>':
+       '<span class="tag" style="background:rgba(37,65,196,.15);color:var(--blue2);margin-left:4px">fixo</span>')+
+      '</div>'+
+      '<div class="item-meta">Parcela '+casaPin.atual+'/'+casaPin.total+(casaPin.data?' · Vence '+fmtD(casaPin.data):'')+(obrasMinhas>0?' + Obra: '+fmt(obrasMinhas):'')+'</div></div>'+
+      '<div class="item-val neg">'+fmt(casaPinMinha+obrasMinhas)+'</div></div>';
+  } else {
+    pinned+='<div class="item" style="border-left:3px solid var(--blue2);opacity:.6;cursor:pointer" onclick="abrirConfigCasa()">'+
+      '<div class="item-ic">🏠</div>'+
+      '<div class="item-info"><div class="item-nome">Financiamento Casa</div>'+
+      '<div class="item-meta" style="color:var(--blue2)">⚙️ Toque para configurar</div></div>'+
+      '<div style="font-size:.7rem;color:var(--muted)">—</div></div>';
+  }
   finsPin.forEach(function(f){
     pinned+=
       '<div class="item" style="border-left:3px solid var(--border)">'+
@@ -3493,7 +3480,7 @@ async function renderGastos(){
       '<div class="item-meta">Todo dia '+a.dia+(a.obs?' · '+a.obs:'')+'</div></div>'+
       '<div class="item-val neg">'+fmt(a.val)+'</div></div>';
   });
-  if(!gastos.length&&!pinned){el.innerHTML='<div class="vazio">Nenhum gasto lançado 💸</div>';return;}
+  if(!gastos.length){if(!motoPin.parcela&&!casaPin.parcela&&!finsPin.length&&!carregarAssinaturas().length){el.innerHTML='<div class="vazio">Configure seus financiamentos e assinaturas acima, e lance seus gastos 💸</div>';return;}}
   var cats=carregarCats();var CAT_IC={};cats.forEach(function(c){CAT_IC[c.id]=c.icon;});
   el.innerHTML=pinned+gastos.map(function(g){
     return '<div class="item">'+
