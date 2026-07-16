@@ -3347,6 +3347,151 @@ function aplicarFixosDoMes(){
   if(_db&&_userId){var o={};o[docId()+'_gastos']=JSON.stringify(gastos);_db.collection('dados').doc(_userId).set(o,{merge:true}).catch(function(){});}
 }
 
+// ══ DADOS DE TESTE ══
+async function popularDadosTeste(){
+  if(!_userId){alert('Faça login primeiro!');return;}
+  var conf=confirm('Isso vai adicionar dados de EXEMPLO no mês atual ('+MESES[mes]+'/'+ano+') pra você ver o app funcionando.\n\nVocê pode apagar tudo depois com um clique.\n\nContinuar?');
+  if(!conf) return;
+  var st=document.getElementById('teste-status');
+  if(st) st.innerHTML='<span style="color:var(--muted)">⏳ Criando dados de teste...</span>';
+
+  var testKeys=[];
+  function setTest(k,v){localStorage.setItem(k,v);var ts=Date.now();localStorage.setItem(k+'__ts',String(ts));testKeys.push(k);}
+
+  // 1. CARTEIRA DE TESTE
+  var carts=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
+  var jaTem=carts.some(function(c){return c._teste;});
+  var carteiraTesteId;
+  if(!jaTem){
+    carteiraTesteId=Date.now();
+    carts.push({id:carteiraTesteId,nome:'Nubank Teste',icon:'💜',tipo:'debito',saldo:3000,_teste:true});
+    setTest(docIdG('carteiras'),JSON.stringify(carts));
+  } else {
+    carteiraTesteId=carts.find(function(c){return c._teste;}).id;
+  }
+
+  // 2. RECEITA FIXA DE TESTE
+  var recFixas=JSON.parse(localStorage.getItem(docIdG('receitas_fixas'))||'[]');
+  recFixas.push({id:Date.now()+1,desc:'Salário Teste',valor:4500,tipo:'fixa',status:'recebido',carteira:carteiraTesteId,data:hoje(),_teste:true});
+  setTest(docIdG('receitas_fixas'),JSON.stringify(recFixas));
+
+  // 3. GASTOS DE TESTE
+  var gastos=carregarGastos();
+  var gastosTeste=[
+    {id:Date.now()+2,desc:'Mercado do mês (teste)',valor:680,cat:'mercado',pag:'debito',data:hoje(),carteira:carteiraTesteId,_teste:true},
+    {id:Date.now()+3,desc:'Combustível (teste)',valor:250,cat:'transporte',pag:'debito',data:hoje(),carteira:carteiraTesteId,_teste:true},
+    {id:Date.now()+4,desc:'Restaurante (teste)',valor:120,cat:'restaurante',pag:'debito',data:hoje(),carteira:carteiraTesteId,_teste:true},
+    {id:Date.now()+5,desc:'Farmácia (teste)',valor:95,cat:'saude',pag:'debito',data:hoje(),carteira:carteiraTesteId,_teste:true}
+  ];
+  gastos=gastos.concat(gastosTeste);
+  setTest(docId()+'_gastos',JSON.stringify(gastos));
+
+  // 4. ASSINATURA DE TESTE
+  var assns=carregarAssinaturas();
+  assns.push({id:Date.now()+6,nome:'Netflix (teste)',val:39.9,dia:10,cat:'lazer',obs:'',_teste:true});
+  setTest(docIdG('assinaturas'),JSON.stringify(assns));
+
+  // 5. FINANCIAMENTO MOTO DE TESTE (só se não configurado)
+  var moto=carregarMoto();
+  if(!moto.parcela){
+    setTest(docIdG('fin_moto'),JSON.stringify({parcela:450,atual:8,total:48,data:hoje(),obs:'(teste)',_teste:true}));
+  }
+
+  // 6. INVESTIMENTO DE TESTE
+  var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]');
+  invs.push({id:Date.now()+7,nome:'Caixinha Teste',valor:1500,taxa:100,data:hoje(),_teste:true});
+  setTest(docId()+'_invs',JSON.stringify(invs));
+
+  // 7. META DE ECONOMIA DE TESTE
+  setTest(docIdG('meta_economia'),'800');
+
+  // 8. RECORRENTE DE TESTE
+  var recs=JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
+  recs.push({id:Date.now()+8,desc:'Academia (teste)',val:99.9,cat:'academia',dia:5,tipo:'fixo',meses:0,obs:'',inicio:mes+'/'+ano,parc:1,_teste:true});
+  setTest(docIdG('recorrentes'),JSON.stringify(recs));
+
+  // 9. CONTA A VENCER DE TESTE
+  var contas=JSON.parse(localStorage.getItem(docIdG('contas'))||'[]');
+  contas.push({id:Date.now()+9,nome:'Internet (teste)',valor:99.9,dia:15,pag:'debito',pago:false,obs:'',_teste:true});
+  setTest(docIdG('contas'),JSON.stringify(contas));
+
+  // 10. DÍVIDA DE TESTE
+  var divs=carregarDividas();
+  divs.push({id:Date.now()+10,credor:'Cartão Antigo (teste)',orig:2000,atual:1200,sit:'negociando',data:hoje(),obs:'Exemplo de dívida em negociação',_teste:true});
+  setTest(docIdG('dividas'),JSON.stringify(divs));
+
+  // 11. META DE TESTE
+  var metas=JSON.parse(localStorage.getItem(docIdG('metas'))||'[]');
+  metas.push({id:Date.now()+11,desc:'Viagem (teste)',total:5000,atual:1500,prazo:'2026-12-31',icon:'✈️',_teste:true});
+  setTest(docIdG('metas'),JSON.stringify(metas));
+
+  // 12. SKY FIT — HORAS DE TESTE
+  var sfHoras=carregarSFHoras();
+  var sfMods=carregarSFMods();
+  if(sfMods.length){sfHoras[sfMods[0].id]=12;setTest(docId()+'_sf_horas',JSON.stringify(sfHoras));}
+
+  // 13. ORÇAMENTO DE TESTE
+  var orcs=JSON.parse(localStorage.getItem(docIdG('orcamentos'))||'{}');
+  orcs['mercado']=800;orcs['lazer']=300;
+  setTest(docIdG('orcamentos'),JSON.stringify(orcs));
+
+  // Save test keys list for later cleanup
+  localStorage.setItem(docIdG('_test_keys'),JSON.stringify(testKeys));
+
+  // Sync to Firebase
+  if(_db){
+    try{
+      var obj={};testKeys.forEach(function(k){obj[k]=localStorage.getItem(k);obj[k+'__ts']=localStorage.getItem(k+'__ts');});
+      await _db.collection('dados').doc(_userId).set(obj,{merge:true});
+    }catch(e){console.warn('sync teste:',e.message);}
+  }
+
+  if(st) st.innerHTML='<span style="color:var(--green2)">✅ Dados de teste criados! Navegue pelo app pra ver tudo funcionando.</span>';
+  mostrarToast('🧪 Dados de teste adicionados!');
+  renderAll();renderContas();renderFinanciamentos();
+}
+
+async function apagarDadosTeste(){
+  var conf=confirm('Apagar todos os dados de TESTE que foram criados?\n\nSeus dados reais não serão afetados.');
+  if(!conf) return;
+  var testKeys=JSON.parse(localStorage.getItem(docIdG('_test_keys'))||'[]');
+  var st=document.getElementById('teste-status');
+
+  // Remove test items from arrays (keep non-test items), and full-remove test-only keys
+  testKeys.forEach(function(k){
+    var raw=localStorage.getItem(k);
+    if(!raw) return;
+    try{
+      var parsed=JSON.parse(raw);
+      if(Array.isArray(parsed)){
+        var filtered=parsed.filter(function(item){return !item._teste;});
+        localStorage.setItem(k,JSON.stringify(filtered));
+        localStorage.setItem(k+'__ts',String(Date.now()));
+      } else if(parsed&&parsed._teste){
+        localStorage.removeItem(k);
+        localStorage.removeItem(k+'__ts');
+      }
+    }catch(e){
+      // Not JSON (e.g. meta_economia) - just remove
+      localStorage.removeItem(k);
+      localStorage.removeItem(k+'__ts');
+    }
+  });
+  localStorage.removeItem(docIdG('_test_keys'));
+
+  // Sync to Firebase
+  if(_db&&_userId){
+    try{
+      var obj={};testKeys.forEach(function(k){var v=localStorage.getItem(k);if(v!==null){obj[k]=v;obj[k+'__ts']=localStorage.getItem(k+'__ts');}});
+      await _db.collection('dados').doc(_userId).set(obj,{merge:true});
+    }catch(e){console.warn('sync limpeza teste:',e.message);}
+  }
+
+  if(st) st.innerHTML='<span style="color:var(--green2)">✅ Dados de teste removidos! Seus dados reais continuam intactos.</span>';
+  mostrarToast('🗑️ Dados de teste apagados!');
+  renderAll();renderContas();renderFinanciamentos();
+}
+
 // ══ LIMPAR DADOS DO DISPOSITIVO ══
 async function limparDadosDispositivo(){
   var conf1=confirm('⚠️ ATENÇÃO!\n\nIsso vai apagar TODOS os dados salvos NESTE dispositivo/navegador (Meus Gastos, Financiamentos, Contas, etc).\n\nDepois disso, o app vai buscar os dados corretos da nuvem (Firebase).\n\nSó faça isso se tiver certeza que os dados aqui estão errados/desatualizados.\n\nQuer continuar?');
@@ -3739,7 +3884,319 @@ async function addCatRapida(targetId, wrapId){
   mostrarToast('✅ Categoria "'+nome+'" criada!');
 }
 
+// ══ SKY FIT — SUÍTE COMPLETA ══
+var SF_MODS_DEFAULT=[{id:1,nome:'Instrutor',valor:18},{id:2,nome:'Muay Thai Coletivo',valor:25}];
+function carregarSFMods(){var r=localStorage.getItem(docIdG('sf_mods'));return r?JSON.parse(r):JSON.parse(JSON.stringify(SF_MODS_DEFAULT));}
+async function salvarSFMods(m){await set(docIdG('sf_mods'),JSON.stringify(m));}
+function carregarSFHoras(){var r=localStorage.getItem(docId()+'_sf_horas');return r?JSON.parse(r):{};}
+async function salvarSFHoras(h){await set(docId()+'_sf_horas',JSON.stringify(h));}
+function carregarSFPersonais(){var r=localStorage.getItem(docId()+'_sf_pt');return r?JSON.parse(r):[];}
+async function salvarSFPersonais(p){await set(docId()+'_sf_pt',JSON.stringify(p));}
+function carregarSFHistorico(){var r=localStorage.getItem(docIdG('sf_hist'));return r?JSON.parse(r):[];}
+async function salvarSFHistorico(h){await set(docIdG('sf_hist'),JSON.stringify(h));}
+
+async function addModalidadeSkyFit(){
+  var nome=document.getElementById('sf-mod-nome').value.trim();
+  var valor=parseFloat(document.getElementById('sf-mod-valor').value)||0;
+  if(!nome||!valor){alert('Preencha nome e valor!');return;}
+  var mods=carregarSFMods();mods.push({id:Date.now(),nome:nome,valor:valor});
+  await salvarSFMods(mods);
+  document.getElementById('sf-mod-nome').value='';document.getElementById('sf-mod-valor').value='';
+  renderSkyFit();mostrarToast('✅ Modalidade adicionada!');
+}
+async function updateSFHoras(modId,horas){var h=carregarSFHoras();h[modId]=parseFloat(horas)||0;await salvarSFHoras(h);renderSkyFitTotal();}
+async function editarSFMod(id){
+  var mods=carregarSFMods();var m=mods.find(function(x){return x.id===id;});if(!m) return;
+  var novoNome=prompt('Nome da modalidade:',m.nome);if(!novoNome) return;
+  var novoValor=parseFloat(prompt('Valor por hora (R$):',m.valor));if(!novoValor) return;
+  mods=mods.map(function(x){if(x.id===id){x.nome=novoNome;x.valor=novoValor;}return x;});
+  await salvarSFMods(mods);renderSkyFit();mostrarToast('✅ Modalidade atualizada!');
+}
+async function delSFMod(id){
+  var mods=carregarSFMods().filter(function(m){return m.id!==id;});
+  var horas=carregarSFHoras();delete horas[id];
+  await salvarSFMods(mods);await salvarSFHoras(horas);renderSkyFit();
+}
+function delSFModBtn(btn){delSFMod(parseInt(btn.dataset.id));}
+function editSFModBtn(btn){editarSFMod(parseInt(btn.dataset.id));}
+
+async function addPersonalSkyFit(){
+  var aluno=document.getElementById('sf-pt-aluno').value.trim();
+  var val=parseFloat(document.getElementById('sf-pt-val').value)||0;
+  var data=document.getElementById('sf-pt-data')?document.getElementById('sf-pt-data').value||hoje():hoje();
+  if(!aluno||!val){alert('Preencha aluno e valor!');return;}
+  var pts=carregarSFPersonais();pts.push({id:Date.now(),aluno:aluno,val:val,data:data});
+  await salvarSFPersonais(pts);
+  var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
+  vars.push({id:Date.now()+1,desc:'Personal — '+aluno,val:val,data:data,obs:'Sky Fit Personal'});
+  await set(docId()+'_receitas_var',JSON.stringify(vars));
+  document.getElementById('sf-pt-aluno').value='';document.getElementById('sf-pt-val').value='';
+  renderSkyFit();renderAll();mostrarToast('✅ '+aluno+' lançado na Receita!');
+}
+async function delSFPersonal(id){var pts=carregarSFPersonais().filter(function(p){return p.id!==id;});await salvarSFPersonais(pts);renderSkyFit();}
+function delSFPTBtn(btn){delSFPersonal(parseInt(btn.dataset.id));}
+
+async function lancarSkyFitReceita(){
+  var mods=carregarSFMods();var horas=carregarSFHoras();
+  var total=mods.reduce(function(a,m){return a+(horas[m.id]||0)*m.valor;},0);
+  if(!total){mostrarToast('Nenhuma hora lançada ainda!');return;}
+  var hist=carregarSFHistorico();
+  var entry={id:Date.now(),mes:mes,ano:ano,mesLabel:MESES[mes]+'/'+ano,total:total,data:hoje(),
+    detalhe:mods.filter(function(m){return(horas[m.id]||0)>0;}).map(function(m){return m.nome+' '+(horas[m.id]||0)+'h × '+fmt(m.valor);}).join(', ')};
+  hist.unshift(entry);await salvarSFHistorico(hist);
+  var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
+  vars.push({id:Date.now()+2,desc:'Sky Fit — Aulas '+MESES[mes]+'/'+ano,val:total,data:hoje(),obs:entry.detalhe});
+  await set(docId()+'_receitas_var',JSON.stringify(vars));
+  renderSkyFit();renderAll();mostrarToast('✅ '+fmt(total)+' lançado nas Receitas!');
+}
+
+function gerarNotaSkyFit(){
+  var mods=carregarSFMods();var horas=carregarSFHoras();var pts=carregarSFPersonais();
+  var comp=document.getElementById('sf-nota-comp')?document.getElementById('sf-nota-comp').value||(MESES[mes]+'/'+ano):(MESES[mes]+'/'+ano);
+  var tomador=document.getElementById('sf-nota-tomador')?document.getElementById('sf-nota-tomador').value||'Sky Fit Academia':'Sky Fit Academia';
+  var totalMods=mods.reduce(function(a,m){return a+(horas[m.id]||0)*m.valor;},0);
+  var totalPT=pts.reduce(function(a,p){return a+p.val;},0);
+  var total=totalMods+totalPT;
+  var win=window.open('','_blank');
+  var linhasMods=mods.filter(function(m){return(horas[m.id]||0)>0;}).map(function(m){return '<tr><td>'+m.nome+'</td><td style="text-align:center">'+(horas[m.id]||0)+'h</td><td style="text-align:right">'+fmt(m.valor)+'/h</td><td style="text-align:right">'+fmt((horas[m.id]||0)*m.valor)+'</td></tr>';}).join('');
+  var linhasPT=pts.map(function(p){return '<tr><td>Personal Training — '+p.aluno+'</td><td style="text-align:center">—</td><td style="text-align:right">—</td><td style="text-align:right">'+fmt(p.val)+'</td></tr>';}).join('');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Recibo — '+comp+'</title>');
+  win.document.write('<style>body{font-family:Arial,sans-serif;padding:40px;max-width:680px;margin:0 auto}h1{color:#1a2e8c;font-size:1.3rem}table{width:100%;border-collapse:collapse;margin:16px 0}th{background:#1a2e8c;color:#fff;padding:10px;text-align:left;font-size:.82rem}td{padding:9px 10px;border-bottom:1px solid #eee;font-size:.82rem}.info{display:flex;justify-content:space-between;background:#f5f5f5;padding:14px;border-radius:8px;font-size:.82rem;margin-bottom:16px}.total{background:#f0f4ff;font-weight:700}</style></head><body>');
+  win.document.write('<h1>Recibo de Prestação de Serviços</h1><div class="info"><div><strong>Prestador</strong><br/>Fábio Padote<br/>CREF: 142588-G/SP<br/>CNPJ: 63.359.208/0001-11</div><div><strong>Tomador</strong><br/>'+tomador+'</div><div><strong>Competência</strong><br/>'+comp+'</div></div>');
+  win.document.write('<table><tr><th>Serviço</th><th>Qtd/Horas</th><th>Valor Unit.</th><th>Total</th></tr>'+linhasMods+linhasPT+'<tr class="total"><td colspan="3">TOTAL A RECEBER</td><td style="text-align:right">'+fmt(total)+'</td></tr></table>');
+  win.document.write('<p style="font-size:.72rem;color:#999;text-align:center;margin-top:24px">PADOTY Finance — '+new Date().toLocaleDateString('pt-BR')+'</p></body></html>');
+  win.document.close();setTimeout(function(){win.print();},500);
+}
+
+// ══ RECORRENTES — ADD ══
+async function addRecorrente(){
+  var desc=document.getElementById('rec-desc').value.trim();
+  var val=parseFloat(document.getElementById('rec-val').value)||0;
+  var cat=document.getElementById('rec-cat').value;
+  var dia=parseInt(document.getElementById('rec-dia').value)||1;
+  var tipoEl=document.getElementById('rec-tipo');
+  var tipo=tipoEl?tipoEl.value:'recorrente';
+  var meses2=parseInt(document.getElementById('rec-meses').value)||0;
+  var obs=document.getElementById('rec-obs').value.trim();
+  if(!desc||!val){alert('Preencha descrição e valor!');return;}
+  var recs=JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
+  recs.push({id:Date.now(),desc:desc,val:val,cat:cat,dia:dia,tipo:tipo,meses:meses2,obs:obs,inicio:mes+'/'+ano,parc:1});
+  await set(docIdG('recorrentes'),JSON.stringify(recs));
+  ['rec-desc','rec-val','rec-dia','rec-meses','rec-obs'].forEach(function(id){var e=document.getElementById(id);if(e) e.value='';});
+  renderRecorrentes();mostrarToast('✅ '+(tipo==='fixo'?'Fixo':'Recorrente')+' adicionado!');
+}
+
+// ══ EDITAR RECEITA ══
+async function salvarEdicaoReceita(){
+  var id=parseInt(document.getElementById('er-id').value);
+  var tipo=document.getElementById('er-tipo').value;
+  var key=tipo==='fixa'?docIdG('receitas_fixas'):docId()+'_receitas_var';
+  var lista=JSON.parse(localStorage.getItem(key)||'[]');
+  lista=lista.map(function(r){if(r.id===id){r.desc=document.getElementById('er-desc').value.trim();r.val=parseFloat(document.getElementById('er-val').value)||0;r.data=document.getElementById('er-data').value;r.obs=document.getElementById('er-obs').value.trim();}return r;});
+  await set(key,JSON.stringify(lista));
+  fecharModal('overlayEditarReceita');renderAll();mostrarToast('✅ Receita atualizada!');
+}
+
+// ══ EDITAR ASSINATURA ══
+async function salvarEdicaoAssn(){
+  var id=parseInt(document.getElementById('ea-id').value);
+  var assns=carregarAssinaturas();
+  assns=assns.map(function(a){if(a.id===id){a.nome=document.getElementById('ea-nome').value.trim();a.val=parseFloat(document.getElementById('ea-val').value)||0;a.dia=parseInt(document.getElementById('ea-dia').value)||1;a.obs=document.getElementById('ea-obs').value.trim();}return a;});
+  await salvarAssinaturas(assns);fecharModal('overlayEditarAssn');renderAssinaturas();mostrarToast('✅ Assinatura atualizada!');
+}
+
+// ══ EDITAR RECORRENTE ══
+async function salvarEdicaoRec(){
+  var id=parseInt(document.getElementById('erec-id').value);
+  var recs=JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
+  recs=recs.map(function(r){if(r.id===id){r.desc=document.getElementById('erec-desc').value.trim();r.val=parseFloat(document.getElementById('erec-val').value)||0;r.dia=parseInt(document.getElementById('erec-dia').value)||1;r.obs=document.getElementById('erec-obs').value.trim();}return r;});
+  await set(docIdG('recorrentes'),JSON.stringify(recs));fecharModal('overlayEditarRec');renderRecorrentes();mostrarToast('✅ Recorrente atualizado!');
+}
+
+// ══ NOVO FINANCIAMENTO (outros) ══
+async function salvarNovoFin(){
+  var nome=document.getElementById('nf-nome').value.trim();
+  var icon=document.getElementById('nf-icon')?document.getElementById('nf-icon').value.trim()||'🏦':'🏦';
+  var parcela=parseFloat(document.getElementById('nf-parcela').value)||0;
+  var atual=parseInt(document.getElementById('nf-atual').value)||1;
+  var total=parseInt(document.getElementById('nf-total').value)||0;
+  var dataVenc=document.getElementById('nf-data')?document.getElementById('nf-data').value||hoje():hoje();
+  var obs=document.getElementById('nf-obs')?document.getElementById('nf-obs').value.trim():'';
+  if(!nome||!parcela||!total){alert('Preencha nome, parcela e total!');return;}
+  var dia=parseInt((dataVenc.split('-')[2]||'1'));
+  var fins=carregarFins();
+  fins.push({id:Date.now(),nome:nome,icon:icon,dia:dia,dataVenc:dataVenc,parcela:parcela,atual:atual,total:total,obs:obs});
+  await salvarFins(fins);
+  ['nf-nome','nf-parcela','nf-atual','nf-total','nf-obs'].forEach(function(id){var e=document.getElementById(id);if(e) e.value='';});
+  fecharModal('overlayNovoFin');renderFinanciamentos();
+  mostrarToast('✅ Financiamento adicionado!');
+}
+
+// ══ EDITAR FINANCIAMENTO (outros) — ATUALIZADO ══
+async function salvarEdicaoFin(){
+  var id=parseInt(document.getElementById('ef-id').value);
+  var fins=carregarFins();
+  fins=fins.map(function(f){
+    if(f.id===id){
+      f.nome=document.getElementById('ef-nome').value.trim();
+      f.icon=document.getElementById('ef-icon')?document.getElementById('ef-icon').value.trim()||'🏦':f.icon;
+      f.parcela=parseFloat(document.getElementById('ef-parcela').value)||0;
+      f.atual=parseInt(document.getElementById('ef-atual').value)||1;
+      f.total=parseInt(document.getElementById('ef-total').value)||0;
+      var dv=document.getElementById('ef-data');if(dv&&dv.value){f.dataVenc=dv.value;f.dia=parseInt((dv.value.split('-')[2]||'1'));}
+      var ob=document.getElementById('ef-obs');if(ob) f.obs=ob.value.trim();
+    }
+    return f;
+  });
+  await salvarFins(fins);
+  fecharModal('overlayEditarFin');renderFinanciamentos();mostrarToast('✅ Financiamento atualizado!');
+}
+
+// ══ EDITAR GASTO ══
+async function salvarEdicao(){
+  var id=parseFloat(document.getElementById('edit-id').value);
+  var gastos=carregarGastos();
+  gastos=gastos.map(function(g){
+    if(g.id==id){
+      g.desc=document.getElementById('edit-desc').value.trim();
+      g.valor=parseFloat(document.getElementById('edit-val').value)||0;
+      g.cat=document.getElementById('edit-cat').value;
+      g.pag=document.getElementById('edit-pag').value;
+      g.data=document.getElementById('edit-data').value||g.data;
+      g.obs=document.getElementById('edit-obs').value.trim();
+    }
+    return g;
+  });
+  await set(docId()+'_gastos',JSON.stringify(gastos));
+  fecharModal('overlayEditar');renderAll();mostrarToast('✅ Gasto atualizado!');
+}
+
+// ══ SALVAR API KEY ══
+async function salvarAPIKey(){
+  var key=document.getElementById('config-apikey').value.trim();
+  if(!key){alert('Digite a chave!');return;}
+  localStorage.setItem('pf_apikey',key);
+  await set('pf_apikey',key);
+  window._apiKeyCache=key;
+  mostrarToast('✅ Chave da API salva!');
+}
+
+// ══ SIMULAR CAIXINHA / INVESTIMENTO ══
+function simularCaixinha(){
+  var val=parseFloat(document.getElementById('sim-inv-val').value)||0;
+  var tipo=document.getElementById('sim-inv-tipo').value;
+  var cdiAnual=parseFloat(document.getElementById('sim-inv-cdi').value)||10.65;
+  var prazo=parseInt(document.getElementById('sim-inv-prazo').value)||12;
+  if(!val){mostrarToast('Digite o valor investido!');return;}
+  var pctCDI={caixinha:100,cdb110:110,cdb100:100,tesouro:100,poupanca:70}[tipo]||100;
+  var taxaMensal=(cdiAnual/100)*(pctCDI/100)/12;
+  var final=val*Math.pow(1+taxaMensal,prazo);
+  var rendimento=final-val;
+  var el=document.getElementById('sim-inv-resultado');
+  if(!el){
+    el=document.createElement('div');el.id='sim-inv-resultado';
+    document.getElementById('sim-inv-tipo').closest('.form-box').appendChild(el);
+  }
+  el.innerHTML='<div class="cards-row" style="margin-top:10px">'+
+    '<div class="mini-card"><div class="lbl">💰 Valor final</div><div class="val" style="color:var(--green2)">'+fmt(final)+'</div></div>'+
+    '<div class="mini-card"><div class="lbl">📈 Rendimento</div><div class="val" style="color:var(--invest2)">'+fmt(rendimento)+'</div></div>'+
+    '<div class="mini-card"><div class="lbl">📊 Taxa mensal</div><div class="val">'+(taxaMensal*100).toFixed(2)+'%</div></div>'+
+    '</div>';
+}
+
+// ══ CALCULAR PRIORIDADE DE DÍVIDAS ══
+function calcularPrioridadeDividas(){
+  var divs=carregarDividas().filter(function(d){return d.sit!=='quitado';});
+  var el=document.getElementById('dividas-prioridade');
+  if(!el) return;
+  if(!divs.length){el.innerHTML='<div class="vazio">Nenhuma dívida ativa para priorizar 🎉</div>';return;}
+  var ordenadas=divs.slice().sort(function(a,b){return b.atual-a.atual;});
+  el.innerHTML=ordenadas.map(function(d,i){
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px;background:'+(i===0?'rgba(224,48,48,.08)':'var(--bg2)')+';border-radius:10px;margin-bottom:6px">'+
+      '<div style="font-size:1.2rem;font-weight:800;color:'+(i===0?'var(--red2)':'var(--muted)')+'">'+(i+1)+'º</div>'+
+      '<div style="flex:1"><div style="font-weight:600;font-size:.82rem">'+d.credor+'</div>'+
+      '<div style="font-size:.68rem;color:var(--muted)">'+(i===0?'💡 Priorize esta — maior valor':'')+'</div></div>'+
+      '<div style="font-family:DM Mono,monospace;color:var(--red2)">'+fmt(d.atual)+'</div></div>';
+  }).join('');
+}
+
+// ══ CHAT IA — INVESTIMENTOS ══
+var _invChatHistory=[];
+async function enviarChatInv(){
+  var apiKey=localStorage.getItem('pf_apikey');
+  var input=document.getElementById('inv-chat-input');
+  var msgs=document.getElementById('inv-chat-msgs');
+  if(!input||!msgs) return;
+  var pergunta=input.value.trim();if(!pergunta) return;
+  if(!apiKey){mostrarToast('Configure a API key em Configurações!');return;}
+  input.value='';
+  msgs.innerHTML+='<div style="background:rgba(37,65,196,.15);border-radius:10px;padding:10px;font-size:.8rem;align-self:flex-end;max-width:85%">'+pergunta+'</div>';
+  msgs.innerHTML+='<div id="inv-typing" style="font-size:.76rem;color:var(--muted);padding:4px">IA digitando...</div>';
+  msgs.scrollTop=msgs.scrollHeight;
+  var gastos=carregarGastos();var renda=window._totalRenda||0;
+  var totalGasto=gastos.reduce(function(a,g){return a+g.valor;},0);
+  var inv=window._totalInv||0;var saldo=renda-totalGasto-(window._totalFinanc||0);
+  var ctx='Contexto financeiro:\nRenda: R$'+renda.toFixed(2)+'\nGastos: R$'+totalGasto.toFixed(2)+'\nInvestido: R$'+inv.toFixed(2)+'\nSaldo: R$'+saldo.toFixed(2)+'\n\n';
+  _invChatHistory.push({role:'user',content:ctx+pergunta});
+  if(_invChatHistory.length>10) _invChatHistory=_invChatHistory.slice(-10);
+  try{
+    var resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:'Você é um consultor de investimentos pessoal, direto e prático. Responda em português do Brasil, no máximo 4 frases.',messages:_invChatHistory})});
+    var data=await resp.json();
+    var texto=data.content&&data.content[0]?data.content[0].text:'Erro.';
+    _invChatHistory.push({role:'assistant',content:texto});
+    var t1=document.getElementById('inv-typing');if(t1) t1.remove();
+    msgs.innerHTML+='<div style="background:var(--bg2);border-radius:10px;padding:10px;font-size:.8rem;max-width:90%">'+texto.replace(/\n/g,'<br/>')+'</div>';
+    msgs.scrollTop=msgs.scrollHeight;
+  }catch(e){var t2=document.getElementById('inv-typing');if(t2) t2.remove();msgs.innerHTML+='<div style="color:var(--red2);font-size:.76rem;padding:4px">Erro: '+e.message+'</div>';}
+}
+
+// ══ CHAT IA — DÍVIDAS ══
+var _dividasChatHistory=[];
+async function enviarChatDividas(){
+  var apiKey=localStorage.getItem('pf_apikey');
+  var input=document.getElementById('dividas-chat-input');
+  var msgs=document.getElementById('dividas-chat-msgs');
+  if(!input||!msgs) return;
+  var pergunta=input.value.trim();if(!pergunta) return;
+  if(!apiKey){mostrarToast('Configure a API key em Configurações!');return;}
+  input.value='';
+  msgs.innerHTML+='<div style="background:rgba(37,65,196,.15);border-radius:10px;padding:10px;font-size:.8rem;align-self:flex-end;max-width:85%">'+pergunta+'</div>';
+  msgs.innerHTML+='<div id="div-typing" style="font-size:.76rem;color:var(--muted);padding:4px">IA digitando...</div>';
+  msgs.scrollTop=msgs.scrollHeight;
+  var divs=carregarDividas();
+  var totalDiv=divs.filter(function(d){return d.sit!=='quitado';}).reduce(function(a,d){return a+d.atual;},0);
+  var renda=window._totalRenda||0;
+  var ctx='Contexto de dívidas:\nTotal em dívidas ativas: R$'+totalDiv.toFixed(2)+'\nRenda mensal: R$'+renda.toFixed(2)+'\nQuantidade de dívidas: '+divs.filter(function(d){return d.sit!=='quitado';}).length+'\n\n';
+  _dividasChatHistory.push({role:'user',content:ctx+pergunta});
+  if(_dividasChatHistory.length>10) _dividasChatHistory=_dividasChatHistory.slice(-10);
+  try{
+    var resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:'Você é um consultor especializado em quitação de dívidas e reorganização financeira. Responda em português do Brasil, no máximo 4 frases, sempre prático.',messages:_dividasChatHistory})});
+    var data=await resp.json();
+    var texto=data.content&&data.content[0]?data.content[0].text:'Erro.';
+    _dividasChatHistory.push({role:'assistant',content:texto});
+    var t1=document.getElementById('div-typing');if(t1) t1.remove();
+    msgs.innerHTML+='<div style="background:var(--bg2);border-radius:10px;padding:10px;font-size:.8rem;max-width:90%">'+texto.replace(/\n/g,'<br/>')+'</div>';
+    msgs.scrollTop=msgs.scrollHeight;
+  }catch(e){var t2=document.getElementById('div-typing');if(t2) t2.remove();msgs.innerHTML+='<div style="color:var(--red2);font-size:.76rem;padding:4px">Erro: '+e.message+'</div>';}
+}
+
+// ══ ADD EXTRA (financiamento antigo - mantido por compat) ══
+async function addExtra(){
+  var desc=document.getElementById('ex-desc').value.trim();
+  var val=parseFloat(document.getElementById('ex-val').value)||0;
+  var data=document.getElementById('ex-data').value||hoje();
+  var obs=document.getElementById('ex-obs').value.trim();
+  if(!desc||!val){alert('Preencha descrição e valor!');return;}
+  var gastos=carregarGastos();
+  gastos.push({id:Date.now(),desc:desc,valor:val,cat:'financiamento',pag:'debito',data:data,obs:obs});
+  await set(docId()+'_gastos',JSON.stringify(gastos));
+  fecharModal('overlayExtra');renderAll();mostrarToast('✅ Extra adicionado aos gastos!');
+}
+
 // ══ RENDER ALL ══
+
 
 
 
