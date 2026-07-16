@@ -1512,9 +1512,11 @@ async function get(k){
 }
 
 async function set(k, v){
+  var ts = Date.now();
   localStorage.setItem(k, v);
+  localStorage.setItem(k+'__ts', String(ts));
   if(_db && _userId){
-    var obj = {}; obj[k] = v;
+    var obj = {}; obj[k] = v; obj[k+'__ts'] = String(ts);
     _db.collection('dados').doc(_userId).set(obj,{merge:true})
       .catch(function(e){ console.warn('set err:',e.message); });
   }
@@ -1528,11 +1530,15 @@ function iniciarRealtimeSync(){
     var data = snap.data()||{};
     var changed = false;
     Object.keys(data).forEach(function(k){
+      if(k.endsWith('__ts')) return;
       var cloud = data[k];
+      if(!cloud) return;
+      var cloudTs = parseInt(data[k+'__ts']||'0');
+      var localTs = parseInt(localStorage.getItem(k+'__ts')||'0');
       var local = localStorage.getItem(k);
-      // Only sync from cloud if: local is empty OR cloud has more data than local
-      if(cloud && (!local || (cloud.length > local.length && local === '[]') || !local)){
+      if(!local || cloudTs > localTs){
         localStorage.setItem(k, cloud);
+        if(cloudTs) localStorage.setItem(k+'__ts', String(cloudTs));
         changed = true;
       }
     });
@@ -3341,6 +3347,26 @@ function aplicarFixosDoMes(){
   if(_db&&_userId){var o={};o[docId()+'_gastos']=JSON.stringify(gastos);_db.collection('dados').doc(_userId).set(o,{merge:true}).catch(function(){});}
 }
 
+// ══ LIMPAR DADOS DO DISPOSITIVO ══
+async function limparDadosDispositivo(){
+  var conf1=confirm('⚠️ ATENÇÃO!\n\nIsso vai apagar TODOS os dados salvos NESTE dispositivo/navegador (Meus Gastos, Financiamentos, Contas, etc).\n\nDepois disso, o app vai buscar os dados corretos da nuvem (Firebase).\n\nSó faça isso se tiver certeza que os dados aqui estão errados/desatualizados.\n\nQuer continuar?');
+  if(!conf1) return;
+  var conf2=confirm('Última confirmação: isso é IRREVERSÍVEL neste dispositivo.\n\nRecomendado: exporte um backup ANTES de limpar, caso queira guardar algo daqui.\n\nConfirma a limpeza?');
+  if(!conf2) return;
+  if(!_userId){alert('Faça login primeiro!');return;}
+  // Remove all keys belonging to this user, EXCEPT session/theme prefs
+  var toRemove=[];
+  for(var i=0;i<localStorage.length;i++){
+    var k=localStorage.key(i);
+    if(k&&(k.startsWith(_userId)||k.startsWith('pf_apikey')||k.startsWith('pf_cdi'))){
+      toRemove.push(k);
+    }
+  }
+  toRemove.forEach(function(k){localStorage.removeItem(k);});
+  alert('✅ '+toRemove.length+' registros locais apagados! O app vai recarregar e buscar os dados corretos da nuvem.');
+  location.reload();
+}
+
 // ══ BACKUP — EXPORTAR / IMPORTAR ══
 function exportarDados(){
   if(!_userId){mostrarToast('Faça login primeiro!');return;}
@@ -3760,20 +3786,29 @@ async function init(){
   var savedCDI=localStorage.getItem('pf_cdi')||'10.65';
   var cdiEl=document.getElementById('config-cdi');if(cdiEl) cdiEl.value=savedCDI;
 
-  // Load from Firebase - SAFE MERGE: never overwrite existing local data
+  // Load from Firebase - SMART MERGE: compare timestamps, newest wins
   if(_db && _userId){
     try{
       var snap = await _db.collection('dados').doc(_userId).get();
       if(snap.exists){
         var fbData = snap.data()||{};
         Object.keys(fbData).forEach(function(k){
-          var local = localStorage.getItem(k);
+          if(k.endsWith('__ts')) return; // skip timestamp keys themselves
           var cloud = fbData[k];
-          if(cloud && !local){
-            // Only load from Firebase if local doesn't have this key
+          if(!cloud) return;
+          var cloudTs = parseInt(fbData[k+'__ts']||'0');
+          var localTs = parseInt(localStorage.getItem(k+'__ts')||'0');
+          var local = localStorage.getItem(k);
+          if(!local){
+            // No local data at all -> take cloud
             localStorage.setItem(k, cloud);
+            if(cloudTs) localStorage.setItem(k+'__ts', String(cloudTs));
+          } else if(cloudTs > localTs){
+            // Cloud is newer -> take cloud
+            localStorage.setItem(k, cloud);
+            localStorage.setItem(k+'__ts', String(cloudTs));
           }
-          // If local already has data → keep local (don't overwrite)
+          // else: local is newer or equal -> keep local
         });
       }
     }catch(e){ console.warn('Firebase load err:',e.message); }
