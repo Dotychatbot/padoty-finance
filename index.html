@@ -962,6 +962,35 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
       <button class="btn-sm" onclick="exportarCSV()" style="text-align:left">📊 Exportar CSV</button>
     </div>
   </div>
+
+  <!-- BACKUP -->
+  <div class="form-box" style="margin-bottom:12px;border:2px solid var(--green2)">
+    <div class="form-tit"><span class="bar" style="background:var(--green2)"></span>💾 Backup dos seus dados</div>
+    <div style="font-size:.76rem;color:var(--muted);margin-bottom:12px">Exporte seus dados antes de qualquer atualização. Importe para restaurar tudo.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-add" style="flex:1;background:linear-gradient(135deg,var(--green),var(--green2))" onclick="exportarDados()">⬇️ Exportar backup</button>
+      <label style="flex:1;cursor:pointer">
+        <div class="btn-add" style="background:linear-gradient(135deg,var(--blue),var(--blue2));text-align:center">⬆️ Importar backup</div>
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="importarDados(this)"/>
+      </label>
+    </div>
+    <div id="backup-status" style="font-size:.74rem;margin-top:8px;color:var(--muted)"></div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+      <div style="font-size:.72rem;color:var(--red2);margin-bottom:8px">⚠️ Este dispositivo com dados antigos/errados? Limpe e deixe a nuvem repovoar do zero.</div>
+      <button class="btn-add" style="width:100%;background:var(--surface);border:1px solid var(--red2);color:var(--red2)" onclick="limparDadosDispositivo()">🗑️ Limpar dados deste dispositivo</button>
+    </div>
+  </div>
+
+  <!-- DADOS DE TESTE -->
+  <div class="form-box" style="margin-bottom:12px;border:2px dashed var(--gold2)">
+    <div class="form-tit"><span class="bar" style="background:var(--gold2)"></span>🧪 Modo de teste</div>
+    <div style="font-size:.76rem;color:var(--muted);margin-bottom:12px">Popule o app com dados de exemplo (renda, gastos, financiamentos) pra ver todas as funções funcionando. Depois é só apagar tudo com um clique.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-add" style="flex:1;background:linear-gradient(135deg,var(--gold),var(--gold2))" onclick="popularDadosTeste()">🧪 Popular com dados de teste</button>
+      <button class="btn-add" style="flex:1;background:var(--surface);border:1px solid var(--red2);color:var(--red2)" onclick="apagarDadosTeste()">🗑️ Apagar dados de teste</button>
+    </div>
+    <div id="teste-status" style="font-size:.74rem;margin-top:8px;color:var(--muted)"></div>
+  </div>
 </section>
 </main>
 </div><!-- layout -->
