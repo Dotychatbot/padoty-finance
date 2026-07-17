@@ -373,30 +373,49 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
         <button class="btn-add" style="flex:1;background:var(--surface);border:1px solid var(--border);color:var(--muted)" onclick="abrirHistCasa('parcela')">📋 Registrar anterior</button>
       </div>
 
-      <!-- TAXA DE OBRA -->
-      <div style="background:var(--bg2);border-radius:10px;padding:12px;border:1px solid var(--border)">
-        <div style="font-size:.64rem;font-weight:700;color:var(--invest2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">🔧 Taxa de Obra (variável)</div>
-        <div id="obra-progresso-el" style="margin-bottom:10px"></div>
-        <div class="fields">
-          <div><label>Valor total da obra (R$)</label><input type="number" id="obra-val" placeholder="0,00" min="0" step="0.01"/></div>
-          <div><label>Descrição</label><input type="text" id="obra-desc" placeholder="Ex: Construção, Material..."/></div>
-          <div><label>Conta que pagou</label><select id="obra-carteira"><option value="">— Selecione —</option></select></div>
-          <div style="align-self:flex-end">
-            <div style="font-size:.62rem;color:var(--muted);margin-bottom:4px">Sua parte (<span id="obra-pct-label">50</span>%)</div>
-            <div id="obra-minha-parte" style="font-family:DM Mono,monospace;font-size:.9rem;color:var(--invest2)">R$ 0,00</div>
-          </div>
-          <div class="full" style="display:flex;gap:8px">
-            <button class="btn-add" style="flex:1;background:linear-gradient(135deg,var(--invest),var(--invest2))" onclick="pagarTaxaObra()">✅ Paguei taxa de obra</button>
-            <button class="btn-add" style="flex:1;background:var(--surface);border:1px solid var(--border);color:var(--muted)" onclick="abrirHistCasa('obra')">📋 Registrar anterior</button>
-          </div>
-        </div>
-        <div id="lista-obras-atual" style="margin-top:8px"></div>
-      </div>
     </div>
 
     <!-- HISTÓRICO CASA -->
     <div id="casa-hist-resumo" style="margin-top:12px"></div>
     <div id="lista-hist-casa" style="margin-top:8px;max-height:200px;overflow-y:auto"></div>
+  </div>
+
+  <!-- ═══ TAXA DE OBRA ═══ -->
+  <div class="form-box" style="border-top:3px solid var(--invest2);margin-bottom:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:2rem">🔧</div>
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px">Taxa de Obra</div>
+          <div id="obra-sub-lbl" style="font-size:.68rem;color:var(--muted)">Valor variável — dividido com sua esposa</div>
+        </div>
+      </div>
+      <button class="btn-sm" onclick="abrirConfigCasa()">⚙️ Config (via Casa)</button>
+    </div>
+
+    <!-- PROGRESSO -->
+    <div id="obra-progresso-el" style="margin-bottom:10px"></div>
+
+    <!-- LANÇAR NOVA TAXA -->
+    <div class="fields">
+      <div><label>Valor total da obra (R$)</label><input type="number" id="obra-val" placeholder="0,00" min="0" step="0.01"/></div>
+      <div><label>Descrição</label><input type="text" id="obra-desc" placeholder="Ex: Construção, Material..."/></div>
+      <div><label>Data</label><input type="date" id="obra-data"/></div>
+      <div><label>Conta que pagou</label><select id="obra-carteira"><option value="">— Selecione —</option></select></div>
+      <div style="align-self:flex-end">
+        <div style="font-size:.62rem;color:var(--muted);margin-bottom:4px">Sua parte (<span id="obra-pct-label">50</span>%)</div>
+        <div id="obra-minha-parte" style="font-family:DM Mono,monospace;font-size:.9rem;color:var(--invest2)">R$ 0,00</div>
+      </div>
+      <div class="full" style="display:flex;gap:8px">
+        <button class="btn-add" style="flex:1;background:linear-gradient(135deg,var(--invest),var(--invest2))" onclick="pagarTaxaObra()">✅ Paguei taxa de obra</button>
+        <button class="btn-add" style="flex:1;background:var(--surface);border:1px solid var(--border);color:var(--muted)" onclick="abrirHistCasa('obra')">📋 Registrar anterior</button>
+      </div>
+    </div>
+    <div id="lista-obras-atual" style="margin-top:8px"></div>
+
+    <!-- HISTÓRICO -->
+    <div id="obra-hist-resumo" style="margin-top:12px"></div>
+    <div id="lista-hist-obra" style="margin-top:8px;max-height:200px;overflow-y:auto"></div>
   </div>
 
   <!-- ═══ PÓS-GRADUAÇÃO ═══ -->
@@ -450,7 +469,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     <div class="fields">
       <div><label>Nome</label><input type="text" id="assn-nome" placeholder="Ex: Spotify, Netflix..."/></div>
       <div><label>Valor (R$)</label><input type="number" id="assn-val" placeholder="0,00" min="0" step="0.01"/></div>
-      <div><label>Dia cobrança</label><input type="number" id="assn-dia" placeholder="Ex: 5" min="1" max="31"/></div>
+      <div><label>Data de cobrança</label><input type="date" id="assn-data"/></div>
       <div class="full">
         <label>Categoria</label>
         <div style="display:flex;gap:8px;align-items:center">
@@ -1334,7 +1353,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     <div class="fields">
       <div class="full"><label>Nome</label><input type="text" id="nf-nome" placeholder="Ex: Moto Honda, Casa, Carro..."/></div>
       <div><label>Ícone</label><input type="text" id="nf-icon" placeholder="🏍️" maxlength="4" style="text-align:center;font-size:1.2rem"/></div>
-      <div><label>Dia vencimento</label><input type="number" id="nf-dia" placeholder="Ex: 10" min="1" max="31"/></div>
+      <div><label>Data de vencimento</label><input type="date" id="nf-data"/></div>
       <div><label>Parcela (R$/mês)</label><input type="number" id="nf-parcela" placeholder="0,00" min="0" step="0.01"/></div>
       <div><label>Parcela atual nº</label><input type="number" id="nf-atual" placeholder="Ex: 1" min="1"/></div>
       <div><label>Total de parcelas</label><input type="number" id="nf-total" placeholder="Ex: 48" min="1"/></div>
@@ -1502,7 +1521,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     <div class="fields">
       <div class="full"><label>Nome</label><input type="text" id="ea-nome"/></div>
       <div><label>Valor (R$)</label><input type="number" id="ea-val" min="0" step="0.01"/></div>
-      <div><label>Dia cobrança</label><input type="number" id="ea-dia" min="1" max="31"/></div>
+      <div><label>Data de cobrança</label><input type="date" id="ea-data"/></div>
       <div class="full"><label>Obs</label><input type="text" id="ea-obs"/></div>
     </div>
     <div class="modal-btns">
@@ -1539,7 +1558,16 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     <div class="fields">
       <div class="full"><label>Nome</label><input type="text" id="ec-nome"/></div>
       <div><label>Valor (R$)</label><input type="number" id="ec-val" min="0" step="0.01"/></div>
-      <div><label>Dia vencimento</label><input type="number" id="ec-dia" min="1" max="31"/></div>
+      <div><label>Data vencimento</label><input type="date" id="ec-data"/></div>
+      <div><label>Forma pagamento</label>
+        <select id="ec-pag">
+          <option value="debito">💳 Débito</option>
+          <option value="pix">⚡ PIX</option>
+          <option value="credito">💳 Crédito</option>
+          <option value="boleto">🏦 Boleto</option>
+          <option value="dinheiro">💵 Dinheiro</option>
+        </select>
+      </div>
       <div class="full"><label>Obs</label><input type="text" id="ec-obs"/></div>
     </div>
     <div class="modal-btns">
@@ -1972,20 +2000,21 @@ async function confirmarPagarCasa(){
 async function pagarTaxaObra(){
   var val=parseFloat(document.getElementById('obra-val').value)||0;
   var desc=document.getElementById('obra-desc').value.trim()||'Taxa de obra';
+  var data=document.getElementById('obra-data')?(document.getElementById('obra-data').value||hoje()):hoje();
   var contaId=parseInt(document.getElementById('obra-carteira').value)||0;
   if(!val){alert('Digite o valor da obra!');return;}
   if(!contaId){alert('Selecione a conta!');return;}
   var c=carregarCasa();var pct=c.pct||100;var minha=val*(pct/100);
   var hist=carregarHistCasa();
-  hist.push({id:Date.now(),valor:minha,valorTotal:val,data:hoje(),obs:desc,tipo:'obra',pagTipo:'real',contaId:contaId,pct:pct});
+  hist.push({id:Date.now(),valor:minha,valorTotal:val,data:data,obs:desc,tipo:'obra',pagTipo:'real',contaId:contaId,pct:pct});
   await salvarHistCasa(hist);
   // Save to obras list too
   var obras=JSON.parse(localStorage.getItem(docId()+'_obras')||'[]');
-  obras.push({id:Date.now()+1,desc:desc,valor:val,pct:pct,minhaParte:minha,data:hoje()});
+  obras.push({id:Date.now()+1,desc:desc,valor:val,pct:pct,minhaParte:minha,data:data});
   await set(docId()+'_obras',JSON.stringify(obras));
   await debitarCarteira(contaId,minha,'🔧 '+desc,false);
   var gastos=carregarGastos();
-  gastos.push({id:Date.now()+2,desc:'🔧 '+desc+(pct<100?' ('+pct+'% de '+fmt(val)+')':''),valor:minha,cat:'financiamento',pag:'debito',data:hoje(),carteira:contaId});
+  gastos.push({id:Date.now()+2,desc:'🔧 '+desc+(pct<100?' ('+pct+'% de '+fmt(val)+')':''),valor:minha,cat:'financiamento',pag:'debito',data:data,carteira:contaId});
   await set(docId()+'_gastos',JSON.stringify(gastos));
   document.getElementById('obra-val').value='';
   document.getElementById('obra-desc').value='';
@@ -2276,6 +2305,7 @@ function renderFinanciamentos(){
     if(cAcoes) cAcoes.style.display='none';
   }
   renderHistoricoCasa();
+  renderHistoricoObra();
 
   // ── OUTROS FINS (cards completos) ──
   var outrosEl=document.getElementById('lista-fins-outros');
@@ -2348,21 +2378,20 @@ function renderHistoricoCasa(){
   var totalObr=hist.filter(function(h){return h.tipo==='obra';}).reduce(function(a,h){return a+h.valor;},0);
   var totalTudo=totalFin+totalObr;
   var resumoEl=document.getElementById('casa-hist-resumo');
-  if(resumoEl&&totalTudo>0){
-    resumoEl.innerHTML='<div class="cards-row" style="margin-bottom:0">'+
-      '<div class="mini-card"><div class="lbl">🏠 Total financiamento pago</div><div class="val" style="color:var(--blue2)">'+fmt(totalFin)+'</div></div>'+
-      '<div class="mini-card"><div class="lbl">🔧 Total obras pago</div><div class="val" style="color:var(--invest2)">'+fmt(totalObr)+'</div></div>'+
-      '<div class="mini-card"><div class="lbl">💸 Total geral pago</div><div class="val" style="color:var(--red2)">'+fmt(totalTudo)+'</div></div>'+
-      '</div>';
+  if(resumoEl&&totalFin>0){
+    resumoEl.innerHTML='<div class="mini-card"><div class="lbl">🏠 Total financiamento pago</div><div class="val" style="color:var(--blue2)">'+fmt(totalFin)+'</div></div>';
+  } else if(resumoEl){
+    resumoEl.innerHTML='';
   }
+  var histParcela=hist.filter(function(h){return h.tipo==='parcela';});
   var listEl=document.getElementById('lista-hist-casa');
   if(!listEl) return;
-  if(!hist.length){listEl.innerHTML='<div style="font-size:.76rem;color:var(--muted);padding:8px">Nenhum pagamento registrado ainda.</div>';return;}
-  listEl.innerHTML=hist.map(function(h){
+  if(!histParcela.length){listEl.innerHTML='<div style="font-size:.76rem;color:var(--muted);padding:8px">Nenhum pagamento registrado ainda.</div>';return;}
+  listEl.innerHTML=histParcela.map(function(h){
     return '<div class="item" style="margin-bottom:4px">'+
-      '<div class="item-ic">'+(h.tipo==='parcela'?'🏠':'🔧')+'</div>'+
+      '<div class="item-ic">🏠</div>'+
       '<div class="item-info">'+
-      '<div class="item-nome">'+(h.tipo==='parcela'?'Parcela financiamento':'Taxa de obra')+(h.obs?' — '+h.obs:'')+'</div>'+
+      '<div class="item-nome">Parcela financiamento'+(h.obs?' — '+h.obs:'')+'</div>'+
       '<div class="item-meta">'+fmtD(h.data)+'</div></div>'+
       '<div class="item-val neg">'+fmt(h.valor)+'</div>'+
       '<button style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.76rem;padding:3px" data-id="'+h.id+'" onclick="editarHistBtn(this)" title="Editar">&#x270F;&#xFE0F;</button>'+
@@ -3560,14 +3589,15 @@ async function salvarAssinaturas(a){localStorage.setItem(docIdG('assinaturas'),J
 async function addAssinatura(){
   var nome=document.getElementById('assn-nome').value.trim();
   var val=parseFloat(document.getElementById('assn-val').value)||0;
-  var dia=parseInt(document.getElementById('assn-dia').value)||1;
+  var dataVenc=document.getElementById('assn-data').value||hoje();
+  var dia=parseInt((dataVenc.split('-')[2]||'1'));
   var cat=document.getElementById('assn-cat').value;
   var obs=document.getElementById('assn-obs').value.trim();
   if(!nome||!val){alert('Preencha nome e valor!');return;}
   var assns=carregarAssinaturas();
-  assns.push({id:Date.now(),nome:nome,val:val,dia:dia,cat:cat,obs:obs});
+  assns.push({id:Date.now(),nome:nome,val:val,dia:dia,dataVenc:dataVenc,cat:cat,obs:obs});
   await salvarAssinaturas(assns);
-  ['assn-nome','assn-val','assn-dia','assn-obs'].forEach(function(id){var el=document.getElementById(id);if(el) el.value='';});
+  ['assn-nome','assn-val','assn-obs'].forEach(function(id){var el=document.getElementById(id);if(el) el.value='';});
   renderAssinaturas();mostrarToast('✅ Assinatura adicionada!');
 }
 async function delAssinatura(id){
@@ -3583,7 +3613,7 @@ function renderAssinaturas(){
     return '<div class="item">'+
       '<div class="item-ic">📱</div>'+
       '<div class="item-info"><div class="item-nome">'+a.nome+'</div>'+
-      '<div class="item-meta">Todo dia '+a.dia+'  de cada mês'+(a.obs?' · '+a.obs:'')+'</div></div>'+
+      '<div class="item-meta">'+(a.dataVenc?'Vence '+fmtD(a.dataVenc):'Todo dia '+a.dia)+' de cada mês'+(a.obs?' · '+a.obs:'')+'</div></div>'+
       '<div class="item-val neg">'+fmt(a.val)+'/mês</div>'+
       '<button style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.76rem;padding:3px" data-id="'+a.id+'" onclick="editarAssnBtn(this)">✏️</button>'+
       '<button class="item-del" data-id="'+a.id+'" onclick="delAssnBtn(this)">&#x2715;</button></div>';
@@ -4302,10 +4332,28 @@ async function salvarEdicaoReceita(){
 }
 
 // ══ EDITAR ASSINATURA ══
+function abrirEdicaoAssn(id){
+  var assns=carregarAssinaturas();var a=assns.find(function(x){return x.id===id;});if(!a) return;
+  document.getElementById('ea-id').value=id;
+  document.getElementById('ea-nome').value=a.nome||'';
+  document.getElementById('ea-val').value=a.val||0;
+  var dv=document.getElementById('ea-data');if(dv) dv.value=a.dataVenc||'';
+  document.getElementById('ea-obs').value=a.obs||'';
+  document.getElementById('overlayEditarAssn').classList.add('aberto');
+}
 async function salvarEdicaoAssn(){
   var id=parseInt(document.getElementById('ea-id').value);
   var assns=carregarAssinaturas();
-  assns=assns.map(function(a){if(a.id===id){a.nome=document.getElementById('ea-nome').value.trim();a.val=parseFloat(document.getElementById('ea-val').value)||0;a.dia=parseInt(document.getElementById('ea-dia').value)||1;a.obs=document.getElementById('ea-obs').value.trim();}return a;});
+  assns=assns.map(function(a){
+    if(a.id===id){
+      a.nome=document.getElementById('ea-nome').value.trim();
+      a.val=parseFloat(document.getElementById('ea-val').value)||0;
+      var dv=document.getElementById('ea-data').value;
+      if(dv){a.dataVenc=dv;a.dia=parseInt((dv.split('-')[2]||'1'));}
+      a.obs=document.getElementById('ea-obs').value.trim();
+    }
+    return a;
+  });
   await salvarAssinaturas(assns);fecharModal('overlayEditarAssn');renderAssinaturas();mostrarToast('✅ Assinatura atualizada!');
 }
 
@@ -4674,6 +4722,28 @@ async function delHistFinOutro(finId,histId){
   await salvarHistFin(finId,hist);renderFinanciamentos();
 }
 function delHistFinOutroBtn(btn){delHistFinOutro(parseFloat(btn.dataset.fin),parseFloat(btn.dataset.id));}
+
+// ══ HISTÓRICO DEDICADO — TAXA DE OBRA ══
+function renderHistoricoObra(){
+  var hist=carregarHistCasa().filter(function(h){return h.tipo==='obra';});
+  hist.sort(function(a,b){return(b.data||'').localeCompare(a.data||'');});
+  var total=hist.reduce(function(a,h){return a+h.valor;},0);
+  var totalGeral=hist.reduce(function(a,h){return a+(h.valorTotal||h.valor);},0);
+  var resumoEl=document.getElementById('obra-hist-resumo');
+  if(resumoEl) resumoEl.innerHTML=total>0?'<div class="cards-row" style="margin-bottom:0"><div class="mini-card"><div class="lbl">💰 Sua parte total paga</div><div class="val" style="color:var(--invest2)">'+fmt(total)+'</div></div><div class="mini-card"><div class="lbl">🔧 Total geral pago</div><div class="val" style="color:var(--muted)">'+fmt(totalGeral)+'</div></div></div>':'';
+  var listEl=document.getElementById('lista-hist-obra');
+  if(!listEl) return;
+  if(!hist.length){listEl.innerHTML='<div style="font-size:.76rem;color:var(--muted);padding:8px">Nenhum pagamento registrado ainda.</div>';return;}
+  listEl.innerHTML=hist.map(function(h){
+    return '<div class="item" style="margin-bottom:4px">'+
+      '<div class="item-ic">🔧</div>'+
+      '<div class="item-info"><div class="item-nome">'+(h.obs||'Taxa de obra')+(h.pct<100?' ('+h.pct+'%)':'')+'</div>'+
+      '<div class="item-meta">'+fmtD(h.data)+'</div></div>'+
+      '<div class="item-val neg">'+fmt(h.valor)+'</div>'+
+      '<button style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.76rem;padding:3px" data-id="'+h.id+'" onclick="editarHistBtn(this)" title="Editar">&#x270F;&#xFE0F;</button>'+
+      '<button class="item-del" data-id="'+h.id+'" onclick="delHistBtn(this)">&#x2715;</button></div>';
+  }).join('');
+}
 
 // ══ RENDER ALL ══
 
