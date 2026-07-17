@@ -2653,7 +2653,7 @@ async function renderGastos(){
       '<div class="item-meta">Todo dia '+a.dia+(a.obs?' · '+a.obs:'')+'</div></div>'+
       '<div class="item-val neg">'+fmt(a.val)+'</div></div>';
   });
-  if(!gastos.length){if(!motoPin.parcela&&!casaPin.parcela&&!finsPin.length&&!carregarAssinaturas().length){el.innerHTML='<div class="vazio">Configure seus financiamentos e assinaturas acima, e lance seus gastos 💸</div>';return;}}
+  if(!gastos.length&&!finsPin.length&&!assnsPin.length){el.innerHTML='<div class="vazio">Nenhum gasto lançado ainda neste mês 💸</div>';return;}
   var cats=carregarCats();var CAT_IC={};cats.forEach(function(c){CAT_IC[c.id]=c.icon;});
   el.innerHTML=pinned+gastos.map(function(g){
     return '<div class="item">'+
@@ -3394,9 +3394,15 @@ function aplicarFixosDoMes(){
     var jaExiste=gastos.some(function(g){return g._recId===r.id;});
     if(!jaExiste) gastos.push({id:Date.now()+Math.floor(Math.random()*1000),desc:r.desc,valor:r.val,cat:r.cat||'outros',pag:'debito',data:hoje(),obs:'Auto: recorrente fixo',_recId:r.id});
   });
-  localStorage.setItem(docId()+'_gastos',JSON.stringify(gastos));
+  var gastosStr=JSON.stringify(gastos);
+  var ts=Date.now();
+  localStorage.setItem(docId()+'_gastos',gastosStr);
+  localStorage.setItem(docId()+'_gastos__ts',String(ts));
   localStorage.setItem(marcaKey,'1');
-  if(_db&&_userId){var o={};o[docId()+'_gastos']=JSON.stringify(gastos);_db.collection('dados').doc(_userId).set(o,{merge:true}).catch(function(){});}
+  if(_db&&_userId){
+    var o={};o[docId()+'_gastos']=gastosStr;o[docId()+'_gastos__ts']=String(ts);
+    _db.collection('dados').doc(_userId).set(o,{merge:true}).catch(function(){});
+  }
 }
 
 // ══ DADOS DE TESTE ══
@@ -3696,7 +3702,7 @@ function renderMetaEconomia(){
 async function salvarMetaEconomia(){
   var val=parseFloat(document.getElementById('meta-eco-val').value)||0;
   if(!val){alert('Digite um valor!');return;}
-  localStorage.setItem(docIdG('meta_economia'),val);
+  await set(docIdG('meta_economia'),String(val));
   fecharModal('overlayMetaEco');renderMetaEconomia();mostrarToast('✅ Meta salva!');
 }
 
