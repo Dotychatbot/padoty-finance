@@ -376,6 +376,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
       <!-- TAXA DE OBRA -->
       <div style="background:var(--bg2);border-radius:10px;padding:12px;border:1px solid var(--border)">
         <div style="font-size:.64rem;font-weight:700;color:var(--invest2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">🔧 Taxa de Obra (variável)</div>
+        <div id="obra-progresso-el" style="margin-bottom:10px"></div>
         <div class="fields">
           <div><label>Valor total da obra (R$)</label><input type="number" id="obra-val" placeholder="0,00" min="0" step="0.01"/></div>
           <div><label>Descrição</label><input type="text" id="obra-desc" placeholder="Ex: Construção, Material..."/></div>
@@ -396,6 +397,35 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     <!-- HISTÓRICO CASA -->
     <div id="casa-hist-resumo" style="margin-top:12px"></div>
     <div id="lista-hist-casa" style="margin-top:8px;max-height:200px;overflow-y:auto"></div>
+  </div>
+
+  <!-- ═══ PÓS-GRADUAÇÃO ═══ -->
+  <div class="form-box" style="border-top:3px solid var(--invest2);margin-bottom:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:2rem">🎓</div>
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px">Pós-Graduação</div>
+          <div id="pg-parcela-lbl" style="font-size:.68rem;color:var(--muted)">Não configurado</div>
+        </div>
+      </div>
+      <button class="btn-sm" onclick="abrirConfigPosGrad()">⚙️ Config</button>
+    </div>
+
+    <!-- PROGRESSO -->
+    <div id="pg-progresso-el"></div>
+
+    <!-- BOTÕES DE AÇÃO -->
+    <div id="pg-acoes-el" style="display:none;margin-top:12px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-add" style="flex:1;background:linear-gradient(135deg,var(--green),var(--green2))" onclick="abrirPagarPosGrad()">✅ Paguei a parcela deste mês</button>
+        <button class="btn-add" style="flex:1;background:var(--surface);border:1px solid var(--border);color:var(--muted)" onclick="abrirHistPosGrad()">📋 Registrar anterior</button>
+      </div>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div id="pg-hist-resumo" style="margin-top:12px"></div>
+    <div id="lista-hist-pg" style="margin-top:8px;max-height:200px;overflow-y:auto"></div>
   </div>
 
   <!-- OUTROS FINANCIAMENTOS -->
@@ -421,15 +451,24 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
       <div><label>Nome</label><input type="text" id="assn-nome" placeholder="Ex: Spotify, Netflix..."/></div>
       <div><label>Valor (R$)</label><input type="number" id="assn-val" placeholder="0,00" min="0" step="0.01"/></div>
       <div><label>Dia cobrança</label><input type="number" id="assn-dia" placeholder="Ex: 5" min="1" max="31"/></div>
-      <div><label>Categoria</label>
-        <select id="assn-cat">
-          <option value="streaming">🎬 Streaming</option>
-          <option value="musica">🎵 Música</option>
-          <option value="ia">🤖 IA / Tecnologia</option>
-          <option value="saude">💊 Saúde</option>
-          <option value="educacao">📚 Educação</option>
-          <option value="outros">📦 Outros</option>
-        </select>
+      <div class="full">
+        <label>Categoria</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="assn-cat" style="flex:1">
+            <option value="streaming">🎬 Streaming</option>
+            <option value="musica">🎵 Música</option>
+            <option value="ia">🤖 IA / Tecnologia</option>
+            <option value="saude">💊 Saúde</option>
+            <option value="educacao">📚 Educação</option>
+            <option value="outros">📦 Outros</option>
+          </select>
+          <button type="button" onclick="document.getElementById('assn-nova-cat').style.display=document.getElementById('assn-nova-cat').style.display==='none'?'flex':'none'" style="background:none;border:1px solid var(--border);border-radius:20px;color:var(--muted);font-size:.72rem;padding:7px 10px;cursor:pointer;white-space:nowrap">+ Nova</button>
+        </div>
+        <div id="assn-nova-cat" style="display:none;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap">
+          <input type="text" id="assn-cat-icon" placeholder="🏷️" maxlength="4" style="width:48px;text-align:center;font-size:1rem;padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text)"/>
+          <input type="text" id="assn-cat-nome" placeholder="Nome da categoria" style="flex:1;min-width:120px;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:.82rem"/>
+          <button type="button" onclick="addCatRapida('assn-cat','assn-nova-cat','assn-cat-icon','assn-cat-nome')" style="background:var(--gold2);color:#111;border:none;border-radius:8px;padding:7px 12px;font-size:.78rem;font-weight:700;cursor:pointer">✅</button>
+        </div>
       </div>
       <div class="full"><label>Obs</label><input type="text" id="assn-obs" placeholder="Detalhe..."/></div>
       <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--invest),var(--invest2))" onclick="addAssinatura()">+ Adicionar Assinatura</button></div>
@@ -498,7 +537,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
   <div id="gastos-nova-cat" style="display:none;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
     <input type="text" id="gc-icon" placeholder="🏷️" maxlength="4" style="width:48px;text-align:center;font-size:1rem;padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text)"/>
     <input type="text" id="gc-nome" placeholder="Nome da categoria" style="flex:1;min-width:120px;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:.82rem"/>
-    <button onclick="addCatRapida('g-cat','gastos-nova-cat')" style="background:var(--gold2);color:#111;border:none;border-radius:8px;padding:7px 12px;font-size:.78rem;font-weight:700;cursor:pointer">✅</button>
+    <button onclick="addCatRapida('g-cat','gastos-nova-cat','gc-icon','gc-nome')" style="background:var(--gold2);color:#111;border:none;border-radius:8px;padding:7px 12px;font-size:.78rem;font-weight:700;cursor:pointer">✅</button>
   </div>
   <div class="lista" id="lista-gastos"></div>
 </section>
@@ -629,10 +668,19 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     <div class="fields">
       <div><label>Descrição</label><input type="text" id="rec-desc" placeholder="Ex: Spotify, Netflix..."/></div>
       <div><label>Valor (R$)</label><input type="number" id="rec-val" placeholder="0,00" min="0" step="0.01"/></div>
-      <div><label>Categoria</label>
-        <select id="rec-cat" onchange=""></select>
+      <div class="full">
+        <label>Categoria</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="rec-cat" style="flex:1"></select>
+          <button type="button" onclick="document.getElementById('rec-nova-cat').style.display=document.getElementById('rec-nova-cat').style.display==='none'?'flex':'none'" style="background:none;border:1px solid var(--border);border-radius:20px;color:var(--muted);font-size:.72rem;padding:7px 10px;cursor:pointer;white-space:nowrap">+ Nova</button>
+        </div>
+        <div id="rec-nova-cat" style="display:none;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap">
+          <input type="text" id="rec-cat-icon" placeholder="🏷️" maxlength="4" style="width:48px;text-align:center;font-size:1rem;padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text)"/>
+          <input type="text" id="rec-cat-nome" placeholder="Nome da categoria" style="flex:1;min-width:120px;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:.82rem"/>
+          <button type="button" onclick="addCatRapida('rec-cat','rec-nova-cat','rec-cat-icon','rec-cat-nome')" style="background:var(--gold2);color:#111;border:none;border-radius:8px;padding:7px 12px;font-size:.78rem;font-weight:700;cursor:pointer">✅</button>
+        </div>
       </div>
-      <div><label>Dia vencimento</label><input type="number" id="rec-dia" placeholder="Ex: 10" min="1" max="31"/></div>
+      <div><label>Data de vencimento</label><input type="date" id="rec-data"/></div>
       <div><label>Tipo</label>
         <select id="rec-tipo">
           <option value="fixo">🔒 Fixo — mesmo valor, entra automático</option>
@@ -745,8 +793,17 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     <div id="orc-cats-el"></div>
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
       <div class="fields">
-        <div><label>Categoria</label>
-          <select id="orc-cat" onchange=""></select>
+        <div class="full">
+          <label>Categoria</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="orc-cat" style="flex:1"></select>
+            <button type="button" onclick="document.getElementById('orc-nova-cat').style.display=document.getElementById('orc-nova-cat').style.display==='none'?'flex':'none'" style="background:none;border:1px solid var(--border);border-radius:20px;color:var(--muted);font-size:.72rem;padding:7px 10px;cursor:pointer;white-space:nowrap">+ Nova</button>
+          </div>
+          <div id="orc-nova-cat" style="display:none;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap">
+            <input type="text" id="orc-cat-icon" placeholder="🏷️" maxlength="4" style="width:48px;text-align:center;font-size:1rem;padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text)"/>
+            <input type="text" id="orc-cat-nome" placeholder="Nome da categoria" style="flex:1;min-width:120px;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:.82rem"/>
+            <button type="button" onclick="addCatRapida('orc-cat','orc-nova-cat','orc-cat-icon','orc-cat-nome')" style="background:var(--gold2);color:#111;border:none;border-radius:8px;padding:7px 12px;font-size:.78rem;font-weight:700;cursor:pointer">✅</button>
+          </div>
         </div>
         <div><label>Limite (R$)</label><input type="number" id="orc-val" placeholder="Ex: 800" min="0" step="0.01"/></div>
         <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--gold),var(--gold2));color:#111" onclick="salvarOrcamento()">💾 Salvar limite</button></div>
@@ -1172,13 +1229,100 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
       <div><label>Total de parcelas</label><input type="number" id="cc-total" placeholder="Ex: 360" min="1"/></div>
       <div><label>Data de vencimento</label><input type="date" id="cc-data"/></div>
       <div class="full"><label>Banco / contrato</label><input type="text" id="cc-obs" placeholder="Ex: Caixa Econômica..."/></div>
+      <div><label>Valor total estimado da obra (R$)</label><input type="number" id="cc-obra-estimado" placeholder="Ex: 15000 (opcional)" min="0" step="0.01"/></div>
       <div class="full" style="background:var(--bg2);border-radius:10px;padding:10px;font-size:.76rem;color:var(--muted)">
-        💡 Parcela compartilhada com companheira? Coloque o valor total e defina sua % de responsabilidade. O app calcula sua parte automaticamente.
+        💡 Parcela compartilhada com companheira? Coloque o valor total e defina sua % de responsabilidade. O app calcula sua parte automaticamente. O valor estimado da obra é opcional — só serve para mostrar a barra de progresso.
       </div>
     </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="fecharModal('overlayConfigCasa')">Cancelar</button>
       <button class="btn-confirm" onclick="salvarConfigCasa()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIG PÓS-GRADUAÇÃO -->
+<div class="overlay" id="overlayConfigPosGrad" onclick="fecharOverlay('overlayConfigPosGrad',event)">
+  <div class="modal">
+    <h2>🎓 Pós-Graduação</h2>
+    <div class="fields">
+      <div><label>Parcela mensal (R$)</label><input type="number" id="pg-c-parcela" placeholder="Ex: 250,00" min="0" step="0.01"/></div>
+      <div><label>Parcela atual (nº)</label><input type="number" id="pg-c-atual" placeholder="Ex: 3" min="1"/></div>
+      <div><label>Total de parcelas</label><input type="number" id="pg-c-total" placeholder="Ex: 18" min="1"/></div>
+      <div><label>Data de vencimento</label><input type="date" id="pg-c-data"/></div>
+      <div class="full"><label>Curso / instituição</label><input type="text" id="pg-c-obs" placeholder="Ex: Fisiologia do Exercício..."/></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal('overlayConfigPosGrad')">Cancelar</button>
+      <button class="btn-confirm" onclick="salvarConfigPosGrad()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PAGAR PÓS-GRADUAÇÃO -->
+<div class="overlay" id="overlayPagarPosGrad" onclick="fecharOverlay('overlayPagarPosGrad',event)">
+  <div class="modal">
+    <h2>✅ Pagar Pós-Graduação</h2>
+    <div id="pagar-pg-info" style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:12px;font-size:.82rem"></div>
+    <div class="fields">
+      <div><label>Conta que pagou</label><select id="pg-p-carteira"><option value="">— Selecione —</option></select></div>
+      <div><label>Data do pagamento</label><input type="date" id="pg-p-data"/></div>
+      <div class="full"><label>Obs</label><input type="text" id="pg-p-obs" placeholder="Detalhe..."/></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal('overlayPagarPosGrad')">Cancelar</button>
+      <button class="btn-confirm" onclick="confirmarPagarPosGrad()">✅ Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL HISTÓRICO PÓS-GRADUAÇÃO -->
+<div class="overlay" id="overlayHistPosGrad" onclick="fecharOverlay('overlayHistPosGrad',event)">
+  <div class="modal">
+    <h2>📋 Registrar pagamento anterior</h2>
+    <div class="fields">
+      <div><label>Valor pago (R$)</label><input type="number" id="pg-h-val" min="0" step="0.01"/></div>
+      <div><label>Data</label><input type="date" id="pg-h-data"/></div>
+      <div class="full"><label>Obs</label><input type="text" id="pg-h-obs" placeholder="Ex: Parcela 5/18..."/></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal('overlayHistPosGrad')">Cancelar</button>
+      <button class="btn-confirm" onclick="confirmarHistPosGrad()">📋 Registrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PAGAR OUTRO FINANCIAMENTO (genérico) -->
+<div class="overlay" id="overlayPagarFinOutro" onclick="fecharOverlay('overlayPagarFinOutro',event)">
+  <div class="modal">
+    <h2>✅ Pagar Financiamento</h2>
+    <input type="hidden" id="pfo-id"/>
+    <div id="pagar-fo-info" style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:12px;font-size:.82rem"></div>
+    <div class="fields">
+      <div><label>Conta que pagou</label><select id="pfo-carteira"><option value="">— Selecione —</option></select></div>
+      <div><label>Data do pagamento</label><input type="date" id="pfo-data"/></div>
+      <div class="full"><label>Obs</label><input type="text" id="pfo-obs" placeholder="Detalhe..."/></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal('overlayPagarFinOutro')">Cancelar</button>
+      <button class="btn-confirm" onclick="confirmarPagarFinOutro()">✅ Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL HISTÓRICO OUTRO FINANCIAMENTO (genérico) -->
+<div class="overlay" id="overlayHistFinOutro" onclick="fecharOverlay('overlayHistFinOutro',event)">
+  <div class="modal">
+    <h2>📋 Registrar pagamento anterior</h2>
+    <input type="hidden" id="hfo-id"/>
+    <div class="fields">
+      <div><label>Valor pago (R$)</label><input type="number" id="hfo-val" min="0" step="0.01"/></div>
+      <div><label>Data</label><input type="date" id="hfo-data"/></div>
+      <div class="full"><label>Obs</label><input type="text" id="hfo-obs" placeholder="Ex: Parcela 3/24..."/></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal('overlayHistFinOutro')">Cancelar</button>
+      <button class="btn-confirm" onclick="confirmarHistFinOutro()">📋 Registrar</button>
     </div>
   </div>
 </div>
@@ -1376,7 +1520,8 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     <div class="fields">
       <div class="full"><label>Descrição</label><input type="text" id="erec-desc"/></div>
       <div><label>Valor (R$)</label><input type="number" id="erec-val" min="0" step="0.01"/></div>
-      <div><label>Dia vencimento</label><input type="number" id="erec-dia" min="1" max="31"/></div>
+      <div><label>Categoria</label><select id="erec-cat"></select></div>
+      <div><label>Data de vencimento</label><input type="date" id="erec-data"/></div>
       <div class="full"><label>Obs</label><input type="text" id="erec-obs"/></div>
     </div>
     <div class="modal-btns">
@@ -1662,6 +1807,7 @@ function setSecao(btn){
   if(sec) sec.classList.add('ativa');
   recalcularTotais();
   if(btn.dataset.sec==='orcamento') renderOrcamento();
+  if(btn.dataset.sec==='recorrentes') atualizarDropdownsCats();
   if(btn.dataset.sec==='skyfit') renderSkyFit();
   if(btn.dataset.sec==='relatorio') renderRelatorio();
   if(btn.dataset.sec==='metas') renderMetas();
@@ -1680,6 +1826,7 @@ function setSecaoMob(sec, btn){
   if(el) el.classList.add('ativa');
   recalcularTotais();
   if(sec==='orcamento') renderOrcamento();
+  if(sec==='recorrentes') atualizarDropdownsCats();
   if(sec==='skyfit') renderSkyFit();
   if(sec==='relatorio') renderRelatorio();
   if(sec==='metas') renderMetas();
@@ -1892,9 +2039,10 @@ async function salvarConfigCasa(){
   var total=parseInt(document.getElementById('cc-total').value)||0;
   var data=document.getElementById('cc-data').value||hoje();
   var obs=document.getElementById('cc-obs').value.trim();
+  var obraEstimado=parseFloat(document.getElementById('cc-obra-estimado').value)||0;
   if(!parcela||!total){alert('Preencha parcela e total!');return;}
   var minhaParte=parcela*(pct/100);
-  var obj={parcela:parcela,minhaParte:minhaParte,pct:pct,atual:atual,total:total,data:data,obs:obs};
+  var obj={parcela:parcela,minhaParte:minhaParte,pct:pct,atual:atual,total:total,data:data,obs:obs,obraEstimado:obraEstimado};
   await set(docIdG('fin_casa'),JSON.stringify(obj));
   fecharModal('overlayConfigCasa');
   renderFinanciamentos();renderContas();mostrarToast('✅ Casa salva! Sua parte: '+fmt(minhaParte));
@@ -1994,6 +2142,37 @@ function renderFinanciamentos(){
   }
   renderHistoricoMoto();
 
+  // ── PÓS-GRADUAÇÃO ──
+  var pg=carregarPosGrad();
+  var pgLbl=document.getElementById('pg-parcela-lbl');
+  var pgProg=document.getElementById('pg-progresso-el');
+  var pgAcoes=document.getElementById('pg-acoes-el');
+  if(pg.parcela){
+    if(pgLbl) pgLbl.textContent='Parcela '+pg.atual+'/'+pg.total+(pg.obs?' · '+pg.obs:'');
+    if(pgAcoes) pgAcoes.style.display='block';
+    var pctPg=pg.total>0?Math.min(pg.atual/pg.total*100,100).toFixed(0):0;
+    var restPg=Math.max(0,pg.total-pg.atual);
+    var histPg=carregarHistPosGrad();
+    var totalPagoPg=histPg.reduce(function(a,h){return a+h.valor;},0);
+    var restantePg=(pg.total-pg.atual)*pg.parcela;
+    if(pgProg) pgProg.innerHTML=
+      '<div class="cards-row" style="margin-bottom:8px">'+
+      '<div class="mini-card"><div class="lbl">💰 Valor da parcela</div><div class="val" style="color:var(--invest2)">'+fmt(pg.parcela)+'/mês</div></div>'+
+      '<div class="mini-card"><div class="lbl">✅ Total pago</div><div class="val" style="color:var(--green2)">'+fmt(totalPagoPg)+'</div></div>'+
+      '<div class="mini-card"><div class="lbl">⏳ Restante estimado</div><div class="val" style="color:var(--muted)">'+fmt(restantePg)+'</div></div>'+
+      '</div>'+
+      '<div style="height:8px;background:var(--bg2);border-radius:99px;overflow:hidden;margin-bottom:4px">'+
+      '<div style="height:100%;background:var(--invest2);width:'+pctPg+'%;border-radius:99px;transition:width .6s"></div></div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted)">'+
+      '<span>'+pctPg+'% quitado</span>'+
+      '<span>'+restPg+' parcelas restantes'+(pg.data?' · Vence '+fmtD(pg.data):'')+'</span></div>';
+  } else {
+    if(pgLbl) pgLbl.textContent='Toque em ⚙️ Config para configurar';
+    if(pgProg) pgProg.innerHTML='<div style="font-size:.76rem;color:var(--muted);padding:8px">Configure a Pós-Graduação para ver o progresso</div>';
+    if(pgAcoes) pgAcoes.style.display='none';
+  }
+  renderHistoricoPosGrad();
+
   // ── CASA ──
   var cLbl=document.getElementById('casa-parcela-lbl');
   var cProg=document.getElementById('casa-progresso-el');
@@ -2047,6 +2226,31 @@ function renderFinanciamentos(){
       if(sel&&sel.children.length<=1){cart.forEach(function(c){if(c.tipo!=='credito'){var o=document.createElement('option');o.value=c.id;o.textContent=c.icon+' '+c.nome;sel.appendChild(o);}});}
     });
     if(cHistRes) cHistRes.innerHTML=histC.length?'<div style="font-size:.66rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Histórico de pagamentos</div>':'';
+    // Barra de progresso da Taxa de Obra (baseado em histórico acumulado vs estimado)
+    var obraProgEl=document.getElementById('obra-progresso-el');
+    if(obraProgEl){
+      var histCasaAll=carregarHistCasa();
+      var totalObraPago=histCasaAll.filter(function(h){return h.tipo==='obra';}).reduce(function(a,h){return a+(h.valorTotal||h.valor);},0);
+      var minhaObraPago=histCasaAll.filter(function(h){return h.tipo==='obra';}).reduce(function(a,h){return a+h.valor;},0);
+      var estimadoObra=casa.obraEstimado||0;
+      if(estimadoObra>0){
+        var pctObra=Math.min(totalObraPago/estimadoObra*100,100).toFixed(0);
+        obraProgEl.innerHTML='<div class="cards-row" style="margin-bottom:6px">'+
+          '<div class="mini-card"><div class="lbl">✅ Total pago (obra)</div><div class="val" style="color:var(--invest2)">'+fmt(totalObraPago)+'</div></div>'+
+          '<div class="mini-card"><div class="lbl">💰 Sua parte paga</div><div class="val" style="color:var(--green2)">'+fmt(minhaObraPago)+'</div></div>'+
+          '<div class="mini-card"><div class="lbl">🎯 Estimado total</div><div class="val" style="color:var(--muted)">'+fmt(estimadoObra)+'</div></div>'+
+          '</div>'+
+          '<div style="height:8px;background:var(--bg2);border-radius:99px;overflow:hidden;margin-bottom:4px">'+
+          '<div style="height:100%;background:var(--invest2);width:'+pctObra+'%;border-radius:99px;transition:width .6s"></div></div>'+
+          '<div style="font-size:.68rem;color:var(--muted)">'+pctObra+'% da obra estimada já paga</div>';
+      } else if(totalObraPago>0){
+        obraProgEl.innerHTML='<div class="cards-row"><div class="mini-card"><div class="lbl">✅ Total pago até agora</div><div class="val" style="color:var(--invest2)">'+fmt(totalObraPago)+'</div></div>'+
+          '<div class="mini-card"><div class="lbl">💰 Sua parte</div><div class="val" style="color:var(--green2)">'+fmt(minhaObraPago)+'</div></div></div>'+
+          '<div style="font-size:.66rem;color:var(--muted);margin-top:4px">💡 Defina um valor estimado em ⚙️ Config pra ver a barra de progresso</div>';
+      } else {
+        obraProgEl.innerHTML='';
+      }
+    }
     // Render obras do mês atual
     var obrasAtualEl=document.getElementById('lista-obras-atual');
     var obrasAtual=JSON.parse(localStorage.getItem(docId()+'_obras')||'[]');
@@ -2073,20 +2277,45 @@ function renderFinanciamentos(){
   }
   renderHistoricoCasa();
 
-  // ── OUTROS FINS ──
+  // ── OUTROS FINS (cards completos) ──
   var outrosEl=document.getElementById('lista-fins-outros');
   if(outrosEl){
     outrosEl.innerHTML=!fins.length?'<div class="vazio" style="padding:10px">Nenhum outro financiamento</div>':
       fins.map(function(f){
         var pct2=f.total>0?Math.min(f.atual/f.total*100,100).toFixed(0):0;
-        return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:12px;margin-bottom:8px;position:relative">'+
-          '<button style="position:absolute;top:8px;right:28px;background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.72rem" data-id="'+f.id+'" onclick="editarFinBtn(this)" title="Editar">✏️</button>'+
-          '<button style="position:absolute;top:8px;right:8px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.72rem" data-id="'+f.id+'" onclick="delFinBtn(this)">✕</button>'+
-          '<div style="font-weight:700;margin-bottom:4px">'+f.icon+' '+f.nome+'</div>'+
-          '<div style="font-family:DM Mono,monospace;color:var(--gold2);font-size:.9rem">'+fmt(f.parcela)+'/mês</div>'+
-          '<div style="font-size:.68rem;color:var(--muted)">Parcela '+f.atual+'/'+f.total+(f.dataVenc?' · Vence '+fmtD(f.dataVenc):'')+'</div>'+
-          '<div style="height:4px;background:var(--bg);border-radius:99px;overflow:hidden;margin-top:8px">'+
-          '<div style="height:100%;background:var(--blue2);width:'+pct2+'%"></div></div>'+
+        var restF=Math.max(0,f.total-f.atual);
+        var histF=carregarHistFin(f.id);
+        var totalPagoF=histF.reduce(function(a,h){return a+h.valor;},0);
+        var restanteF=(f.total-f.atual)*f.parcela;
+        var showHist=window._finHistOpen===f.id;
+        return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:12px;margin-bottom:10px;position:relative">'+
+          '<button style="position:absolute;top:10px;right:32px;background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.72rem" data-id="'+f.id+'" onclick="editarFinBtn(this)" title="Editar">✏️</button>'+
+          '<button style="position:absolute;top:10px;right:10px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.72rem" data-id="'+f.id+'" onclick="delFinBtn(this)">✕</button>'+
+          '<div style="font-weight:700;margin-bottom:6px;padding-right:50px">'+f.icon+' '+f.nome+'</div>'+
+          '<div class="cards-row" style="margin-bottom:8px">'+
+          '<div class="mini-card"><div class="lbl">💰 Parcela</div><div class="val" style="color:var(--gold2)">'+fmt(f.parcela)+'/mês</div></div>'+
+          '<div class="mini-card"><div class="lbl">✅ Total pago</div><div class="val" style="color:var(--green2)">'+fmt(totalPagoF)+'</div></div>'+
+          '<div class="mini-card"><div class="lbl">⏳ Restante</div><div class="val" style="color:var(--muted)">'+fmt(restanteF)+'</div></div>'+
+          '</div>'+
+          '<div style="height:8px;background:var(--bg);border-radius:99px;overflow:hidden;margin-bottom:4px">'+
+          '<div style="height:100%;background:var(--blue2);width:'+pct2+'%;border-radius:99px;transition:width .6s"></div></div>'+
+          '<div style="display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted);margin-bottom:10px">'+
+          '<span>'+pct2+'% quitado</span><span>'+restF+' parcelas restantes'+(f.dataVenc?' · Vence '+fmtD(f.dataVenc):'')+'</span></div>'+
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">'+
+          '<button class="btn-add" style="flex:1;background:linear-gradient(135deg,var(--green),var(--green2));font-size:.76rem;padding:8px" data-id="'+f.id+'" onclick="abrirPagarFinOutro(this)">✅ Paguei</button>'+
+          '<button class="btn-add" style="flex:1;background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:.76rem;padding:8px" data-id="'+f.id+'" onclick="abrirHistFinOutro(this)">📋 Registrar anterior</button>'+
+          '<button class="btn-sm" style="font-size:.72rem" data-id="'+f.id+'" onclick="toggleHistFinOutro(this)">'+(showHist?'▲':'▼')+' Histórico ('+histF.length+')</button>'+
+          '</div>'+
+          (showHist?('<div style="margin-top:6px;max-height:180px;overflow-y:auto">'+
+            (histF.length?histF.slice().sort(function(a,b){return(b.data||'').localeCompare(a.data||'');}).map(function(h){
+              return '<div class="item" style="margin-bottom:4px">'+
+                '<div class="item-ic">'+f.icon+'</div>'+
+                '<div class="item-info"><div class="item-nome">Parcela'+(h.obs?' — '+h.obs:'')+'</div>'+
+                '<div class="item-meta">'+fmtD(h.data)+'</div></div>'+
+                '<div class="item-val neg">'+fmt(h.valor)+'</div>'+
+                '<button class="item-del" data-fin="'+f.id+'" data-id="'+h.id+'" onclick="delHistFinOutroBtn(this)">&#x2715;</button></div>';
+            }).join(''):'<div style="font-size:.72rem;color:var(--muted);padding:6px">Nenhum pagamento registrado ainda.</div>')+
+            '</div>'):'')+
           '</div>';
       }).join('');
   }
@@ -2095,14 +2324,16 @@ function renderFinanciamentos(){
   var totalMoto=moto.parcela||0;
   var casaPct=casa.pct||100;
   var casaMinha=(casa.minhaParte||(( casa.parcela||0)*(casaPct/100)));
-  var totalFin=totalMoto+casaMinha+fins.reduce(function(a,f){return a+f.parcela;},0);
+  var totalFin=totalMoto+casaMinha+(pg.parcela||0)+fins.reduce(function(a,f){return a+f.parcela;},0);
   window._totalFinanc=totalFin;
   window._totalFinMoto=totalMoto;
   window._totalFinCasa=casaMinha;
+  window._totalFinPosGrad=pg.parcela||0;
   var totalEl=document.getElementById('fin-total-el');
   if(totalEl) totalEl.innerHTML='<div class="cards-row">'+
     (totalMoto>0?'<div class="mini-card"><div class="lbl">🏍️ Moto</div><div class="val" style="color:var(--red2)">'+fmt(totalMoto)+'</div></div>':'')+
     (casaMinha>0?'<div class="mini-card"><div class="lbl">🏠 Casa (minha parte)</div><div class="val" style="color:var(--blue2)">'+fmt(casaMinha)+'</div></div>':'')+
+    (pg.parcela>0?'<div class="mini-card"><div class="lbl">🎓 Pós-Graduação</div><div class="val" style="color:var(--invest2)">'+fmt(pg.parcela)+'</div></div>':'')+
     '<div class="mini-card"><div class="lbl">💸 Total mensal</div><div class="val" style="color:var(--red2)">'+fmt(totalFin)+'</div></div>'+
     '</div>';
   // Populate modals with saved data
@@ -2113,10 +2344,10 @@ function renderFinanciamentos(){
 function renderHistoricoCasa(){
   var hist=carregarHistCasa();
   hist.sort(function(a,b){return(b.data||'').localeCompare(a.data||'');});
-  var totalFin=hist.filter(function(h){return h.tipo==='financiamento';}).reduce(function(a,h){return a+h.valor;},0);
+  var totalFin=hist.filter(function(h){return h.tipo==='parcela';}).reduce(function(a,h){return a+h.valor;},0);
   var totalObr=hist.filter(function(h){return h.tipo==='obra';}).reduce(function(a,h){return a+h.valor;},0);
   var totalTudo=totalFin+totalObr;
-  var resumoEl=document.getElementById('casa-historico-resumo');
+  var resumoEl=document.getElementById('casa-hist-resumo');
   if(resumoEl&&totalTudo>0){
     resumoEl.innerHTML='<div class="cards-row" style="margin-bottom:0">'+
       '<div class="mini-card"><div class="lbl">🏠 Total financiamento pago</div><div class="val" style="color:var(--blue2)">'+fmt(totalFin)+'</div></div>'+
@@ -2124,14 +2355,14 @@ function renderHistoricoCasa(){
       '<div class="mini-card"><div class="lbl">💸 Total geral pago</div><div class="val" style="color:var(--red2)">'+fmt(totalTudo)+'</div></div>'+
       '</div>';
   }
-  var listEl=document.getElementById('lista-historico-casa');
+  var listEl=document.getElementById('lista-hist-casa');
   if(!listEl) return;
   if(!hist.length){listEl.innerHTML='<div style="font-size:.76rem;color:var(--muted);padding:8px">Nenhum pagamento registrado ainda.</div>';return;}
   listEl.innerHTML=hist.map(function(h){
     return '<div class="item" style="margin-bottom:4px">'+
-      '<div class="item-ic">'+(h.tipo==='financiamento'?'🏠':'🔧')+'</div>'+
+      '<div class="item-ic">'+(h.tipo==='parcela'?'🏠':'🔧')+'</div>'+
       '<div class="item-info">'+
-      '<div class="item-nome">'+(h.tipo==='financiamento'?'Parcela financiamento':'Taxa de obra')+(h.obs?' — '+h.obs:'')+'</div>'+
+      '<div class="item-nome">'+(h.tipo==='parcela'?'Parcela financiamento':'Taxa de obra')+(h.obs?' — '+h.obs:'')+'</div>'+
       '<div class="item-meta">'+fmtD(h.data)+'</div></div>'+
       '<div class="item-val neg">'+fmt(h.valor)+'</div>'+
       '<button style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.76rem;padding:3px" data-id="'+h.id+'" onclick="editarHistBtn(this)" title="Editar">&#x270F;&#xFE0F;</button>'+
@@ -2741,7 +2972,7 @@ function renderRecorrentes(){
       '<div class="item-info"><div class="item-nome">'+r.desc+
       '<span class="tag" style="background:'+(r.tipo==='fixo'?'rgba(34,197,94,.15)':'rgba(245,166,35,.15)')+';color:'+(r.tipo==='fixo'?'var(--green2)':'var(--gold2)')+'">'+( r.tipo==='fixo'?'🔒 Fixo':'🔔 Recorrente')+'</span>'+
       (r.meses>0?'<span class="tag" style="background:rgba(139,92,246,.15);color:var(--invest2)">'+parc+'/'+r.meses+'</span>':'')+
-      '</div><div class="item-meta">Dia '+r.dia+' de cada mês'+(r.obs?' · '+r.obs:'')+(ativo?'':' — Encerrado')+'</div></div>'+
+      '</div><div class="item-meta">'+(r.dataVenc?'Vence '+fmtD(r.dataVenc):'Dia '+r.dia)+' de cada mês'+(r.obs?' · '+r.obs:'')+(ativo?'':' — Encerrado')+'</div></div>'+
       '<div class="item-val neg">'+fmt(r.val)+'/mês</div>'+
       '<button style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.76rem;padding:3px" data-id="'+r.id+'" onclick="editarRecBtn(this)" title="Editar">✏️</button>'+
       '<button class="item-del" data-id="'+r.id+'" onclick="delRecorrenteBtn(this)">&#x2715;</button></div>';
@@ -2885,6 +3116,7 @@ function renderRelatorio(){
   var casaMinhaR=casa.minhaParte||((casa.parcela||0)*(casaPctR/100));
   var obras=JSON.parse(localStorage.getItem(docId()+'_obras')||'[]');
   var fins=carregarFins();
+  var pgR=carregarPosGrad();
   var assns=carregarAssinaturas();
   // Renda: recalcula direto (não usa window._totalRenda cacheado)
   var fixasR=JSON.parse(localStorage.getItem(docIdG('receitas_fixas'))||'[]');
@@ -2897,7 +3129,7 @@ function renderRelatorio(){
   var gastoCat={};gastos.forEach(function(g){gastoCat[g.cat]=(gastoCat[g.cat]||0)+g.valor;});
   var totalGasto=Object.values(gastoCat).reduce(function(a,v){return a+v;},0);
   var totalObras=obras.reduce(function(a,o){return a+(o.minhaParte||o.valor);},0);
-  var totalFin=(moto.parcela||0)+casaMinhaR+totalObras+fins.reduce(function(a,f){return a+f.parcela;},0);
+  var totalFin=(moto.parcela||0)+casaMinhaR+totalObras+(pgR.parcela||0)+fins.reduce(function(a,f){return a+f.parcela;},0);
   var totalAssn=assns.reduce(function(a,s){return a+s.val;},0);
   var totalInv=invs.reduce(function(a,i){return a+i.valor;},0);
   var lucro=renda-totalGasto-totalFin-totalAssn-totalRec-totalInv;
@@ -3125,9 +3357,9 @@ function renderHistoricoMoto(){
   var hist=carregarHistMoto();
   hist.sort(function(a,b){return(b.data||'').localeCompare(a.data||'');});
   var total=hist.reduce(function(a,h){return a+h.valor;},0);
-  var resumoEl=document.getElementById('moto-historico-resumo');
+  var resumoEl=document.getElementById('moto-hist-resumo');
   if(resumoEl) resumoEl.innerHTML=total>0?'<div class="mini-card" style="margin-bottom:8px"><div class="lbl">🏍️ Total pago no financiamento</div><div class="val" style="color:var(--red2)">'+fmt(total)+'</div></div>':'';
-  var listEl=document.getElementById('lista-historico-moto');
+  var listEl=document.getElementById('lista-hist-moto');
   if(!listEl) return;
   if(!hist.length){listEl.innerHTML='<div style="font-size:.76rem;color:var(--muted);padding:8px">Nenhum pagamento registrado ainda.</div>';return;}
   listEl.innerHTML=hist.map(function(h){
@@ -3728,7 +3960,7 @@ function carregarCatsCustom(){return JSON.parse(localStorage.getItem(docIdG('cat
 async function salvarCatsCustom(cats){localStorage.setItem(docIdG('cats_custom'),JSON.stringify(cats));await set(docIdG('cats_custom'),JSON.stringify(cats));}
 function buildCatOptions(sel){return carregarCats().map(function(c){return '<option value="'+c.id+'"'+(c.id===sel?' selected':'')+'>'+c.icon+' '+c.nome+'</option>';}).join('');}
 function atualizarDropdownsCats(){
-  ['g-cat','rd-cat','rq-cat','assn-cat','orc-cat'].forEach(function(id){var s=document.getElementById(id);if(s){var v=s.value;s.innerHTML=buildCatOptions(v);if(v) s.value=v;}});
+  ['g-cat','rd-cat','rq-cat','assn-cat','orc-cat','rec-cat'].forEach(function(id){var s=document.getElementById(id);if(s){var v=s.value;s.innerHTML=buildCatOptions(v);if(v) s.value=v;}});
   var fc=document.getElementById('filtro-cat');if(fc){var v=fc.value;fc.innerHTML='<option value="">Todas categorias</option>'+buildCatOptions(v);if(v) fc.value=v;}
 }
 function renderCatsConfig(){
@@ -3737,9 +3969,19 @@ function renderCatsConfig(){
   el.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:6px">'+
     cats.map(function(c){return '<div style="display:flex;align-items:center;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:.76rem">'+
       '<span>'+c.icon+'</span><span>'+c.nome+'</span>'+
-      (!c.padrao?'<button data-id="'+c.id+'" onclick="delCatBtn(this)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.68rem;padding:0 0 0 4px">✕</button>':'')+
+      (!c.padrao?'<button data-id="'+c.id+'" onclick="editarCatBtn(this)" style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.68rem;padding:0 4px">✏️</button>'+
+      '<button data-id="'+c.id+'" onclick="delCatBtn(this)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.68rem;padding:0 0 0 4px">✕</button>':'')+
       '</div>';}).join('')+'</div>';
 }
+async function editarCategoria(id){
+  var cats=carregarCatsCustom();var c=cats.find(function(x){return x.id===id;});if(!c) return;
+  var novoIcon=prompt('Ícone da categoria:',c.icon);if(novoIcon===null) return;
+  var novoNome=prompt('Nome da categoria:',c.nome);if(!novoNome) return;
+  cats=cats.map(function(x){if(x.id===id){x.icon=novoIcon.trim()||x.icon;x.nome=novoNome.trim();}return x;});
+  await salvarCatsCustom(cats);
+  atualizarDropdownsCats();renderCatsConfig();mostrarToast('✅ Categoria atualizada!');
+}
+function editarCatBtn(btn){editarCategoria(btn.dataset.id);}
 async function addCategoria(){
   var icon=document.getElementById('cat-icon').value.trim()||'🏷️';
   var nome=document.getElementById('cat-nome').value.trim();
@@ -3927,9 +4169,10 @@ function verificarContasVencidas(){
 }
 
 // ══ ADD RAPIDA CATEGORIA ══
-async function addCatRapida(targetId, wrapId){
-  var iconEl=document.getElementById(targetId==='g-cat'?'gc-icon':'ac-icon');
-  var nomeEl=document.getElementById(targetId==='g-cat'?'gc-nome':'ac-nome');
+async function addCatRapida(targetId, wrapId, iconId, nomeId){
+  iconId=iconId||(wrapId+'-icon');nomeId=nomeId||(wrapId+'-nome');
+  var iconEl=document.getElementById(iconId);
+  var nomeEl=document.getElementById(nomeId);
   if(!iconEl||!nomeEl) return;
   var icon=iconEl.value.trim()||'🏷️';var nome=nomeEl.value.trim();
   if(!nome){mostrarToast('Digite o nome!');return;}
@@ -3938,7 +4181,9 @@ async function addCatRapida(targetId, wrapId){
   await salvarCatsCustom(cats);
   iconEl.value='';nomeEl.value='';
   var w=document.getElementById(wrapId);if(w) w.style.display='none';
+  var sel=document.getElementById(targetId);
   atualizarDropdownsCats();renderCatsConfig();
+  if(sel) sel.value=cats[cats.length-1].id;
   mostrarToast('✅ Categoria "'+nome+'" criada!');
 }
 
@@ -4031,16 +4276,17 @@ async function addRecorrente(){
   var desc=document.getElementById('rec-desc').value.trim();
   var val=parseFloat(document.getElementById('rec-val').value)||0;
   var cat=document.getElementById('rec-cat').value;
-  var dia=parseInt(document.getElementById('rec-dia').value)||1;
+  var dataVenc=document.getElementById('rec-data').value||hoje();
+  var dia=parseInt((dataVenc.split('-')[2]||'1'));
   var tipoEl=document.getElementById('rec-tipo');
   var tipo=tipoEl?tipoEl.value:'recorrente';
   var meses2=parseInt(document.getElementById('rec-meses').value)||0;
   var obs=document.getElementById('rec-obs').value.trim();
   if(!desc||!val){alert('Preencha descrição e valor!');return;}
   var recs=JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
-  recs.push({id:Date.now(),desc:desc,val:val,cat:cat,dia:dia,tipo:tipo,meses:meses2,obs:obs,inicio:mes+'/'+ano,parc:1});
+  recs.push({id:Date.now(),desc:desc,val:val,cat:cat,dia:dia,dataVenc:dataVenc,tipo:tipo,meses:meses2,obs:obs,inicio:mes+'/'+ano,parc:1});
   await set(docIdG('recorrentes'),JSON.stringify(recs));
-  ['rec-desc','rec-val','rec-dia','rec-meses','rec-obs'].forEach(function(id){var e=document.getElementById(id);if(e) e.value='';});
+  ['rec-desc','rec-val','rec-meses','rec-obs'].forEach(function(id){var e=document.getElementById(id);if(e) e.value='';});
   renderRecorrentes();mostrarToast('✅ '+(tipo==='fixo'?'Fixo':'Recorrente')+' adicionado!');
 }
 
@@ -4064,10 +4310,31 @@ async function salvarEdicaoAssn(){
 }
 
 // ══ EDITAR RECORRENTE ══
+function abrirEdicaoRec(id){
+  var recs=JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
+  var r=recs.find(function(x){return x.id===id;});if(!r) return;
+  document.getElementById('erec-id').value=id;
+  document.getElementById('erec-desc').value=r.desc||'';
+  document.getElementById('erec-val').value=r.val||0;
+  var catSel=document.getElementById('erec-cat');if(catSel){catSel.innerHTML=buildCatOptions(r.cat);}
+  var dv=document.getElementById('erec-data');if(dv) dv.value=r.dataVenc||'';
+  document.getElementById('erec-obs').value=r.obs||'';
+  document.getElementById('overlayEditarRec').classList.add('aberto');
+}
 async function salvarEdicaoRec(){
   var id=parseInt(document.getElementById('erec-id').value);
   var recs=JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
-  recs=recs.map(function(r){if(r.id===id){r.desc=document.getElementById('erec-desc').value.trim();r.val=parseFloat(document.getElementById('erec-val').value)||0;r.dia=parseInt(document.getElementById('erec-dia').value)||1;r.obs=document.getElementById('erec-obs').value.trim();}return r;});
+  recs=recs.map(function(r){
+    if(r.id===id){
+      r.desc=document.getElementById('erec-desc').value.trim();
+      r.val=parseFloat(document.getElementById('erec-val').value)||0;
+      r.cat=document.getElementById('erec-cat').value;
+      var dv=document.getElementById('erec-data').value;
+      if(dv){r.dataVenc=dv;r.dia=parseInt((dv.split('-')[2]||'1'));}
+      r.obs=document.getElementById('erec-obs').value.trim();
+    }
+    return r;
+  });
   await set(docIdG('recorrentes'),JSON.stringify(recs));fecharModal('overlayEditarRec');renderRecorrentes();mostrarToast('✅ Recorrente atualizado!');
 }
 
@@ -4253,6 +4520,161 @@ async function addExtra(){
   fecharModal('overlayExtra');renderAll();mostrarToast('✅ Extra adicionado aos gastos!');
 }
 
+// ══ PÓS-GRADUAÇÃO ══
+function carregarPosGrad(){var r=localStorage.getItem(docIdG('fin_posgrad'));return r?JSON.parse(r):{parcela:0,atual:1,total:0,data:'',obs:''};}
+function abrirConfigPosGrad(){document.getElementById('overlayConfigPosGrad').classList.add('aberto');}
+async function salvarConfigPosGrad(){
+  var parcela=parseFloat(document.getElementById('pg-c-parcela').value)||0;
+  var atual=parseInt(document.getElementById('pg-c-atual').value)||1;
+  var total=parseInt(document.getElementById('pg-c-total').value)||0;
+  var data=document.getElementById('pg-c-data').value||hoje();
+  var obs=document.getElementById('pg-c-obs').value.trim();
+  if(!parcela||!total){alert('Preencha parcela e total!');return;}
+  var obj={parcela:parcela,atual:atual,total:total,data:data,obs:obs};
+  await set(docIdG('fin_posgrad'),JSON.stringify(obj));
+  fecharModal('overlayConfigPosGrad');
+  renderFinanciamentos();renderContas();mostrarToast('✅ Pós-Graduação salva!');
+}
+function abrirPagarPosGrad(){
+  var m=carregarPosGrad();if(!m.parcela){alert('Configure a Pós-Graduação primeiro!');return;}
+  var info=document.getElementById('pagar-pg-info');
+  if(info) info.innerHTML='<strong>Parcela '+m.atual+'/'+m.total+'</strong> — <span style="color:var(--invest2);font-family:DM Mono,monospace">'+fmt(m.parcela)+'</span><br/>'+(m.data?'Vencimento: '+fmtD(m.data):'');
+  var pd=document.getElementById('pg-p-data');if(pd) pd.value=hoje();
+  var ps=document.getElementById('pg-p-obs');if(ps) ps.value='';
+  var cart=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
+  var sel=document.getElementById('pg-p-carteira');
+  if(sel){sel.innerHTML='<option value="">— Selecione —</option>';cart.forEach(function(c){if(c.tipo!=='credito'){var o=document.createElement('option');o.value=c.id;o.textContent=c.icon+' '+c.nome;sel.appendChild(o);}});}
+  document.getElementById('overlayPagarPosGrad').classList.add('aberto');
+}
+async function confirmarPagarPosGrad(){
+  var m=carregarPosGrad();
+  var contaId=parseInt(document.getElementById('pg-p-carteira').value)||0;
+  var data=document.getElementById('pg-p-data').value||hoje();
+  var obs=document.getElementById('pg-p-obs').value.trim();
+  if(!contaId){alert('Selecione a conta!');return;}
+  var hist=carregarHistPosGrad();
+  hist.push({id:Date.now(),valor:m.parcela,data:data,obs:obs||('Parcela '+m.atual+'/'+m.total),tipo:'real',contaId:contaId});
+  await salvarHistPosGrad(hist);
+  await debitarCarteira(contaId,m.parcela,'🎓 Parcela Pós-Graduação '+m.atual+'/'+m.total,false);
+  var gastos=carregarGastos();
+  gastos.push({id:Date.now()+1,desc:'🎓 Parcela Pós-Graduação '+m.atual+'/'+m.total,valor:m.parcela,cat:'financiamento',pag:'debito',data:data,obs:obs,carteira:contaId});
+  await set(docId()+'_gastos',JSON.stringify(gastos));
+  m.atual=Math.min(m.atual+1,m.total);
+  await set(docIdG('fin_posgrad'),JSON.stringify(m));
+  fecharModal('overlayPagarPosGrad');
+  renderFinanciamentos();renderAll();
+  mostrarToast('✅ Parcela '+(m.atual-1)+'/'+m.total+' paga! Debitado de '+fmt(m.parcela));
+}
+function abrirHistPosGrad(){
+  var hd=document.getElementById('pg-h-data');if(hd) hd.value=hoje();
+  var hv=document.getElementById('pg-h-val');if(hv) hv.value='';
+  var ho=document.getElementById('pg-h-obs');if(ho) ho.value='';
+  document.getElementById('overlayHistPosGrad').classList.add('aberto');
+}
+async function confirmarHistPosGrad(){
+  var val=parseFloat(document.getElementById('pg-h-val').value)||0;
+  var data=document.getElementById('pg-h-data').value||hoje();
+  var obs=document.getElementById('pg-h-obs').value.trim();
+  if(!val){alert('Digite o valor!');return;}
+  var hist=carregarHistPosGrad();
+  hist.push({id:Date.now(),valor:val,data:data,obs:obs,tipo:'historico',contaId:0});
+  await salvarHistPosGrad(hist);
+  fecharModal('overlayHistPosGrad');renderFinanciamentos();
+  mostrarToast('📋 Pagamento anterior registrado!');
+}
+function carregarHistPosGrad(){var r=localStorage.getItem(docIdG('hist_posgrad'));return r?JSON.parse(r):[];}
+async function salvarHistPosGrad(h){await set(docIdG('hist_posgrad'),JSON.stringify(h));}
+async function delHistPosGrad(id){var hist=carregarHistPosGrad().filter(function(h){return h.id!==id;});await salvarHistPosGrad(hist);renderFinanciamentos();}
+function delHistPosGradBtn(btn){delHistPosGrad(parseFloat(btn.dataset.id));}
+function renderHistoricoPosGrad(){
+  var hist=carregarHistPosGrad();
+  hist.sort(function(a,b){return(b.data||'').localeCompare(a.data||'');});
+  var total=hist.reduce(function(a,h){return a+h.valor;},0);
+  var resumoEl=document.getElementById('pg-hist-resumo');
+  if(resumoEl) resumoEl.innerHTML=total>0?'<div class="mini-card" style="margin-bottom:8px"><div class="lbl">🎓 Total pago na Pós-Graduação</div><div class="val" style="color:var(--invest2)">'+fmt(total)+'</div></div>':'';
+  var listEl=document.getElementById('lista-hist-pg');
+  if(!listEl) return;
+  if(!hist.length){listEl.innerHTML='<div style="font-size:.76rem;color:var(--muted);padding:8px">Nenhum pagamento registrado ainda.</div>';return;}
+  listEl.innerHTML=hist.map(function(h){
+    return '<div class="item" style="margin-bottom:4px">'+
+      '<div class="item-ic">🎓</div>'+
+      '<div class="item-info"><div class="item-nome">Parcela'+(h.obs?' — '+h.obs:'')+'</div>'+
+      '<div class="item-meta">'+fmtD(h.data)+'</div></div>'+
+      '<div class="item-val neg">'+fmt(h.valor)+'</div>'+
+      '<button class="item-del" data-id="'+h.id+'" onclick="delHistPosGradBtn(this)">&#x2715;</button></div>';
+  }).join('');
+}
+
+// ══ OUTROS FINANCIAMENTOS — HISTÓRICO E PAGAMENTO (genérico) ══
+function carregarHistFin(finId){var r=localStorage.getItem(docIdG('hist_fin_'+finId));return r?JSON.parse(r):[];}
+async function salvarHistFin(finId,h){await set(docIdG('hist_fin_'+finId),JSON.stringify(h));}
+
+function toggleHistFinOutro(btn){
+  var id=parseFloat(btn.dataset.id);
+  window._finHistOpen=(window._finHistOpen===id)?null:id;
+  renderFinanciamentos();
+}
+
+function abrirPagarFinOutro(btn){
+  var id=parseFloat(btn.dataset.id);
+  var fins=carregarFins();var f=fins.find(function(x){return x.id===id;});if(!f) return;
+  document.getElementById('pfo-id').value=id;
+  var info=document.getElementById('pagar-fo-info');
+  if(info) info.innerHTML='<strong>'+f.icon+' '+f.nome+' — Parcela '+f.atual+'/'+f.total+'</strong> — <span style="color:var(--blue2);font-family:DM Mono,monospace">'+fmt(f.parcela)+'</span><br/>'+(f.dataVenc?'Vencimento: '+fmtD(f.dataVenc):'');
+  var pd=document.getElementById('pfo-data');if(pd) pd.value=hoje();
+  var ps=document.getElementById('pfo-obs');if(ps) ps.value='';
+  var cart=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
+  var sel=document.getElementById('pfo-carteira');
+  if(sel){sel.innerHTML='<option value="">— Selecione —</option>';cart.forEach(function(c){if(c.tipo!=='credito'){var o=document.createElement('option');o.value=c.id;o.textContent=c.icon+' '+c.nome;sel.appendChild(o);}});}
+  document.getElementById('overlayPagarFinOutro').classList.add('aberto');
+}
+async function confirmarPagarFinOutro(){
+  var id=parseFloat(document.getElementById('pfo-id').value);
+  var fins=carregarFins();var f=fins.find(function(x){return x.id===id;});if(!f) return;
+  var contaId=parseInt(document.getElementById('pfo-carteira').value)||0;
+  var data=document.getElementById('pfo-data').value||hoje();
+  var obs=document.getElementById('pfo-obs').value.trim();
+  if(!contaId){alert('Selecione a conta!');return;}
+  var hist=carregarHistFin(id);
+  hist.push({id:Date.now(),valor:f.parcela,data:data,obs:obs||('Parcela '+f.atual+'/'+f.total),tipo:'real',contaId:contaId});
+  await salvarHistFin(id,hist);
+  await debitarCarteira(contaId,f.parcela,f.icon+' Parcela '+f.nome+' '+f.atual+'/'+f.total,false);
+  var gastos=carregarGastos();
+  gastos.push({id:Date.now()+1,desc:f.icon+' Parcela '+f.nome+' '+f.atual+'/'+f.total,valor:f.parcela,cat:'financiamento',pag:'debito',data:data,obs:obs,carteira:contaId});
+  await set(docId()+'_gastos',JSON.stringify(gastos));
+  fins=fins.map(function(x){if(x.id===id) x.atual=Math.min(x.atual+1,x.total);return x;});
+  await salvarFins(fins);
+  fecharModal('overlayPagarFinOutro');
+  renderFinanciamentos();renderAll();
+  mostrarToast('✅ Parcela de '+f.nome+' paga! Debitado '+fmt(f.parcela));
+}
+
+function abrirHistFinOutro(btn){
+  var id=parseFloat(btn.dataset.id);
+  document.getElementById('hfo-id').value=id;
+  var hd=document.getElementById('hfo-data');if(hd) hd.value=hoje();
+  var hv=document.getElementById('hfo-val');if(hv) hv.value='';
+  var ho=document.getElementById('hfo-obs');if(ho) ho.value='';
+  document.getElementById('overlayHistFinOutro').classList.add('aberto');
+}
+async function confirmarHistFinOutro(){
+  var id=parseFloat(document.getElementById('hfo-id').value);
+  var val=parseFloat(document.getElementById('hfo-val').value)||0;
+  var data=document.getElementById('hfo-data').value||hoje();
+  var obs=document.getElementById('hfo-obs').value.trim();
+  if(!val){alert('Digite o valor!');return;}
+  var hist=carregarHistFin(id);
+  hist.push({id:Date.now(),valor:val,data:data,obs:obs,tipo:'historico',contaId:0});
+  await salvarHistFin(id,hist);
+  fecharModal('overlayHistFinOutro');renderFinanciamentos();
+  mostrarToast('📋 Pagamento anterior registrado!');
+}
+async function delHistFinOutro(finId,histId){
+  var hist=carregarHistFin(finId).filter(function(h){return h.id!==histId;});
+  await salvarHistFin(finId,hist);renderFinanciamentos();
+}
+function delHistFinOutroBtn(btn){delHistFinOutro(parseFloat(btn.dataset.fin),parseFloat(btn.dataset.id));}
+
 // ══ RENDER ALL ══
 
 
@@ -4275,9 +4697,11 @@ function recalcularTotais(){
   var obras=JSON.parse(localStorage.getItem(docId()+'_obras')||'[]');
   var totalObras=obras.reduce(function(a,o){return a+(o.minhaParte||o.valor);},0);
   var fins=carregarFins();
+  var pg=carregarPosGrad();
   window._totalFinMoto=moto.parcela||0;
   window._totalFinCasa=casaMinha;
-  window._totalFinanc=(moto.parcela||0)+casaMinha+totalObras+fins.reduce(function(a,f){return a+f.parcela;},0);
+  window._totalFinPosGrad=pg.parcela||0;
+  window._totalFinanc=(moto.parcela||0)+casaMinha+totalObras+(pg.parcela||0)+fins.reduce(function(a,f){return a+f.parcela;},0);
 
   var assns=carregarAssinaturas();
   window._totalAssinaturas=assns.reduce(function(a,s){return a+s.val;},0);
