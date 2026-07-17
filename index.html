@@ -841,7 +841,10 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
 
 <!-- RELATÓRIO -->
 <section class="secao" id="sec-relatorio">
-  <div class="page-header"><h2>Relatório Mensal</h2><p>Visão completa do seu mês financeiro</p></div>
+  <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end;gap:8px">
+    <div><h2>Relatório Mensal</h2><p>Visão completa do seu mês financeiro</p></div>
+    <button class="btn-sm" onclick="renderRelatorio();mostrarToast('🔄 Relatório atualizado!')" style="white-space:nowrap">🔄 Atualizar</button>
+  </div>
   <div id="relatorio-el"></div>
   <div style="display:flex;gap:8px;margin-top:14px">
     <button class="btn-add" style="flex:1" onclick="copiarRelatorio()">📋 Copiar</button>
@@ -1657,11 +1660,16 @@ function setSecao(btn){
   btn.classList.add('ativo');
   var sec = document.getElementById('sec-'+btn.dataset.sec);
   if(sec) sec.classList.add('ativa');
+  recalcularTotais();
   if(btn.dataset.sec==='orcamento') renderOrcamento();
   if(btn.dataset.sec==='skyfit') renderSkyFit();
   if(btn.dataset.sec==='relatorio') renderRelatorio();
   if(btn.dataset.sec==='metas') renderMetas();
   if(btn.dataset.sec==='contas') renderContas();
+  if(btn.dataset.sec==='dividas'){renderDividas();calcularPrioridadeDividas();}
+  if(btn.dataset.sec==='resumo'){renderResumo();renderSemaforo();renderWidgetInteligente();renderMetaEconomia();}
+  if(btn.dataset.sec==='investimentos') renderInvestimentos();
+  if(btn.dataset.sec==='simulador') popularSimuladorFins();
 }
 
 function setSecaoMob(sec, btn){
@@ -1670,10 +1678,16 @@ function setSecaoMob(sec, btn){
   if(btn) btn.classList.add('ativo');
   var el = document.getElementById('sec-'+sec);
   if(el) el.classList.add('ativa');
+  recalcularTotais();
   if(sec==='orcamento') renderOrcamento();
+  if(sec==='skyfit') renderSkyFit();
   if(sec==='relatorio') renderRelatorio();
   if(sec==='metas') renderMetas();
   if(sec==='contas') renderContas();
+  if(sec==='dividas'){renderDividas();calcularPrioridadeDividas();}
+  if(sec==='resumo'){renderResumo();renderSemaforo();renderWidgetInteligente();renderMetaEconomia();}
+  if(sec==='investimentos') renderInvestimentos();
+  if(sec==='simulador') popularSimuladorFins();
 }
 
 function setSecaoDrawer(btn){
@@ -2863,20 +2877,29 @@ async function renderInvestimentos(){
 
 // ══ RELATÓRIO ══
 function renderRelatorio(){
+  // Recalcula TUDO direto do localStorage — não depende de outras telas terem rodado antes
   var gastos=carregarGastos();
   var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]');
   var moto=carregarMoto();var casa=carregarCasa();
+  var casaPctR=casa.pct||100;
+  var casaMinhaR=casa.minhaParte||((casa.parcela||0)*(casaPctR/100));
   var obras=JSON.parse(localStorage.getItem(docId()+'_obras')||'[]');
   var fins=carregarFins();
   var assns=carregarAssinaturas();
-  var renda=window._totalRenda||0;
+  // Renda: recalcula direto (não usa window._totalRenda cacheado)
+  var fixasR=JSON.parse(localStorage.getItem(docIdG('receitas_fixas'))||'[]');
+  var varsR=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
+  var renda=fixasR.filter(function(f){return f.status!=='previsto';}).reduce(function(a,f){return a+f.val;},0)+
+             varsR.filter(function(v){return v.status!=='previsto';}).reduce(function(a,v){return a+v.val;},0);
+  // Recorrentes: recalcula direto
+  var recsR=JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
+  var totalRec=recsR.filter(function(r){return r.tipo==='recorrente';}).reduce(function(a,r){return a+r.val;},0);
   var gastoCat={};gastos.forEach(function(g){gastoCat[g.cat]=(gastoCat[g.cat]||0)+g.valor;});
   var totalGasto=Object.values(gastoCat).reduce(function(a,v){return a+v;},0);
-  var totalObras=obras.reduce(function(a,o){return a+o.valor;},0);
-  var totalFin=(moto.parcela||0)+(casa.parcela||0)+totalObras+fins.reduce(function(a,f){return a+f.parcela;},0);
+  var totalObras=obras.reduce(function(a,o){return a+(o.minhaParte||o.valor);},0);
+  var totalFin=(moto.parcela||0)+casaMinhaR+totalObras+fins.reduce(function(a,f){return a+f.parcela;},0);
   var totalAssn=assns.reduce(function(a,s){return a+s.val;},0);
   var totalInv=invs.reduce(function(a,i){return a+i.valor;},0);
-  var totalRec=window._totalRecorrentes||0;
   var lucro=renda-totalGasto-totalFin-totalAssn-totalRec-totalInv;
   var el=document.getElementById('relatorio-el');if(!el) return;
   var cats2=carregarCats();var CAT_IC={};cats2.forEach(function(c){CAT_IC[c.id]=c.icon;});
@@ -2885,7 +2908,7 @@ function renderRelatorio(){
     '<div style="display:flex;justify-content:space-between;padding:7px 0;font-size:.82rem"><span style="color:var(--muted)">Total receitas</span><span style="font-family:DM Mono,monospace;color:var(--green2)">'+fmt(renda)+'</span></div></div>'+
     '<div class="form-box"><div class="form-tit"><span class="bar" style="background:var(--red2)"></span>FINANCIAMENTOS</div>'+
     (moto.parcela?'<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.79rem"><span style="color:var(--muted)">🏍️ Moto ('+moto.atual+'/'+moto.total+')</span><span style="font-family:DM Mono,monospace">'+fmt(moto.parcela)+'</span></div>':'')+
-    (casa.parcela?'<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.79rem"><span style="color:var(--muted)">🏠 Casa ('+casa.atual+'/'+casa.total+')</span><span style="font-family:DM Mono,monospace">'+fmt(casa.parcela)+'</span></div>':'')+
+    (casa.parcela?'<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.79rem"><span style="color:var(--muted)">🏠 Casa ('+casa.atual+'/'+casa.total+')'+(casaPctR<100?' — sua parte '+casaPctR+'%':'')+'</span><span style="font-family:DM Mono,monospace">'+fmt(casaMinhaR)+'</span></div>':'')+
     (totalObras>0?'<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.79rem"><span style="color:var(--muted)">🔧 Taxa de obra</span><span style="font-family:DM Mono,monospace">'+fmt(totalObras)+'</span></div>':'')+
     '<div style="display:flex;justify-content:space-between;padding:7px 0;font-size:.82rem;font-weight:700"><span>Total financiamentos</span><span style="font-family:DM Mono,monospace;color:var(--red2)">'+fmt(totalFin)+'</span></div></div>'+
     (totalAssn>0?'<div class="form-box"><div class="form-tit"><span class="bar" style="background:var(--invest2)"></span>ASSINATURAS</div>'+
@@ -3477,7 +3500,7 @@ async function popularDadosTeste(){
 
   if(st) st.innerHTML='<span style="color:var(--green2)">✅ Dados de teste criados! Navegue pelo app pra ver tudo funcionando.</span>';
   mostrarToast('🧪 Dados de teste adicionados!');
-  renderAll();renderContas();renderFinanciamentos();
+  renderAll();renderContas();renderFinanciamentos();renderRelatorio();renderSkyFit();renderMetas();renderDividas();renderOrcamento();
 }
 
 async function apagarDadosTeste(){
@@ -3518,7 +3541,7 @@ async function apagarDadosTeste(){
 
   if(st) st.innerHTML='<span style="color:var(--green2)">✅ Dados de teste removidos! Seus dados reais continuam intactos.</span>';
   mostrarToast('🗑️ Dados de teste apagados!');
-  renderAll();renderContas();renderFinanciamentos();
+  renderAll();renderContas();renderFinanciamentos();renderRelatorio();renderSkyFit();renderMetas();renderDividas();renderOrcamento();
 }
 
 // ══ LIMPAR DADOS DO DISPOSITIVO ══
@@ -4232,8 +4255,37 @@ async function addExtra(){
 
 
 
+function recalcularTotais(){
+  // Fonte única de verdade — recalcula TODOS os totais direto do localStorage,
+  // sem depender de qual tela rodou antes. Chamado sempre que uma tela precisa dos totais.
+  var fixasR=JSON.parse(localStorage.getItem(docIdG('receitas_fixas'))||'[]');
+  var varsR=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
+  window._totalRenda=fixasR.filter(function(f){return f.status!=='previsto';}).reduce(function(a,f){return a+f.val;},0)+
+                      varsR.filter(function(v){return v.status!=='previsto';}).reduce(function(a,v){return a+v.val;},0);
+
+  var moto=carregarMoto();var casa=carregarCasa();
+  var casaPct=casa.pct||100;
+  var casaMinha=casa.minhaParte||((casa.parcela||0)*(casaPct/100));
+  var obras=JSON.parse(localStorage.getItem(docId()+'_obras')||'[]');
+  var totalObras=obras.reduce(function(a,o){return a+(o.minhaParte||o.valor);},0);
+  var fins=carregarFins();
+  window._totalFinMoto=moto.parcela||0;
+  window._totalFinCasa=casaMinha;
+  window._totalFinanc=(moto.parcela||0)+casaMinha+totalObras+fins.reduce(function(a,f){return a+f.parcela;},0);
+
+  var assns=carregarAssinaturas();
+  window._totalAssinaturas=assns.reduce(function(a,s){return a+s.val;},0);
+
+  var recsR=JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
+  window._totalRecorrentes=recsR.filter(function(r){return r.tipo==='recorrente';}).reduce(function(a,r){return a+r.val;},0);
+
+  var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]');
+  window._totalInv=invs.reduce(function(a,i){return a+i.valor;},0);
+}
+
 async function renderAll(){
   _cache['gastos'] = JSON.parse(localStorage.getItem(docId()+'_gastos')||'[]');
+  recalcularTotais();
   await renderReceitas();
   renderFinanciamentos();
   renderAssinaturas();
@@ -4241,6 +4293,7 @@ async function renderAll(){
   await renderGastos();
   await renderCarteiras();
   await renderInvestimentos();
+  recalcularTotais();
   renderResumo();
   renderSemaforo();
   renderWidgetInteligente();
