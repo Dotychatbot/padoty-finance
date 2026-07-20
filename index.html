@@ -407,7 +407,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
         <div id="obra-minha-parte" style="font-family:DM Mono,monospace;font-size:.9rem;color:var(--invest2)">R$ 0,00</div>
       </div>
       <div class="full" style="display:flex;gap:8px">
-        <button class="btn-add" style="flex:1;background:linear-gradient(135deg,var(--invest),var(--invest2))" onclick="pagarTaxaObra()">✅ Paguei taxa de obra</button>
+        <button class="btn-add" style="flex:1;background:linear-gradient(135deg,var(--invest),var(--invest2))" onclick="pagarTaxaObra()">✅ Paguei minha parte</button>
         <button class="btn-add" style="flex:1;background:var(--surface);border:1px solid var(--border);color:var(--muted)" onclick="abrirHistCasa('obra')">📋 Registrar anterior</button>
       </div>
     </div>
@@ -1546,6 +1546,58 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     <div class="modal-btns">
       <button class="btn-cancel" onclick="fecharModal('overlayEditarRec')">Cancelar</button>
       <button class="btn-confirm" onclick="salvarEdicaoRec()">✅ Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PAGAR RECORRENTE -->
+<div class="overlay" id="overlayPagarRec" onclick="fecharOverlay('overlayPagarRec',event)">
+  <div class="modal">
+    <h2>✅ Pagar Recorrente</h2>
+    <input type="hidden" id="prx-id"/>
+    <div id="pagar-rx-info" style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:12px;font-size:.82rem"></div>
+    <div class="fields">
+      <div><label>Conta / carteira</label><select id="prx-carteira"><option value="">— Selecione —</option></select></div>
+      <div><label>Forma de pagamento</label>
+        <select id="prx-pag">
+          <option value="debito">💳 Débito</option>
+          <option value="pix">⚡ PIX</option>
+          <option value="credito">💳 Crédito</option>
+          <option value="dinheiro">💵 Dinheiro</option>
+        </select>
+      </div>
+      <div><label>Data do pagamento</label><input type="date" id="prx-data"/></div>
+      <div class="full"><label>Obs</label><input type="text" id="prx-obs" placeholder="Detalhe..."/></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal('overlayPagarRec')">Cancelar</button>
+      <button class="btn-confirm" onclick="confirmarPagarRec()">✅ Confirmar pagamento</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PAGAR CONTA A VENCER -->
+<div class="overlay" id="overlayPagarConta" onclick="fecharOverlay('overlayPagarConta',event)">
+  <div class="modal">
+    <h2>✅ Pagar Conta</h2>
+    <input type="hidden" id="pcx-id"/>
+    <div id="pagar-cx-info" style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:12px;font-size:.82rem"></div>
+    <div class="fields">
+      <div><label>Conta / carteira</label><select id="pcx-carteira"><option value="">— Selecione —</option></select></div>
+      <div><label>Forma de pagamento</label>
+        <select id="pcx-pag">
+          <option value="debito">💳 Débito</option>
+          <option value="pix">⚡ PIX</option>
+          <option value="credito">💳 Crédito</option>
+          <option value="dinheiro">💵 Dinheiro</option>
+        </select>
+      </div>
+      <div><label>Data do pagamento</label><input type="date" id="pcx-data"/></div>
+      <div class="full"><label>Obs</label><input type="text" id="pcx-obs" placeholder="Detalhe..."/></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal('overlayPagarConta')">Cancelar</button>
+      <button class="btn-confirm" onclick="confirmarPagarConta()">✅ Confirmar pagamento</button>
     </div>
   </div>
 </div>
@@ -2773,7 +2825,7 @@ async function addConta(){
   var cv=document.getElementById('cv-data');if(cv) cv.value=hoje();
   renderContas();mostrarToast('✅ Conta adicionada!');
 }
-function renderContas(){
+function obterContasCompletas(){
   var contas=JSON.parse(localStorage.getItem(docIdG('contas'))||'[]');
   // Auto: Moto
   var motoConf=carregarMoto();
@@ -2791,23 +2843,34 @@ function renderContas(){
       var casaValorCv=(casaConf.minhaParte||(casaConf.parcela*((casaConf.pct||100)/100)))+(totalObrasCv*((casaConf.pct||100)/100));
       contas.push({id:'casa_fin',nome:'🏠 Casa'+(casaConf.pct&&casaConf.pct<100?' ('+casaConf.pct+'%)':'')+( totalObrasCv>0?' + Obra':''),valor:casaValorCv,dia:dC,dataVenc:casaConf.data||'',cat:'financiamento',obs:'Parcela '+casaConf.atual+'/'+casaConf.total+(totalObrasCv>0?' + '+fmt(totalObrasCv)+' obras':''),pago:false,_casa:true,_auto:true});
   }
+  // Auto: Pós-Graduação
+  var pgConf=carregarPosGrad();
+  if(pgConf.parcela){
+    var dPg=pgConf.data?parseInt((pgConf.data.split('-')[2]||'1')):1;
+    if(!contas.some(function(c){return c._posgrad;}))
+      contas.push({id:'pg_fin',nome:'🎓 Pós-Graduação',valor:pgConf.parcela,dia:dPg,dataVenc:pgConf.data||'',cat:'financiamento',obs:'Parcela '+pgConf.atual+'/'+pgConf.total,pago:false,_posgrad:true,_auto:true});
+  }
   // Auto: outros fins
   carregarFins().forEach(function(f){
     if(!contas.some(function(c){return c._finId===f.id;}))
-      contas.push({id:'fin_'+f.id,nome:f.icon+' '+f.nome,valor:f.parcela,dia:f.dia,cat:'financiamento',obs:'Parcela '+f.atual+'/'+f.total,pago:false,_finId:f.id,_auto:true});
+      contas.push({id:'fin_'+f.id,nome:f.icon+' '+f.nome,valor:f.parcela,dia:f.dia,dataVenc:f.dataVenc||'',cat:'financiamento',obs:'Parcela '+f.atual+'/'+f.total,pago:false,_finId:f.id,_auto:true});
   });
   // Auto: assinaturas
   carregarAssinaturas().forEach(function(a){
     if(!contas.some(function(c){return c._assnId===a.id;}))
-      contas.push({id:'assn_'+a.id,nome:a.nome,valor:a.val,dia:a.dia,cat:a.cat,obs:'Assinatura',pago:false,_assnId:a.id,_auto:true});
+      contas.push({id:'assn_'+a.id,nome:a.nome,valor:a.val,dia:a.dia,dataVenc:a.dataVenc||'',cat:a.cat,obs:'Assinatura',pago:false,_assnId:a.id,_auto:true});
   });
   // Auto: recorrentes
   var recs=JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
   recs.filter(recorrenteAtivo).forEach(function(r){
     if(!contas.some(function(c){return c._recId===r.id;}))
-      contas.push({id:'rec_'+r.id,nome:r.desc,valor:r.val,dia:r.dia||1,cat:r.cat,obs:'Recorrente',pago:false,_recId:r.id,_auto:true});
+      contas.push({id:'rec_'+r.id,nome:r.desc,valor:r.val,dia:r.dia||1,dataVenc:r.dataVenc||'',cat:r.cat,obs:'Recorrente',pago:false,_recId:r.id,_auto:true});
   });
   contas.sort(function(a,b){return diasParaVencer(a.dia)-diasParaVencer(b.dia);});
+  return contas;
+}
+function renderContas(){
+  var contas=obterContasCompletas();
   // Alertas
   var alertasEl=document.getElementById('contas-alertas');
   if(alertasEl){
@@ -2829,7 +2892,8 @@ function renderContas(){
       '<div style="text-align:right;flex-shrink:0">'+
       '<div style="font-family:DM Mono,monospace;font-size:.86rem;color:var(--red2)">'+fmt(c.valor)+'</div>'+
       '<span class="conta-badge '+badgeCls+'">'+badge+'</span></div>'+
-      (!c._auto?'<button class="item-del" style="color:var(--green2)" data-id="'+c.id+'" onclick="pagoContaBtn(this)" title="Pago">✓</button>':'')+
+      (!c.pago?'<button style="background:var(--green2);border:none;color:#fff;border-radius:8px;padding:6px 10px;font-size:.7rem;font-weight:700;cursor:pointer;white-space:nowrap" data-id="'+c.id+'" onclick="abrirPagarConta(this)">✅ Pagar</button>':'')+
+      (!c._auto?'<button style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.76rem;padding:3px" data-id="'+c.id+'" onclick="editarContaBtn(this)" title="Editar">✏️</button>':'')+
       (!c._auto?'<button class="item-del" data-id="'+c.id+'" onclick="delContaBtn(this)">&#x2715;</button>':'')+
       '</div>';
   }).join('');
@@ -2994,15 +3058,19 @@ function renderRecorrentes(){
   var el=document.getElementById('lista-recorrentes');if(!el) return;
   if(!recs.length){el.innerHTML='<div class="vazio">Nenhum recorrente cadastrado 🔄</div>';return;}
   var CAT_IC={assinatura:'📱',saude:'💊',educacao:'📚',seguro:'🛡️',outros:'📦'};
+  var gastosMes=carregarGastos();
   el.innerHTML=recs.map(function(r){
     var ativo=recorrenteAtivo(r);var parc=parcelaAtual(r);
-    return '<div class="item" style="opacity:'+(ativo?'1':'0.45')+'">'+
+    var pagoEsteMs=gastosMes.some(function(g){return g._recId===r.id;});
+    return '<div class="item" style="opacity:'+(ativo?'1':'0.45')+';flex-wrap:wrap">'+
       '<div class="item-ic">'+(CAT_IC[r.cat]||'📦')+'</div>'+
       '<div class="item-info"><div class="item-nome">'+r.desc+
       '<span class="tag" style="background:'+(r.tipo==='fixo'?'rgba(34,197,94,.15)':'rgba(245,166,35,.15)')+';color:'+(r.tipo==='fixo'?'var(--green2)':'var(--gold2)')+'">'+( r.tipo==='fixo'?'🔒 Fixo':'🔔 Recorrente')+'</span>'+
       (r.meses>0?'<span class="tag" style="background:rgba(139,92,246,.15);color:var(--invest2)">'+parc+'/'+r.meses+'</span>':'')+
       '</div><div class="item-meta">'+(r.dataVenc?'Vence '+fmtD(r.dataVenc):'Dia '+r.dia)+' de cada mês'+(r.obs?' · '+r.obs:'')+(ativo?'':' — Encerrado')+'</div></div>'+
       '<div class="item-val neg">'+fmt(r.val)+'/mês</div>'+
+      (pagoEsteMs?'<span class="tag" style="background:rgba(34,197,94,.15);color:var(--green2)">✅ Pago</span>':
+        '<button style="background:var(--green2);border:none;color:#fff;border-radius:8px;padding:6px 10px;font-size:.7rem;font-weight:700;cursor:pointer;white-space:nowrap" data-id="'+r.id+'" onclick="abrirPagarRec(this)">✅ Pagar</button>')+
       '<button style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.76rem;padding:3px" data-id="'+r.id+'" onclick="editarRecBtn(this)" title="Editar">✏️</button>'+
       '<button class="item-del" data-id="'+r.id+'" onclick="delRecorrenteBtn(this)">&#x2715;</button></div>';
   }).join('');
@@ -4743,6 +4811,107 @@ function renderHistoricoObra(){
       '<button style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.76rem;padding:3px" data-id="'+h.id+'" onclick="editarHistBtn(this)" title="Editar">&#x270F;&#xFE0F;</button>'+
       '<button class="item-del" data-id="'+h.id+'" onclick="delHistBtn(this)">&#x2715;</button></div>';
   }).join('');
+}
+
+// ══ PAGAR CONTA A VENCER (genérico, cobre auto + manual) ══
+function abrirPagarConta(btn){
+  var id=btn.dataset.id;
+  var contas=obterContasCompletas();
+  var c=contas.find(function(x){return String(x.id)===String(id);});
+  if(!c) return;
+  document.getElementById('pcx-id').value=id;
+  var info=document.getElementById('pagar-cx-info');
+  if(info) info.innerHTML='<strong>'+c.nome+'</strong> — <span style="color:var(--red2);font-family:DM Mono,monospace">'+fmt(c.valor)+'</span>'+(c.obs?'<br/>'+c.obs:'');
+  var pd=document.getElementById('pcx-data');if(pd) pd.value=hoje();
+  var po=document.getElementById('pcx-obs');if(po) po.value='';
+  var pp=document.getElementById('pcx-pag');if(pp) pp.value='debito';
+  var cart=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
+  var sel=document.getElementById('pcx-carteira');
+  if(sel){sel.innerHTML='<option value="">— Selecione —</option>';cart.forEach(function(cc){var o=document.createElement('option');o.value=cc.id;o.textContent=cc.icon+' '+cc.nome;sel.appendChild(o);});}
+  document.getElementById('overlayPagarConta').classList.add('aberto');
+}
+async function confirmarPagarConta(){
+  var id=document.getElementById('pcx-id').value;
+  var contas=obterContasCompletas();
+  var c=contas.find(function(x){return String(x.id)===String(id);});
+  if(!c) return;
+  var contaId=parseInt(document.getElementById('pcx-carteira').value)||0;
+  var formaPag=document.getElementById('pcx-pag').value;
+  var data=document.getElementById('pcx-data').value||hoje();
+  var obs=document.getElementById('pcx-obs').value.trim();
+  if(!contaId){alert('Selecione a conta!');return;}
+
+  // Debita ou lança na fatura
+  if(formaPag==='credito'){
+    var cart=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
+    cart=cart.map(function(cc){if(cc.id===contaId) cc.fatura=(cc.fatura||0)+c.valor;return cc;});
+    await set(docIdG('carteiras'),JSON.stringify(cart));
+  } else {
+    await debitarCarteira(contaId,c.valor,c.nome,false);
+  }
+  // Lança em Meus Gastos
+  var gastos=carregarGastos();
+  gastos.push({id:Date.now(),desc:c.nome,valor:c.valor,cat:c.cat||'outros',pag:formaPag,data:data,obs:obs||c.obs,carteira:contaId,_recId:c._recId,_assnId:c._assnId});
+  await set(docId()+'_gastos',JSON.stringify(gastos));
+
+  // Marca como paga e persiste (funciona tanto pra manuais quanto auto)
+  var todasContas=JSON.parse(localStorage.getItem(docIdG('contas'))||'[]');
+  var idx=todasContas.findIndex(function(x){return String(x.id)===String(id);});
+  if(idx>=0){ todasContas[idx].pago=true; }
+  else { c.pago=true; todasContas.push(c); }
+  await set(docIdG('contas'),JSON.stringify(todasContas));
+
+  // Se for financiamento vinculado, avança a parcela também
+  if(c._moto){var m=carregarMoto();m.atual=Math.min(m.atual+1,m.total);await set(docIdG('fin_moto'),JSON.stringify(m));}
+  if(c._casa){var ca=carregarCasa();ca.atual=Math.min(ca.atual+1,ca.total);await set(docIdG('fin_casa'),JSON.stringify(ca));}
+  if(c._posgrad){var pg=carregarPosGrad();pg.atual=Math.min(pg.atual+1,pg.total);await set(docIdG('fin_posgrad'),JSON.stringify(pg));}
+  if(c._finId){var fins=carregarFins();fins=fins.map(function(f){if(f.id===c._finId) f.atual=Math.min(f.atual+1,f.total);return f;});await salvarFins(fins);}
+
+  fecharModal('overlayPagarConta');
+  renderContas();renderAll();renderFinanciamentos();
+  mostrarToast('✅ '+c.nome+' paga! '+fmt(c.valor));
+}
+
+// ══ PAGAR RECORRENTE (conta + forma de pagamento) ══
+function abrirPagarRec(btn){
+  var id=parseFloat(btn.dataset.id);
+  var recs=JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
+  var r=recs.find(function(x){return x.id===id;});if(!r) return;
+  document.getElementById('prx-id').value=id;
+  var info=document.getElementById('pagar-rx-info');
+  if(info) info.innerHTML='<strong>'+r.desc+'</strong> — <span style="color:var(--red2);font-family:DM Mono,monospace">'+fmt(r.val)+'</span>'+(r.obs?'<br/>'+r.obs:'');
+  var pd=document.getElementById('prx-data');if(pd) pd.value=hoje();
+  var po=document.getElementById('prx-obs');if(po) po.value='';
+  var pp=document.getElementById('prx-pag');if(pp) pp.value='debito';
+  var cart=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
+  var sel=document.getElementById('prx-carteira');
+  if(sel){sel.innerHTML='<option value="">— Selecione —</option>';cart.forEach(function(cc){var o=document.createElement('option');o.value=cc.id;o.textContent=cc.icon+' '+cc.nome;sel.appendChild(o);});}
+  document.getElementById('overlayPagarRec').classList.add('aberto');
+}
+async function confirmarPagarRec(){
+  var id=parseFloat(document.getElementById('prx-id').value);
+  var recs=JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
+  var r=recs.find(function(x){return x.id===id;});if(!r) return;
+  var contaId=parseInt(document.getElementById('prx-carteira').value)||0;
+  var formaPag=document.getElementById('prx-pag').value;
+  var data=document.getElementById('prx-data').value||hoje();
+  var obs=document.getElementById('prx-obs').value.trim();
+  if(!contaId){alert('Selecione a conta!');return;}
+
+  if(formaPag==='credito'){
+    var cart=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
+    cart=cart.map(function(cc){if(cc.id===contaId) cc.fatura=(cc.fatura||0)+r.val;return cc;});
+    await set(docIdG('carteiras'),JSON.stringify(cart));
+  } else {
+    await debitarCarteira(contaId,r.val,r.desc,false);
+  }
+  var gastos=carregarGastos();
+  gastos.push({id:Date.now(),desc:r.desc,valor:r.val,cat:r.cat||'outros',pag:formaPag,data:data,obs:obs,carteira:contaId,_recId:r.id});
+  await set(docId()+'_gastos',JSON.stringify(gastos));
+
+  fecharModal('overlayPagarRec');
+  renderRecorrentes();renderAll();renderContas();
+  mostrarToast('✅ '+r.desc+' pago! '+fmt(r.val));
 }
 
 // ══ RENDER ALL ══
