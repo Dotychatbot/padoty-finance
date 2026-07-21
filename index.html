@@ -729,6 +729,7 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
       <div><label>Saldo inicial (R$)</label><input type="number" id="ck-saldo" placeholder="0,00" min="0" step="0.01"/></div>
       <div><label>Limite crédito (R$)</label><input type="number" id="ck-limite" placeholder="Só p/ crédito" min="0" step="0.01"/></div>
       <div><label>Alerta baixo (R$)</label><input type="number" id="ck-alerta" placeholder="Ex: 100" min="0"/></div>
+      <div><label>Dia fechamento fatura (crédito)</label><input type="number" id="ck-dia-fat" placeholder="Ex: 10" min="1" max="31"/></div>
       <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--blue),var(--blue2))" onclick="addCarteira()">+ Adicionar</button></div>
     </div>
   </div>
@@ -1039,6 +1040,17 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
       <button class="btn-sm" onclick="toggleTema()" style="text-align:left">🌙 Alternar modo escuro/claro</button>
       <button class="btn-sm" onclick="sincronizar()" style="text-align:left">🔄 Sincronizar dados agora</button>
       <button class="btn-sm" onclick="exportarCSV()" style="text-align:left">📊 Exportar CSV</button>
+    </div>
+  </div>
+
+  <!-- GERENCIAR CATEGORIAS -->
+  <div class="form-box" style="margin-bottom:12px">
+    <div class="form-tit"><span class="bar" style="background:var(--gold2)"></span>🏷️ Categorias personalizadas</div>
+    <div id="lista-cats-config" style="margin-bottom:12px"></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="text" id="cat-icon" placeholder="🏷️" maxlength="4" style="width:48px;text-align:center;font-size:1rem;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text)"/>
+      <input type="text" id="cat-nome" placeholder="Nome da nova categoria" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:.82rem"/>
+      <button onclick="addCategoria()" style="background:var(--gold2);color:#111;border:none;border-radius:8px;padding:8px 14px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap">+ Criar</button>
     </div>
   </div>
 
@@ -1888,6 +1900,7 @@ function setSecao(btn){
   recalcularTotais();
   if(btn.dataset.sec==='orcamento') renderOrcamento();
   if(btn.dataset.sec==='recorrentes') atualizarDropdownsCats();
+  if(btn.dataset.sec==='config') renderCatsConfig();
   if(btn.dataset.sec==='skyfit') renderSkyFit();
   if(btn.dataset.sec==='relatorio') renderRelatorio();
   if(btn.dataset.sec==='metas') renderMetas();
@@ -1907,6 +1920,7 @@ function setSecaoMob(sec, btn){
   recalcularTotais();
   if(sec==='orcamento') renderOrcamento();
   if(sec==='recorrentes') atualizarDropdownsCats();
+  if(sec==='config') renderCatsConfig();
   if(sec==='skyfit') renderSkyFit();
   if(sec==='relatorio') renderRelatorio();
   if(sec==='metas') renderMetas();
