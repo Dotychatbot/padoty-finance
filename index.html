@@ -295,6 +295,8 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
   <div id="semaforo-el" style="margin-bottom:12px"></div>
   <!-- WIDGET INTELIGENTE -->
   <div id="widget-inteligente-el" style="margin-bottom:12px"></div>
+  <div id="projecao-proximo-mes-el" style="margin-bottom:12px"></div>
+  <div id="meta-patrimonio-el" style="margin-bottom:12px"></div>
   <div class="cards-row" id="resumo-cards"></div>
   <div class="form-box" style="margin-bottom:14px"><div class="form-tit"><span class="bar" style="background:var(--casal,var(--blue2))"></span>Fluxo do mês</div><div id="resumo-fluxo"></div></div>
   <div class="form-box"><div class="form-tit"><span class="bar" style="background:var(--red2)"></span>Gastos por categoria</div><div id="resumo-grafico"></div></div>
@@ -1487,6 +1489,22 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
   </div>
 </div>
 
+<!-- MODAL META DE PATRIMÔNIO -->
+<div class="overlay" id="overlayMetaPatrimonio" onclick="fecharOverlay('overlayMetaPatrimonio',event)">
+  <div class="modal">
+    <h2>🏆 Meta de Patrimônio</h2>
+    <p style="font-size:.76rem;color:var(--muted);margin-bottom:12px">Meta de longo prazo, baseada no total guardado (carteiras + investimentos) — diferente da meta mensal.</p>
+    <div class="fields">
+      <div class="full"><label>Quero ter guardado (R$)</label><input type="number" id="mp-val" placeholder="Ex: 20000" min="0" step="0.01"/></div>
+      <div class="full"><label>Prazo (opcional)</label><input type="date" id="mp-prazo"/></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal('overlayMetaPatrimonio')">Cancelar</button>
+      <button class="btn-confirm" onclick="salvarMetaPatrimonio()">💾 Salvar Meta</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL EDITAR FINANCIAMENTO -->
 <div class="overlay" id="overlayEditarFin" onclick="fecharOverlay('overlayEditarFin',event)">
   <div class="modal">
@@ -1908,7 +1926,7 @@ function setSecao(btn){
   if(btn.dataset.sec==='metas') renderMetas();
   if(btn.dataset.sec==='contas') renderContas();
   if(btn.dataset.sec==='dividas'){renderDividas();calcularPrioridadeDividas();}
-  if(btn.dataset.sec==='resumo'){renderResumo();renderSemaforo();renderWidgetInteligente();renderMetaEconomia();}
+  if(btn.dataset.sec==='resumo'){renderResumo();renderSemaforo();renderWidgetInteligente();renderProjecaoProximoMes();renderMetaPatrimonio();renderMetaEconomia();}
   if(btn.dataset.sec==='investimentos') renderInvestimentos();
   if(btn.dataset.sec==='simulador') popularSimuladorFins();
 }
@@ -1928,7 +1946,7 @@ function setSecaoMob(sec, btn){
   if(sec==='metas') renderMetas();
   if(sec==='contas') renderContas();
   if(sec==='dividas'){renderDividas();calcularPrioridadeDividas();}
-  if(sec==='resumo'){renderResumo();renderSemaforo();renderWidgetInteligente();renderMetaEconomia();}
+  if(sec==='resumo'){renderResumo();renderSemaforo();renderWidgetInteligente();renderProjecaoProximoMes();renderMetaPatrimonio();renderMetaEconomia();}
   if(sec==='investimentos') renderInvestimentos();
   if(sec==='simulador') popularSimuladorFins();
 }
@@ -3991,6 +4009,95 @@ function importarDados(input){
   input.value='';
 }
 
+// ══ PROJEÇÃO PRÓXIMO MÊS ══
+function recorrenteAtivoEm(r,mesX,anoX){
+  if(!r.meses||r.meses===0) return true;
+  var mI=r.inicio?parseInt(r.inicio.split('/')[0]||'0'):0;
+  var aI=r.inicio?parseInt(r.inicio.split('/')[1]||'0'):0;
+  return (anoX-aI)*12+(mesX-mI)<r.meses;
+}
+function renderProjecaoProximoMes(){
+  var el=document.getElementById('projecao-proximo-mes-el');if(!el) return;
+  var mesProx=mes+1,anoProx=ano;
+  if(mesProx>11){mesProx=0;anoProx++;}
+
+  // Receita prevista (soma das receitas fixas, assumindo recorrência)
+  var fixasR=JSON.parse(localStorage.getItem(docIdG('receitas_fixas'))||'[]');
+  var receitaPrevista=fixasR.reduce(function(a,f){return a+f.val;},0);
+
+  // Compromissos fixos previstos
+  var moto=carregarMoto();var motoP=(moto.parcela&&moto.atual<moto.total)?moto.parcela:0;
+  var casa=carregarCasa();var casaP=(casa.parcela&&casa.atual<casa.total)?(casa.minhaParte||casa.parcela*((casa.pct||100)/100)):0;
+  var pg=carregarPosGrad();var pgP=(pg.parcela&&pg.atual<pg.total)?pg.parcela:0;
+  var fins=carregarFins();var finsP=fins.reduce(function(a,f){return a+(f.atual<f.total?f.parcela:0);},0);
+  var assns=carregarAssinaturas();var assnsP=assns.reduce(function(a,s){return a+s.val;},0);
+  var recs=JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
+  var recsP=recs.filter(function(r){return recorrenteAtivoEm(r,mesProx,anoProx);}).reduce(function(a,r){return a+r.val;},0);
+
+  var compromissos=motoP+casaP+pgP+finsP+assnsP+recsP;
+  var sobraEstimada=receitaPrevista-compromissos;
+
+  if(!receitaPrevista&&!compromissos){el.innerHTML='';return;}
+
+  var cor=sobraEstimada>=0?'var(--green2)':'var(--red2)';
+  el.innerHTML='<div style="background:linear-gradient(135deg,rgba(139,92,246,.1),var(--surface));border:1px solid rgba(139,92,246,.25);border-radius:12px;padding:13px">'+
+    '<div style="font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">📅 Projeção — '+MESES[mesProx]+'/'+anoProx+'</div>'+
+    '<div class="cards-row" style="margin-bottom:6px">'+
+    '<div class="mini-card"><div class="lbl">💰 Receita prevista</div><div class="val" style="color:var(--green2)">'+fmt(receitaPrevista)+'</div></div>'+
+    '<div class="mini-card"><div class="lbl">📌 Compromissos fixos</div><div class="val" style="color:var(--red2)">'+fmt(compromissos)+'</div></div>'+
+    '<div class="mini-card"><div class="lbl">'+(sobraEstimada>=0?'✅':'⚠️')+' Sobra estimada</div><div class="val" style="color:'+cor+'">'+fmt(sobraEstimada)+'</div></div>'+
+    '</div>'+
+    '<div style="font-size:.64rem;color:var(--muted)">Baseado nas receitas fixas e compromissos já cadastrados. Receitas variáveis (ex: aulas extras, personal avulso) não entram nessa conta.</div>'+
+    '</div>';
+}
+
+// ══ META DE PATRIMÔNIO (longo prazo, baseada no total guardado) ══
+function abrirMetaPatrimonio(){
+  var mp=JSON.parse(localStorage.getItem(docIdG('meta_patrimonio'))||'{}');
+  var v=document.getElementById('mp-val');if(v) v.value=mp.valor||'';
+  var p=document.getElementById('mp-prazo');if(p) p.value=mp.prazo||'';
+  document.getElementById('overlayMetaPatrimonio').classList.add('aberto');
+}
+async function salvarMetaPatrimonio(){
+  var valor=parseFloat(document.getElementById('mp-val').value)||0;
+  var prazo=document.getElementById('mp-prazo').value||'';
+  if(!valor){alert('Digite um valor!');return;}
+  await set(docIdG('meta_patrimonio'),JSON.stringify({valor:valor,prazo:prazo}));
+  fecharModal('overlayMetaPatrimonio');renderMetaPatrimonio();mostrarToast('✅ Meta de patrimônio salva!');
+}
+function renderMetaPatrimonio(){
+  var el=document.getElementById('meta-patrimonio-el');if(!el) return;
+  var mp=JSON.parse(localStorage.getItem(docIdG('meta_patrimonio'))||'{}');
+  var carts=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
+  var saldoContas=carts.filter(function(c){return c.tipo!=='credito';}).reduce(function(a,c){return a+(c.saldo||0);},0);
+  var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]');
+  var totalInvs=invs.reduce(function(a,i){return a+i.valor;},0);
+  var patrimonio=saldoContas+totalInvs;
+
+  if(!mp.valor){
+    el.innerHTML='<button onclick="abrirMetaPatrimonio()" style="width:100%;background:none;border:1px dashed var(--border);border-radius:10px;padding:10px;color:var(--muted);font-size:.76rem;cursor:pointer">🏆 Definir meta de patrimônio (longo prazo)</button>';
+    return;
+  }
+  var pct=Math.min(patrimonio/mp.valor*100,100).toFixed(0);
+  var cor=patrimonio>=mp.valor?'var(--green2)':'var(--gold2)';
+  var diasRestPrazo='';
+  if(mp.prazo){
+    var hoje2=new Date();var alvo=new Date(mp.prazo+'T00:00:00');
+    var dd=Math.ceil((alvo-hoje2)/(1000*60*60*24));
+    diasRestPrazo=dd>0?' · '+dd+' dias restantes (até '+fmtD(mp.prazo)+')':dd===0?' · prazo é hoje!':' · prazo já passou';
+  }
+  el.innerHTML='<div style="background:linear-gradient(135deg,rgba(240,196,74,.1),var(--surface));border:1px solid rgba(240,196,74,.25);border-radius:12px;padding:13px">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">'+
+    '<span style="font-weight:600;font-size:.78rem">🏆 Meta de patrimônio</span>'+
+    '<button onclick="abrirMetaPatrimonio()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.7rem">⚙️</button></div>'+
+    '<div style="font-family:DM Mono,monospace;color:'+cor+';font-size:.9rem;font-weight:700;margin-bottom:6px">'+fmt(patrimonio)+' / '+fmt(mp.valor)+'</div>'+
+    '<div style="height:8px;background:var(--bg2);border-radius:99px;overflow:hidden">'+
+    '<div style="height:100%;background:'+cor+';width:'+pct+'%;border-radius:99px;transition:width .6s"></div></div>'+
+    '<div style="font-size:.66rem;color:var(--muted);margin-top:4px">'+pct+'% da meta'+diasRestPrazo+
+    (patrimonio>=mp.valor?' · ✅ Meta batida! 🎉':'')+'</div>'+
+    '</div>';
+}
+
 // ══ SEMÁFORO ══
 
 function renderSemaforo(){
@@ -4041,14 +4148,22 @@ function renderMetaEconomia(){
   var economia=renda-totalG;
   var pct=meta>0?Math.min(economia/meta*100,100).toFixed(0):0;
   var cor=economia>=meta?'var(--green2)':economia>0?'var(--gold2)':'var(--red2)';
+  // Patrimônio total acumulado (referência, não faz parte do cálculo da meta)
+  var carts=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
+  var saldoContas=carts.filter(function(c){return c.tipo!=='credito';}).reduce(function(a,c){return a+(c.saldo||0);},0);
+  var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]');
+  var totalInvs=invs.reduce(function(a,i){return a+i.valor;},0);
+  var patrimonio=saldoContas+totalInvs;
   el.innerHTML='<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px">'+
-    '<div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:6px">'+
-    '<span style="font-weight:600">🎯 Meta de economia mensal</span>'+
+    '<div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:2px">'+
+    '<span style="font-weight:600">🎯 Meta de economia — '+MESES[mes]+'/'+ano+'</span>'+
     '<span style="font-family:DM Mono,monospace;color:'+cor+'">'+fmt(Math.max(0,economia))+' / '+fmt(meta)+'</span></div>'+
+    '<div style="font-size:.64rem;color:var(--muted);margin-bottom:6px">Quanto sobrou esse mês (renda − gastos) · reseta todo mês</div>'+
     '<div style="height:7px;background:var(--bg2);border-radius:99px;overflow:hidden">'+
     '<div style="height:100%;background:'+cor+';width:'+pct+'%;border-radius:99px;transition:width .6s"></div></div>'+
-    (economia<meta?'<div style="font-size:.68rem;color:var(--muted);margin-top:4px">Falta '+fmt(meta-Math.max(0,economia))+' para bater a meta</div>':
-    '<div style="font-size:.68rem;color:var(--green2);margin-top:4px">✅ Meta batida!</div>')+
+    (economia<meta?'<div style="font-size:.68rem;color:var(--muted);margin-top:4px">Falta '+fmt(meta-Math.max(0,economia))+' para bater a meta deste mês</div>':
+    '<div style="font-size:.68rem;color:var(--green2);margin-top:4px">✅ Meta deste mês batida!</div>')+
+    (patrimonio>0?'<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:.72rem"><span style="color:var(--muted)">💎 Total guardado (carteiras + investimentos)</span><span style="font-family:DM Mono,monospace;color:var(--gold2);font-weight:700">'+fmt(patrimonio)+'</span></div>':'')+
     '</div>';
 }
 async function salvarMetaEconomia(){
@@ -4262,6 +4377,23 @@ async function addDespesaRapida(){
   await set(docId()+'_gastos',JSON.stringify(gastos));
   document.getElementById('rd-desc').value='';document.getElementById('rd-val').value='';
   renderAll();mostrarToast('✅ Despesa lançada!');
+}
+
+// ══ APLICAR RECEITAS FIXAS DO MÊS (reseta status pra 'previsto' a cada novo mês) ══
+function aplicarReceitasFixasDoMes(){
+  var marcaKey=docId()+'_receitas_fixas_aplicado';
+  if(localStorage.getItem(marcaKey)) return;
+  var fixas=JSON.parse(localStorage.getItem(docIdG('receitas_fixas'))||'[]');
+  if(!fixas.length){localStorage.setItem(marcaKey,'1');return;}
+  fixas=fixas.map(function(f){f.status='previsto';return f;});
+  var str=JSON.stringify(fixas);var ts=Date.now();
+  localStorage.setItem(docIdG('receitas_fixas'),str);
+  localStorage.setItem(docIdG('receitas_fixas')+'__ts',String(ts));
+  localStorage.setItem(marcaKey,'1');
+  if(_db&&_userId){
+    var o={};o[docIdG('receitas_fixas')]=str;o[docIdG('receitas_fixas')+'__ts']=String(ts);
+    _db.collection('dados').doc(_userId).set(o,{merge:true}).catch(function(){});
+  }
 }
 
 // ══ AUTO-AVANÇAR PARCELAS ══
@@ -5075,6 +5207,8 @@ async function renderAll(){
   renderResumo();
   renderSemaforo();
   renderWidgetInteligente();
+  renderProjecaoProximoMes();
+  renderMetaPatrimonio();
   renderMetaEconomia();
 }
 
