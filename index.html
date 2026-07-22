@@ -566,11 +566,10 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
 <section class="secao" id="sec-skyfit">
   <div class="page-header"><h2>Sky Fit 🏋️</h2><p>Calcule, edite e lance direto na sua receita</p></div>
 
-  <!-- MODALIDADES DO MÊS -->
+  <!-- MINHAS MODALIDADES (config de valor/hora) -->
   <div class="form-box" style="margin-bottom:12px">
-    <div class="form-tit"><span class="bar" style="background:var(--gold2)"></span>Aulas do mês — <span id="sf-mes-label" style="color:var(--gold2)"></span></div>
+    <div class="form-tit"><span class="bar" style="background:var(--gold2)"></span>⚙️ Minhas modalidades</div>
     <div id="skyfit-modalidades"></div>
-    <!-- ADICIONAR MODALIDADE -->
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
       <div style="font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">+ Nova modalidade</div>
       <div class="fields">
@@ -581,16 +580,19 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     </div>
   </div>
 
-  <!-- TOTAL E LANÇAR -->
+  <!-- LANÇAR AULA (igual Personal) -->
   <div class="form-box" style="margin-bottom:12px">
-    <div class="form-tit"><span class="bar" style="background:var(--green2)"></span>Total do mês</div>
-    <div id="skyfit-total-el" style="margin-bottom:12px"></div>
-    <div id="sf-lancar-wrap" style="display:none">
-      <div style="margin-bottom:8px"><label style="font-size:.72rem;color:var(--muted)">Conta que vai receber (aulas Sky Fit)</label>
-      <select id="sf-aulas-carteira" style="width:100%;margin-top:4px;font-size:.82rem;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text)"><option value="">— Selecione a conta —</option></select></div>
-      <button class="btn-add" id="btn-lancar-sf" onclick="lancarSkyFitReceita()" style="background:linear-gradient(135deg,var(--green),var(--green2))">💰 Lançar aulas na Receita</button>
+    <div class="form-tit"><span class="bar" style="background:var(--gold2)"></span>🏋️ Lançar aula (vai direto pra Receita)</div>
+    <div class="fields">
+      <div><label>Modalidade</label><select id="sf-aula-mod" onchange="calcularValorAula()"></select></div>
+      <div><label>Horas</label><input type="number" id="sf-aula-horas" placeholder="Ex: 2" min="0" step="0.5" oninput="calcularValorAula()"/></div>
+      <div><label>Valor calculado</label><input type="text" id="sf-aula-valor-calc" readonly style="background:var(--bg2);color:var(--green2);font-family:DM Mono,monospace;font-weight:700"/></div>
+      <div><label>Data prevista</label><input type="date" id="sf-aula-data"/></div>
+      <div><label>Conta que vai receber</label><select id="sf-aula-carteira"><option value="">— Selecione —</option></select></div>
+      <div class="full"><label>Status</label><select id="sf-aula-status"><option value="confirmado">✅ Já recebi</option><option value="previsto">📅 Ainda vou receber</option></select></div>
+      <div class="full"><button class="btn-add" style="background:linear-gradient(135deg,var(--green),var(--green2))" onclick="addAulaSkyFit()">+ Lançar aula na Receita</button></div>
     </div>
-    <div id="sf-lancado-el" style="font-size:.74rem;color:var(--muted);margin-top:6px"></div>
+    <div id="skyfit-aulas-list" style="margin-top:10px"></div>
   </div>
 
   <!-- PERSONAL TRAINING -->
@@ -3704,23 +3706,29 @@ function renderAssinaturas(){
 
 // ══ SKY FIT (renderSkyFit restored) ══
 function renderSkyFit(){
-  var mods=carregarSFMods();var horas=carregarSFHoras();var pts=carregarSFPersonais();
+  var mods=carregarSFMods();var pts=carregarSFPersonais();
   var mlEl=document.getElementById('sf-mes-label');if(mlEl) mlEl.textContent=MESES[mes]+'/'+ano;
   var el=document.getElementById('skyfit-modalidades');
   if(el){
     el.innerHTML=mods.map(function(m){
-      var h=horas[m.id]||0;var subtotal=h*m.valor;
       return '<div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border)">'+
         '<div style="flex:1"><div style="font-weight:600;font-size:.83rem">'+m.nome+'</div><div style="font-size:.68rem;color:var(--muted)">'+fmt(m.valor)+'/hora</div></div>'+
-        '<input type="number" value="'+h+'" min="0" step="0.5" style="width:62px;text-align:center;font-size:.85rem;padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text)" placeholder="Hrs" data-id="'+m.id+'" onchange="updateSFHoras('+m.id+',this.value)"/>'+
-        '<div style="font-family:DM Mono,monospace;font-size:.88rem;color:'+(subtotal>0?'var(--green2)':'var(--muted)')+';min-width:68px;text-align:right">'+fmt(subtotal)+'</div>'+
         '<button style="background:none;border:none;color:var(--blue2);cursor:pointer;font-size:.78rem;padding:4px" data-id="'+m.id+'" onclick="editSFModBtn(this)">✏️</button>'+
         '<button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.78rem;padding:4px" data-id="'+m.id+'" onclick="delSFModBtn(this)">✕</button></div>';
     }).join('')+(mods.length===0?'<div class="vazio">Adicione uma modalidade abaixo</div>':'');
   }
+  popularSelectModalidadesSkyFit();
+  var adEl=document.getElementById('sf-aula-data');if(adEl&&!adEl.value) adEl.value=hoje();
+  var cart=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
+  var aulaCartSel=document.getElementById('sf-aula-carteira');
+  if(aulaCartSel&&aulaCartSel.children.length<=1){cart.forEach(function(cc){if(cc.tipo!=='credito'){var o=document.createElement('option');o.value=cc.id;o.textContent=cc.icon+' '+cc.nome;aulaCartSel.appendChild(o);}});}
+  var ptCartSel=document.getElementById('sf-pt-carteira');
+  if(ptCartSel&&ptCartSel.children.length<=1){cart.forEach(function(cc){if(cc.tipo!=='credito'){var o=document.createElement('option');o.value=cc.id;o.textContent=cc.icon+' '+cc.nome;ptCartSel.appendChild(o);}});}
+  var pdEl=document.getElementById('sf-pt-data');if(pdEl&&!pdEl.value) pdEl.value=hoje();
+  renderAulasSkyFit();
   var ptEl=document.getElementById('skyfit-personais');
   if(ptEl){ptEl.innerHTML=!pts.length?'<div style="font-size:.74rem;color:var(--muted);padding:6px">Nenhum personal lançado este mês</div>':
-    pts.map(function(p){return '<div class="item"><div class="item-ic">💪</div><div class="item-info"><div class="item-nome">'+p.aluno+'</div><div class="item-meta">'+fmtD(p.data)+' · Lançado na Receita ✅</div></div><div class="item-val pos">'+fmt(p.val)+'</div><button class="item-del" data-id="'+p.id+'" onclick="delSFPTBtn(this)">✕</button></div>';}).join('');}
+    pts.map(function(p){var pago=p.status!=='previsto';return '<div class="item"><div class="item-ic">💪</div><div class="item-info"><div class="item-nome">'+p.aluno+'</div><div class="item-meta">'+fmtD(p.data)+(pago?' · Recebido ✅':' · Previsto 📅')+'</div></div><div class="item-val pos">'+fmt(p.val)+'</div><button class="item-del" data-id="'+p.id+'" onclick="delSFPTBtn(this)">✕</button></div>';}).join('');}
   renderSkyFitTotal();
   var histEl=document.getElementById('sf-historico-el');
   if(histEl){var hist=carregarSFHistorico();histEl.innerHTML=!hist.length?'<div class="vazio">Nenhum lançamento anterior</div>':
@@ -4339,14 +4347,21 @@ async function addPersonalSkyFit(){
   var aluno=document.getElementById('sf-pt-aluno').value.trim();
   var val=parseFloat(document.getElementById('sf-pt-val').value)||0;
   var data=document.getElementById('sf-pt-data')?document.getElementById('sf-pt-data').value||hoje():hoje();
+  var cartEl=document.getElementById('sf-pt-carteira');
+  var cartId=cartEl?parseInt(cartEl.value)||0:0;
+  var stEl=document.getElementById('sf-pt-status');
+  var status=stEl?stEl.value:'confirmado';
   if(!aluno||!val){alert('Preencha aluno e valor!');return;}
-  var pts=carregarSFPersonais();pts.push({id:Date.now(),aluno:aluno,val:val,data:data});
+  var pts=carregarSFPersonais();pts.push({id:Date.now(),aluno:aluno,val:val,data:data,status:status});
   await salvarSFPersonais(pts);
   var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
-  vars.push({id:Date.now()+1,desc:'Personal — '+aluno,val:val,data:data,obs:'Sky Fit Personal'});
+  var receitaId=Date.now()+1;
+  vars.push({id:receitaId,desc:'Personal — '+aluno,val:val,data:data,obs:'Sky Fit Personal',carteira:cartId,status:status,_skyfitPT:true});
   await set(docId()+'_receitas_var',JSON.stringify(vars));
+  if(cartId&&val&&status==='confirmado') await creditarCarteira(cartId,val,'Personal — '+aluno);
   document.getElementById('sf-pt-aluno').value='';document.getElementById('sf-pt-val').value='';
-  renderSkyFit();renderAll();mostrarToast('✅ '+aluno+' lançado na Receita!');
+  renderSkyFit();renderAll();
+  mostrarToast(status==='confirmado'?'✅ '+aluno+' — recebido e creditado!':'📅 '+aluno+' — previsto na Receita!');
 }
 async function delSFPersonal(id){var pts=carregarSFPersonais().filter(function(p){return p.id!==id;});await salvarSFPersonais(pts);renderSkyFit();}
 function delSFPTBtn(btn){delSFPersonal(parseInt(btn.dataset.id));}
@@ -4926,6 +4941,86 @@ async function confirmarPagarRec(){
   fecharModal('overlayPagarRec');
   renderRecorrentes();renderAll();renderContas();
   mostrarToast('✅ '+r.desc+' pago! '+fmt(r.val));
+}
+
+// ══ TOTAL SKY FIT (Aulas + Personal, recebido vs previsto) ══
+function renderSkyFitTotal(){
+  var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
+  var sfItens=vars.filter(function(v){return v._sfAula||v._skyfitPT;});
+  var recebido=sfItens.filter(function(v){return v.status!=='previsto';}).reduce(function(a,v){return a+v.val;},0);
+  var previsto=sfItens.filter(function(v){return v.status==='previsto';}).reduce(function(a,v){return a+v.val;},0);
+  var total=recebido+previsto;
+  var el=document.getElementById('skyfit-total-el');
+  if(!el) return;
+  if(!total){el.innerHTML='<div style="font-size:.76rem;color:var(--muted)">Nenhuma aula ou personal lançado este mês ainda.</div>';return;}
+  el.innerHTML='<div class="cards-row">'+
+    '<div class="mini-card"><div class="lbl">✅ Já recebido</div><div class="val" style="color:var(--green2)">'+fmt(recebido)+'</div></div>'+
+    '<div class="mini-card"><div class="lbl">📅 Previsto</div><div class="val" style="color:var(--gold2)">'+fmt(previsto)+'</div></div>'+
+    '<div class="mini-card"><div class="lbl">💰 Total do mês</div><div class="val" style="color:var(--blue2)">'+fmt(total)+'</div></div>'+
+    '</div>';
+}
+
+// ══ LANÇAR AULA SKY FIT (individual, igual Personal) ══
+function calcularValorAula(){
+  var mods=carregarSFMods();
+  var modId=parseFloat(document.getElementById('sf-aula-mod').value)||0;
+  var horas=parseFloat(document.getElementById('sf-aula-horas').value)||0;
+  var m=mods.find(function(x){return x.id===modId;});
+  var valor=m?horas*m.valor:0;
+  var el=document.getElementById('sf-aula-valor-calc');
+  if(el) el.value=fmt(valor);
+}
+function popularSelectModalidadesSkyFit(){
+  var mods=carregarSFMods();
+  var sel=document.getElementById('sf-aula-mod');
+  if(sel){sel.innerHTML=!mods.length?'<option value="">Cadastre uma modalidade primeiro</option>':
+    mods.map(function(m){return '<option value="'+m.id+'">'+m.nome+' — '+fmt(m.valor)+'/h</option>';}).join('');}
+}
+async function addAulaSkyFit(){
+  var mods=carregarSFMods();
+  var modId=parseFloat(document.getElementById('sf-aula-mod').value)||0;
+  var m=mods.find(function(x){return x.id===modId;});
+  var horas=parseFloat(document.getElementById('sf-aula-horas').value)||0;
+  var data=document.getElementById('sf-aula-data').value||hoje();
+  var cartEl=document.getElementById('sf-aula-carteira');
+  var cartId=cartEl?parseInt(cartEl.value)||0:0;
+  var status=document.getElementById('sf-aula-status').value;
+  if(!m){alert('Selecione a modalidade!');return;}
+  if(!horas){alert('Digite as horas!');return;}
+  var valor=horas*m.valor;
+  var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
+  vars.push({id:Date.now(),desc:'Aula — '+m.nome,val:valor,data:data,obs:horas+'h × '+fmt(m.valor)+'/h',carteira:cartId,status:status,_sfAula:true,modNome:m.nome,horas:horas});
+  await set(docId()+'_receitas_var',JSON.stringify(vars));
+  if(cartId&&valor&&status==='confirmado') await creditarCarteira(cartId,valor,'Aula — '+m.nome);
+  document.getElementById('sf-aula-horas').value='';
+  document.getElementById('sf-aula-valor-calc').value='';
+  renderSkyFit();renderAll();
+  mostrarToast(status==='confirmado'?'✅ Aula recebida e creditada!':'📅 Aula prevista lançada na Receita!');
+}
+function renderAulasSkyFit(){
+  var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
+  var aulas=vars.filter(function(v){return v._sfAula;});
+  var el=document.getElementById('skyfit-aulas-list');
+  if(!el) return;
+  if(!aulas.length){el.innerHTML='<div style="font-size:.74rem;color:var(--muted);padding:6px">Nenhuma aula lançada este mês</div>';return;}
+  el.innerHTML=aulas.slice().sort(function(a,b){return(b.data||'').localeCompare(a.data||'');}).map(function(a){
+    var pago=a.status==='confirmado';
+    return '<div class="item">'+
+      '<div class="item-ic">🏋️</div>'+
+      '<div class="item-info"><div class="item-nome">'+a.desc+'</div>'+
+      '<div class="item-meta">'+fmtD(a.data)+' · '+(a.obs||'')+'</div></div>'+
+      '<div class="item-val pos">'+fmt(a.val)+'</div>'+
+      (pago?'<span class="tag" style="background:rgba(34,197,94,.15);color:var(--green2)">✅ Recebido</span>':
+        '<button style="background:var(--green2);border:none;color:#fff;border-radius:8px;padding:5px 8px;font-size:.68rem;font-weight:700;cursor:pointer;white-space:nowrap" data-id="'+a.id+'" onclick="confirmarAulaBtn(this)">✅ Recebi</button>')+
+      '<button class="item-del" data-id="'+a.id+'" onclick="delReceitaVarBtn(this)">✕</button></div>';
+  }).join('');
+}
+function confirmarAulaBtn(btn){confirmarReceita(parseFloat(btn.dataset.id),'var');}
+async function delReceitaVarBtn(btn){
+  var id=parseFloat(btn.dataset.id);
+  var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]').filter(function(v){return v.id!==id;});
+  await set(docId()+'_receitas_var',JSON.stringify(vars));
+  renderSkyFit();renderAll();
 }
 
 // ══ RENDER ALL ══
