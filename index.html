@@ -2632,11 +2632,11 @@ async function delCarteira(id){var c=JSON.parse(localStorage.getItem(docIdG('car
 function delCkBtn(btn){delCarteira(parseFloat(btn.dataset.id));}
 async function atualizarSaldo(id,v){var cart=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]').map(function(c){if(c.id===id) c.saldo=v;return c;});await set(docIdG('carteiras'),JSON.stringify(cart));renderCarteiras();}
 function atualizarSaldoBtn(btn){var id=parseFloat(btn.dataset.id);var inp=document.getElementById('ns-'+id);var val=parseFloat(inp?inp.value:0)||0;if(!val) return;atualizarSaldo(id,val);if(inp) inp.value='';}
-async function delInvestimento(id){var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]').filter(function(i){return i.id!=id;});await set(docId()+'_invs',JSON.stringify(invs));renderInvestimentos();}
+async function delInvestimento(id){var invs=JSON.parse(localStorage.getItem(docIdG('invs'))||'[]').filter(function(i){return i.id!=id;});await set(docIdG('invs'),JSON.stringify(invs));renderInvestimentos();}
 function delInvBtn(btn){delInvestimento(parseFloat(btn.dataset.id));}
 function editarInvBtn(btn){abrirEdicaoInv(parseFloat(btn.dataset.id));}
 function abrirEdicaoInv(id){
-  var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]');
+  var invs=JSON.parse(localStorage.getItem(docIdG('invs'))||'[]');
   var inv=invs.find(function(x){return x.id==id;});
   if(!inv) return;
   document.getElementById('ei-id').value=inv.id;
@@ -2650,7 +2650,7 @@ function abrirEdicaoInv(id){
 }
 async function salvarEdicaoInv(){
   var id=parseFloat(document.getElementById('ei-id').value);
-  var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]');
+  var invs=JSON.parse(localStorage.getItem(docIdG('invs'))||'[]');
   invs=invs.map(function(i){
     if(i.id==id){
       i.desc=document.getElementById('ei-desc').value.trim();
@@ -2662,7 +2662,7 @@ async function salvarEdicaoInv(){
     }
     return i;
   });
-  await set(docId()+'_invs',JSON.stringify(invs));
+  await set(docIdG('invs'),JSON.stringify(invs));
   fecharModal('overlayEditarInv');
   renderInvestimentos();
   mostrarToast('✅ Investimento atualizado!');
@@ -3220,16 +3220,16 @@ async function addInvestimento(){
   var taxa=taxaEl?taxaEl.value.trim():'';
   var cartEl=document.getElementById('inv-carteira');
   var cartId=cartEl?parseInt(cartEl.value)||0:0;
-  var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]');
+  var invs=JSON.parse(localStorage.getItem(docIdG('invs'))||'[]');
   invs.push({id:Date.now(),desc:desc,valor:val,tipo:tipo,data:data,obs:obs,taxa:taxa,carteira:cartId});
   if(cartId&&val) await debitarCarteira(cartId,val,'Investimento: '+desc,false);
-  await set(docId()+'_invs',JSON.stringify(invs));
+  await set(docIdG('invs'),JSON.stringify(invs));
   ['inv-desc','inv-val','inv-obs'].forEach(function(id){var el=document.getElementById(id);if(el) el.value='';});
   var id2=document.getElementById('inv-data');if(id2) id2.value=hoje();
   renderInvestimentos();mostrarToast('✅ Investimento registrado!');
 }
 async function renderInvestimentos(){
-  var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]');
+  var invs=JSON.parse(localStorage.getItem(docIdG('invs'))||'[]');
   var total=invs.reduce(function(a,i){return a+i.valor;},0);
   window._totalInv=total;
   var el=document.getElementById('inv-resumo');
@@ -3257,7 +3257,7 @@ async function renderInvestimentos(){
 function renderRelatorio(){
   // Recalcula TUDO direto do localStorage — não depende de outras telas terem rodado antes
   var gastos=carregarGastos();
-  var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]');
+  var invs=JSON.parse(localStorage.getItem(docIdG('invs'))||'[]');
   var moto=carregarMoto();var casa=carregarCasa();
   var casaPctR=casa.pct||100;
   var casaMinhaR=casa.minhaParte||((casa.parcela||0)*(casaPctR/100));
@@ -3443,7 +3443,7 @@ function renderResumo(){
   // Get wallet balances
   var carts=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
   var saldoContas=carts.filter(function(c){return c.tipo!=='credito';}).reduce(function(a,c){return a+(c.saldo||0);},0);
-  var totalInvs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]').reduce(function(a,i){return a+i.valor;},0);
+  var totalInvs=JSON.parse(localStorage.getItem(docIdG('invs'))||'[]').reduce(function(a,i){return a+i.valor;},0);
   var faturaTotal=carts.filter(function(c){return c.tipo==='credito';}).reduce(function(a,c){return a+(c.fatura||0);},0);
 
   if(cardsEl) cardsEl.innerHTML=
@@ -3842,9 +3842,9 @@ async function popularDadosTeste(){
   }
 
   // 6. INVESTIMENTO DE TESTE
-  var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]');
+  var invs=JSON.parse(localStorage.getItem(docIdG('invs'))||'[]');
   invs.push({id:Date.now()+7,nome:'Caixinha Teste',valor:1500,taxa:100,data:hoje(),_teste:true});
-  setTest(docId()+'_invs',JSON.stringify(invs));
+  setTest(docIdG('invs'),JSON.stringify(invs));
 
   // 7. META DE ECONOMIA DE TESTE
   setTest(docIdG('meta_economia'),'800');
@@ -4089,7 +4089,7 @@ function renderMetaPatrimonio(){
   var mp=JSON.parse(localStorage.getItem(docIdG('meta_patrimonio'))||'{}');
   var carts=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
   var saldoContas=carts.filter(function(c){return c.tipo!=='credito';}).reduce(function(a,c){return a+(c.saldo||0);},0);
-  var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]');
+  var invs=JSON.parse(localStorage.getItem(docIdG('invs'))||'[]');
   var totalInvs=invs.reduce(function(a,i){return a+i.valor;},0);
   var patrimonio=saldoContas+totalInvs;
 
@@ -4139,11 +4139,18 @@ function renderSemaforo(){
 function renderGraficoPatrimonio(){
   var el=document.getElementById('patrimonio-chart');if(!el) return;
   var mL=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  var invsGlobal=JSON.parse(localStorage.getItem(docIdG('invs'))||'[]');
   var dados=[];
   for(var m2=5;m2>=0;m2--){
     var mC=mes-m2;var aC=ano;if(mC<0){mC+=12;aC--;}
-    var invs=[];try{invs=JSON.parse(localStorage.getItem((_userId||'local')+'_'+aC+'_'+mC+'_invs')||'[]');}catch(e){}
-    dados.push({l:mL[mC],v:invs.reduce(function(a,i){return a+i.valor;},0),atual:m2===0});
+    // Fim do mês de referência, pra saber quais investimentos já existiam até aquele ponto
+    var fimMes=new Date(aC,mC+1,0);
+    var totalAteAli=invsGlobal.filter(function(i){
+      if(!i.data) return true; // sem data = considera desde sempre
+      var di=new Date(i.data+'T00:00:00');
+      return di<=fimMes;
+    }).reduce(function(a,i){return a+i.valor;},0);
+    dados.push({l:mL[mC],v:totalAteAli,atual:m2===0});
   }
   var max=Math.max.apply(null,dados.map(function(d){return d.v;}))||1;
   el.innerHTML='<div style="display:flex;align-items:flex-end;gap:6px;height:80px;margin-bottom:6px">'+
@@ -4170,7 +4177,7 @@ function renderMetaEconomia(){
   // Patrimônio total acumulado (referência, não faz parte do cálculo da meta)
   var carts=JSON.parse(localStorage.getItem(docIdG('carteiras'))||'[]');
   var saldoContas=carts.filter(function(c){return c.tipo!=='credito';}).reduce(function(a,c){return a+(c.saldo||0);},0);
-  var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]');
+  var invs=JSON.parse(localStorage.getItem(docIdG('invs'))||'[]');
   var totalInvs=invs.reduce(function(a,i){return a+i.valor;},0);
   var patrimonio=saldoContas+totalInvs;
   el.innerHTML='<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px">'+
@@ -5197,6 +5204,46 @@ async function delReceitaVarBtn(btn){
   renderSkyFit();renderAll();
 }
 
+// ══ MIGRAÇÃO — investimentos por mês → global acumulado (roda 1x só) ══
+function migrarInvestimentosParaGlobal(){
+  var flagKey=(_userId||'local')+'_migracao_invs_global_v1';
+  if(localStorage.getItem(flagKey)) return;
+  var prefix=(_userId||'local')+'_';
+  var globalKey=docIdG('invs');
+  var acumulado=[];
+  try{ acumulado=JSON.parse(localStorage.getItem(globalKey)||'[]'); }catch(e){}
+  var jaTem={};acumulado.forEach(function(i){jaTem[i.id]=true;});
+  var migrados=0;
+  for(var i=0;i<localStorage.length;i++){
+    var k=localStorage.key(i);
+    if(!k||!k.startsWith(prefix)) continue;
+    // Padrão antigo: userId_ANO_MES_invs (ex: local_2026_6_invs)
+    var m=k.match(/^.*_(\d{4})_(\d{1,2})_invs$/);
+    if(!m) continue;
+    if(k===globalKey) continue; // pula a global (não tem esse padrão, mas por segurança)
+    try{
+      var lista=JSON.parse(localStorage.getItem(k)||'[]');
+      lista.forEach(function(item){
+        if(!jaTem[item.id]){
+          acumulado.push(item);
+          jaTem[item.id]=true;
+          migrados++;
+        }
+      });
+    }catch(e){}
+  }
+  if(migrados>0){
+    localStorage.setItem(globalKey,JSON.stringify(acumulado));
+    localStorage.setItem(globalKey+'__ts',String(Date.now()));
+    if(_db&&_userId){
+      var o={};o[globalKey]=JSON.stringify(acumulado);o[globalKey+'__ts']=String(Date.now());
+      _db.collection('dados').doc(_userId).set(o,{merge:true}).catch(function(){});
+    }
+  }
+  localStorage.setItem(flagKey,'1');
+  console.log('Migração de investimentos: '+migrados+' registro(s) unificado(s) no saldo global.');
+}
+
 // ══ RENDER ALL ══
 
 
@@ -5231,7 +5278,7 @@ function recalcularTotais(){
   var recsR=JSON.parse(localStorage.getItem(docIdG('recorrentes'))||'[]');
   window._totalRecorrentes=recsR.filter(function(r){return r.tipo==='recorrente';}).reduce(function(a,r){return a+r.val;},0);
 
-  var invs=JSON.parse(localStorage.getItem(docId()+'_invs')||'[]');
+  var invs=JSON.parse(localStorage.getItem(docIdG('invs'))||'[]');
   window._totalInv=invs.reduce(function(a,i){return a+i.valor;},0);
 }
 
@@ -5306,6 +5353,9 @@ async function init(){
       }
     }catch(e){ console.warn('Firebase load err:',e.message); }
   }
+
+  // Migração única: investimentos por mês → saldo global acumulado
+  migrarInvestimentosParaGlobal();
 
   // Auto-advance parcelas for current month
   autoAvancarParcelas();
