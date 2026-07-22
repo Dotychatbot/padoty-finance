@@ -615,9 +615,11 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
   <div class="form-box" style="margin-bottom:12px">
     <div class="form-tit"><span class="bar" style="background:var(--red2)"></span>📄 Nota Fiscal / Comprovante</div>
     <div class="fields">
-      <div><label>Competência</label><input type="text" id="sf-nota-comp" placeholder="Ex: Junho/2026"/></div>
-      <div><label>Tomador</label><input type="text" id="sf-nota-tomador" placeholder="Ex: Sky Fit Academia"/></div>
-      <div class="full"><button class="btn-add" onclick="gerarNotaSkyFit()">📄 Gerar PDF</button></div>
+      <div class="full"><label>Competência</label><input type="text" id="sf-nota-comp" placeholder="Ex: Junho/2026"/></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+      <button class="btn-add" style="flex:1;background:linear-gradient(135deg,var(--blue),var(--blue2))" onclick="gerarNotaSkyFitAulas()">📄 Nota — Sky Fit (Aulas)</button>
+      <button class="btn-add" style="flex:1;background:linear-gradient(135deg,var(--invest),var(--invest2))" onclick="abrirNotaPersonal()">📄 Nota — Personal (por aluno)</button>
     </div>
   </div>
 
@@ -1485,6 +1487,20 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
     <div class="modal-btns">
       <button class="btn-cancel" onclick="fecharModal('overlayMetaEco')">Cancelar</button>
       <button class="btn-confirm" onclick="salvarMetaEconomia()">💾 Salvar Meta</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOTA PERSONAL (por aluno) -->
+<div class="overlay" id="overlayNotaPersonal" onclick="fecharOverlay('overlayNotaPersonal',event)">
+  <div class="modal">
+    <h2>📄 Nota — Personal Training</h2>
+    <div class="fields">
+      <div class="full"><label>Aluno</label><select id="np-aluno"></select></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal('overlayNotaPersonal')">Cancelar</button>
+      <button class="btn-confirm" onclick="gerarNotaPersonal()">📄 Gerar PDF</button>
     </div>
   </div>
 </div>
@@ -4512,22 +4528,45 @@ async function lancarSkyFitReceita(){
   renderSkyFit();renderAll();mostrarToast('✅ '+fmt(total)+' lançado nas Receitas!');
 }
 
-function gerarNotaSkyFit(){
-  var mods=carregarSFMods();var horas=carregarSFHoras();var pts=carregarSFPersonais();
-  var comp=document.getElementById('sf-nota-comp')?document.getElementById('sf-nota-comp').value||(MESES[mes]+'/'+ano):(MESES[mes]+'/'+ano);
-  var tomador=document.getElementById('sf-nota-tomador')?document.getElementById('sf-nota-tomador').value||'Sky Fit Academia':'Sky Fit Academia';
-  var totalMods=mods.reduce(function(a,m){return a+(horas[m.id]||0)*m.valor;},0);
-  var totalPT=pts.reduce(function(a,p){return a+p.val;},0);
-  var total=totalMods+totalPT;
+function abrirImpressaoRecibo(tomador,comp,linhas,total){
   var win=window.open('','_blank');
-  var linhasMods=mods.filter(function(m){return(horas[m.id]||0)>0;}).map(function(m){return '<tr><td>'+m.nome+'</td><td style="text-align:center">'+(horas[m.id]||0)+'h</td><td style="text-align:right">'+fmt(m.valor)+'/h</td><td style="text-align:right">'+fmt((horas[m.id]||0)*m.valor)+'</td></tr>';}).join('');
-  var linhasPT=pts.map(function(p){return '<tr><td>Personal Training — '+p.aluno+'</td><td style="text-align:center">—</td><td style="text-align:right">—</td><td style="text-align:right">'+fmt(p.val)+'</td></tr>';}).join('');
   win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Recibo — '+comp+'</title>');
   win.document.write('<style>body{font-family:Arial,sans-serif;padding:40px;max-width:680px;margin:0 auto}h1{color:#1a2e8c;font-size:1.3rem}table{width:100%;border-collapse:collapse;margin:16px 0}th{background:#1a2e8c;color:#fff;padding:10px;text-align:left;font-size:.82rem}td{padding:9px 10px;border-bottom:1px solid #eee;font-size:.82rem}.info{display:flex;justify-content:space-between;background:#f5f5f5;padding:14px;border-radius:8px;font-size:.82rem;margin-bottom:16px}.total{background:#f0f4ff;font-weight:700}</style></head><body>');
   win.document.write('<h1>Recibo de Prestação de Serviços</h1><div class="info"><div><strong>Prestador</strong><br/>Fábio Padote<br/>CREF: 142588-G/SP<br/>CNPJ: 63.359.208/0001-11</div><div><strong>Tomador</strong><br/>'+tomador+'</div><div><strong>Competência</strong><br/>'+comp+'</div></div>');
-  win.document.write('<table><tr><th>Serviço</th><th>Qtd/Horas</th><th>Valor Unit.</th><th>Total</th></tr>'+linhasMods+linhasPT+'<tr class="total"><td colspan="3">TOTAL A RECEBER</td><td style="text-align:right">'+fmt(total)+'</td></tr></table>');
+  win.document.write('<table><tr><th>Serviço</th><th>Qtd/Horas</th><th>Detalhe</th><th>Total</th></tr>'+linhas+'<tr class="total"><td colspan="3">TOTAL A RECEBER</td><td style="text-align:right">'+fmt(total)+'</td></tr></table>');
   win.document.write('<p style="font-size:.72rem;color:#999;text-align:center;margin-top:24px">PADOTY Finance — '+new Date().toLocaleDateString('pt-BR')+'</p></body></html>');
   win.document.close();setTimeout(function(){win.print();},500);
+}
+// ── Nota exclusiva Sky Fit (só Aulas coletivas/instrutor) ──
+function gerarNotaSkyFitAulas(){
+  var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
+  var aulas=vars.filter(function(v){return v._sfAula;});
+  var comp=document.getElementById('sf-nota-comp')?document.getElementById('sf-nota-comp').value||(MESES[mes]+'/'+ano):(MESES[mes]+'/'+ano);
+  if(!aulas.length){alert('Nenhuma aula lançada este mês ainda!');return;}
+  var total=aulas.reduce(function(a,v){return a+v.val;},0);
+  var linhas=aulas.map(function(v){return '<tr><td>'+v.desc+'</td><td style="text-align:center">'+(v.horas||'—')+(v.horas?'h':'')+'</td><td style="text-align:right">'+(v.obs||'—')+'</td><td style="text-align:right">'+fmt(v.val)+'</td></tr>';}).join('');
+  abrirImpressaoRecibo('Sky Fit Academia',comp,linhas,total);
+}
+// ── Nota exclusiva Personal (por aluno específico) ──
+function abrirNotaPersonal(){
+  var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
+  var pts=vars.filter(function(v){return v._skyfitPT;});
+  if(!pts.length){alert('Nenhum personal lançado este mês ainda!');return;}
+  var alunos=Array.from(new Set(pts.map(function(v){return v.desc.replace('Personal — ','');})));
+  var sel=document.getElementById('np-aluno');
+  if(sel) sel.innerHTML=alunos.map(function(a){return '<option value="'+a+'">'+a+'</option>';}).join('');
+  document.getElementById('overlayNotaPersonal').classList.add('aberto');
+}
+function gerarNotaPersonal(){
+  var aluno=document.getElementById('np-aluno').value;
+  var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
+  var pts=vars.filter(function(v){return v._skyfitPT&&v.desc==='Personal — '+aluno;});
+  var comp=document.getElementById('sf-nota-comp')?document.getElementById('sf-nota-comp').value||(MESES[mes]+'/'+ano):(MESES[mes]+'/'+ano);
+  if(!pts.length){alert('Nenhum lançamento para esse aluno!');return;}
+  var total=pts.reduce(function(a,v){return a+v.val;},0);
+  var linhas=pts.map(function(v){return '<tr><td>Personal Training</td><td style="text-align:center">—</td><td style="text-align:right">'+fmtD(v.data)+'</td><td style="text-align:right">'+fmt(v.val)+'</td></tr>';}).join('');
+  fecharModal('overlayNotaPersonal');
+  abrirImpressaoRecibo(aluno,comp,linhas,total);
 }
 
 // ══ RECORRENTES — ADD ══
