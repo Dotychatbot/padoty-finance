@@ -4037,9 +4037,12 @@ function renderProjecaoProximoMes(){
   var mesProx=mes+1,anoProx=ano;
   if(mesProx>11){mesProx=0;anoProx++;}
 
-  // Receita prevista (soma das receitas fixas, assumindo recorrência)
+  // Receita prevista = receitas fixas recorrentes + receitas variáveis já lançadas este mês aguardando confirmação
   var fixasR=JSON.parse(localStorage.getItem(docIdG('receitas_fixas'))||'[]');
-  var receitaPrevista=fixasR.reduce(function(a,f){return a+f.val;},0);
+  var receitaFixaPrevista=fixasR.reduce(function(a,f){return a+f.val;},0);
+  var varsR=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
+  var receitaVarPrevista=varsR.filter(function(v){return v.status==='previsto';}).reduce(function(a,v){return a+v.val;},0);
+  var receitaPrevista=receitaFixaPrevista+receitaVarPrevista;
 
   // Compromissos fixos previstos
   var moto=carregarMoto();var motoP=(moto.parcela&&moto.atual<moto.total)?moto.parcela:0;
@@ -4063,7 +4066,7 @@ function renderProjecaoProximoMes(){
     '<div class="mini-card"><div class="lbl">📌 Compromissos fixos</div><div class="val" style="color:var(--red2)">'+fmt(compromissos)+'</div></div>'+
     '<div class="mini-card"><div class="lbl">'+(sobraEstimada>=0?'✅':'⚠️')+' Sobra estimada</div><div class="val" style="color:'+cor+'">'+fmt(sobraEstimada)+'</div></div>'+
     '</div>'+
-    '<div style="font-size:.64rem;color:var(--muted)">Baseado nas receitas fixas e compromissos já cadastrados. Receitas variáveis (ex: aulas extras, personal avulso) não entram nessa conta.</div>'+
+    '<div style="font-size:.64rem;color:var(--muted)">Inclui receitas fixas + receitas variáveis já lançadas aguardando confirmação (ex: aulas Sky Fit, personal). Receitas ainda não lançadas não entram.</div>'+
     '</div>';
 }
 
