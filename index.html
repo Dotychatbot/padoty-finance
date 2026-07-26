@@ -1148,8 +1148,11 @@ body.dark{--bg:#0a0c14;--bg2:#0f1222;--surface:#141828;--border:#202840;}
       <button id="voz-btn-mic" onclick="toggleVozRec()" style="width:72px;height:72px;border-radius:50%;background:var(--blue2);color:white;border:none;font-size:2rem;cursor:pointer;transition:all .2s">🎤</button>
     </div>
 
-    <!-- TRANSCRIPT -->
-    <div id="voz-transcript" style="background:var(--bg2);border-radius:10px;padding:12px;font-size:.85rem;min-height:48px;margin-bottom:10px;color:var(--text);font-style:italic"></div>
+    <!-- TRANSCRIPT (editável) -->
+    <div style="margin-bottom:10px">
+      <textarea id="voz-transcript" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:.85rem;min-height:48px;color:var(--text);font-style:italic;resize:vertical;font-family:inherit"></textarea>
+      <button class="btn-sm" style="width:100%;margin-top:6px" onclick="reprocessarVoz()">🔄 Corrigir texto e reprocessar</button>
+    </div>
 
     <!-- IA PROCESSING -->
     <div id="voz-ia-status" style="font-size:.76rem;color:var(--muted);text-align:center;margin-bottom:8px"></div>
@@ -2501,6 +2504,10 @@ function renderHistoricoCasa(){
       '</div>';
   }).join('');
 }
+async function delHistCasa(id){
+  var hist=carregarHistCasa().filter(function(h){return h.id!==id;});
+  await salvarHistCasa(hist);renderFinanciamentos();
+}
 function delHistBtn(btn){delHistCasa(parseFloat(btn.dataset.id));}
 function editarHistBtn(btn){abrirEdicaoHist(parseFloat(btn.dataset.id));}
 function abrirEdicaoHist(id){
@@ -2674,6 +2681,18 @@ function delRecorrenteBtn(btn){delRecorrente(parseFloat(btn.dataset.id));}
 function editarRecBtn(btn){abrirEdicaoRec(parseFloat(btn.dataset.id));}
 function delAssnBtn(btn){delAssinatura(parseFloat(btn.dataset.id));}
 function editarAssnBtn(btn){abrirEdicaoAssn(parseFloat(btn.dataset.id));}
+function abrirEdicaoFin(id){
+  var fins=carregarFins();var f=fins.find(function(x){return x.id===id;});if(!f) return;
+  document.getElementById('ef-id').value=id;
+  document.getElementById('ef-nome').value=f.nome||'';
+  var iconEl=document.getElementById('ef-icon');if(iconEl) iconEl.value=f.icon||'🏦';
+  document.getElementById('ef-parcela').value=f.parcela||0;
+  document.getElementById('ef-atual').value=f.atual||1;
+  document.getElementById('ef-total').value=f.total||0;
+  var dv=document.getElementById('ef-data');if(dv) dv.value=f.dataVenc||'';
+  var ob=document.getElementById('ef-obs');if(ob) ob.value=f.obs||'';
+  document.getElementById('overlayEditarFin').classList.add('aberto');
+}
 function editarFinBtn(btn){abrirEdicaoFin(parseFloat(btn.dataset.id));}
 function delFinBtn(btn){if(confirm('Remover?')) delFinanciamento(parseFloat(btn.dataset.id));}
 async function delFinanciamento(id){var fins=carregarFins().filter(function(f){return f.id!==id;});await salvarFins(fins);renderFinanciamentos();}
@@ -2693,6 +2712,11 @@ function iniciarVoz(tipo){
 
 
 
+function reprocessarVoz(){
+  var texto=document.getElementById('voz-transcript').value.trim();
+  if(!texto){mostrarToast('Digite ou fale algo primeiro!');return;}
+  processarVozComIA(texto);
+}
 async function processarVozComIA(texto){
   var apiKey=window._apiKeyCache||localStorage.getItem('pf_apikey')||sessionStorage.getItem('pf_apikey')||'';
   var iaStatus=document.getElementById('voz-ia-status');
@@ -2742,20 +2766,24 @@ async function processarVozComIA(texto){
     var catObj=cats.find(function(c){return c.id===result.cat;});
     var catName=catObj?(catObj.icon+' '+catObj.nome):'—';
 
-    // Show preview
+    // Show preview — TUDO EDITÁVEL antes de confirmar
+    var cartOptions=carts.map(function(c){return '<option value="'+c.id+'"'+(c.id===result.carteira_id?' selected':'')+'>'+c.icon+' '+c.nome+'</option>';}).join('');
     if(previewContent) previewContent.innerHTML=
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.8rem">'+
-      '<div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;margin-bottom:2px">Tipo</div>'+
-      '<div style="font-weight:700;color:'+(result.tipo==='receita'?'var(--green2)':'var(--red2)')+'">'+( result.tipo==='receita'?'💰 Receita':'💸 Gasto')+'</div></div>'+
-      '<div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;margin-bottom:2px">Valor</div>'+
-      '<div style="font-weight:700;font-family:DM Mono,monospace;font-size:1rem;color:'+(result.tipo==='receita'?'var(--green2)':'var(--red2)')+'">R$ '+parseFloat(result.valor||0).toFixed(2)+'</div></div>'+
-      '<div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;margin-bottom:2px">Descrição</div>'+
-      '<div style="font-weight:600">'+( result.desc||'—')+'</div></div>'+
-      '<div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;margin-bottom:2px">Categoria</div>'+
-      '<div>'+catName+'</div></div>'+
-      (result.tipo==='gasto'?'<div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;margin-bottom:2px">Pagamento</div><div>'+result.pag+'</div></div>':'')+
-      '<div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;margin-bottom:2px">Conta</div>'+
-      '<div>'+cartName+'</div></div>'+
+      '<div class="fields" style="font-size:.8rem">'+
+      '<div><label style="font-size:.62rem">Tipo</label><select id="vz-tipo">'+
+      '<option value="gasto"'+(result.tipo!=='receita'?' selected':'')+'>💸 Gasto</option>'+
+      '<option value="receita"'+(result.tipo==='receita'?' selected':'')+'>💰 Receita</option>'+
+      '</select></div>'+
+      '<div><label style="font-size:.62rem">Valor (R$)</label><input type="number" id="vz-valor" value="'+parseFloat(result.valor||0).toFixed(2)+'" step="0.01" min="0"/></div>'+
+      '<div class="full"><label style="font-size:.62rem">Descrição</label><input type="text" id="vz-desc" value="'+(result.desc||'').replace(/"/g,'&quot;')+'"/></div>'+
+      '<div><label style="font-size:.62rem">Categoria</label><select id="vz-cat">'+buildCatOptions(result.cat)+'</select></div>'+
+      '<div><label style="font-size:.62rem">Pagamento</label><select id="vz-pag">'+
+      '<option value="debito"'+(result.pag==='debito'?' selected':'')+'>💳 Débito</option>'+
+      '<option value="pix"'+(result.pag==='pix'?' selected':'')+'>⚡ PIX</option>'+
+      '<option value="credito"'+(result.pag==='credito'?' selected':'')+'>💳 Crédito</option>'+
+      '<option value="dinheiro"'+(result.pag==='dinheiro'?' selected':'')+'>💵 Dinheiro</option>'+
+      '</select></div>'+
+      '<div class="full"><label style="font-size:.62rem">Conta</label><select id="vz-carteira"><option value="0">— Selecione —</option>'+cartOptions+'</select></div>'+
       '</div>'+
       (result.explicacao?'<div style="font-size:.7rem;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">🤖 '+result.explicacao+'</div>':'');
 
@@ -2771,23 +2799,32 @@ async function processarVozComIA(texto){
   }
 }
 
+function confirmarVoz(){
+  fecharModal('overlayVoz');
+  mostrarToast('📝 Confira os campos preenchidos em Meus Gastos e finalize o lançamento por lá.');
+}
 async function confirmarVozIA(){
   if(!_vozDados){confirmarVoz();return;}
-  var d=_vozDados;
-  var val=parseFloat(d.valor)||0;
-  if(!val){mostrarToast('Não consegui identificar o valor. Tente de novo!');return;}
+  // Lê os campos EDITADOS pelo usuário, não os dados brutos da IA
+  var tipo=document.getElementById('vz-tipo').value;
+  var val=parseFloat(document.getElementById('vz-valor').value)||0;
+  var desc=document.getElementById('vz-desc').value.trim();
+  var cat=document.getElementById('vz-cat').value;
+  var pag=document.getElementById('vz-pag').value;
+  var carteiraId=parseInt(document.getElementById('vz-carteira').value)||0;
+  if(!val){mostrarToast('Digite um valor válido!');return;}
 
-  if(d.tipo==='receita'){
+  if(tipo==='receita'){
     var vars=JSON.parse(localStorage.getItem(docId()+'_receitas_var')||'[]');
-    vars.push({id:Date.now(),desc:d.desc||'Receita por voz',val:val,data:hoje(),obs:'Voz IA',carteira:d.carteira_id||0,status:d.status||'confirmado'});
+    vars.push({id:Date.now(),desc:desc||'Receita por voz',val:val,data:hoje(),obs:'Voz IA',carteira:carteiraId,status:'confirmado'});
     await set(docId()+'_receitas_var',JSON.stringify(vars));
-    if(d.carteira_id&&val&&d.status!=='previsto') await creditarCarteira(d.carteira_id,val,d.desc);
+    if(carteiraId&&val) await creditarCarteira(carteiraId,val,desc);
     mostrarToast('✅ Receita lançada: '+fmt(val));
   } else {
     var gastos=carregarGastos();
-    gastos.push({id:Date.now(),desc:d.desc||'Gasto por voz',valor:val,cat:d.cat||'outros',pag:d.pag||'debito',data:hoje(),obs:'Voz IA',carteira:d.carteira_id||0});
+    gastos.push({id:Date.now(),desc:desc||'Gasto por voz',valor:val,cat:cat||'outros',pag:pag||'debito',data:hoje(),obs:'Voz IA',carteira:carteiraId});
     await set(docId()+'_gastos',JSON.stringify(gastos));
-    if(d.carteira_id&&val) await debitarCarteira(d.carteira_id,val,d.desc,d.pag==='credito');
+    if(carteiraId&&val) await debitarCarteira(carteiraId,val,desc,pag==='credito');
     mostrarToast('✅ Gasto lançado: '+fmt(val));
   }
 
@@ -4355,7 +4392,7 @@ function toggleVozRec(){
   window._vozRecon.lang='pt-BR';window._vozRecon.continuous=false;window._vozRecon.interimResults=false;
   window._vozRecon.onresult=function(e){
     var texto=e.results[0][0].transcript;
-    var trans=document.getElementById('voz-transcript');if(trans) trans.textContent='"'+texto+'"';
+    var trans=document.getElementById('voz-transcript');if(trans) trans.value=texto;
     processarVozComIA(texto);
   };
   window._vozRecon.onerror=function(e){window._vozAtiva=false;if(btn){btn.style.background='var(--blue2)';btn.textContent='🎤';}};
@@ -4599,6 +4636,18 @@ async function addRecorrente(){
 }
 
 // ══ EDITAR RECEITA ══
+function abrirEdicaoReceita(id,tipo){
+  var key=tipo==='fixa'?docIdG('receitas_fixas'):docId()+'_receitas_var';
+  var lista=JSON.parse(localStorage.getItem(key)||'[]');
+  var r=lista.find(function(x){return x.id==id;});if(!r) return;
+  document.getElementById('er-id').value=id;
+  document.getElementById('er-tipo').value=tipo;
+  document.getElementById('er-desc').value=r.desc||'';
+  document.getElementById('er-val').value=r.val||0;
+  var dv=document.getElementById('er-data');if(dv) dv.value=r.data||hoje();
+  document.getElementById('er-obs').value=r.obs||'';
+  document.getElementById('overlayEditarReceita').classList.add('aberto');
+}
 async function salvarEdicaoReceita(){
   var id=parseInt(document.getElementById('er-id').value);
   var tipo=document.getElementById('er-tipo').value;
@@ -4704,6 +4753,18 @@ async function salvarEdicaoFin(){
 }
 
 // ══ EDITAR GASTO ══
+function abrirEdicao(id){
+  var gastos=carregarGastos();
+  var g=gastos.find(function(x){return x.id==id;});if(!g) return;
+  document.getElementById('edit-id').value=id;
+  document.getElementById('edit-desc').value=g.desc||'';
+  document.getElementById('edit-val').value=g.valor||0;
+  var catSel=document.getElementById('edit-cat');if(catSel) catSel.innerHTML=buildCatOptions(g.cat);
+  var pagSel=document.getElementById('edit-pag');if(pagSel) pagSel.value=g.pag||'debito';
+  var dv=document.getElementById('edit-data');if(dv) dv.value=g.data||hoje();
+  document.getElementById('edit-obs').value=g.obs||'';
+  document.getElementById('overlayEditar').classList.add('aberto');
+}
 async function salvarEdicao(){
   var id=parseFloat(document.getElementById('edit-id').value);
   var gastos=carregarGastos();
